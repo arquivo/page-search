@@ -2,11 +2,15 @@ package org.arquivo.parsers;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.apache.commons.httpclient.*;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.httpclient.HttpParser;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHeaders;
+import org.apache.commons.httpclient.Header;
+import org.apache.http.ProtocolException;
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -20,8 +24,6 @@ import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.archive.io.arc.ARCRecord;
 import org.archive.io.warc.WARCRecord;
-import org.archive.url.UsableURI;
-import org.archive.url.UsableURIFactory;
 import org.archive.util.ArchiveUtils;
 import org.arquivo.indexer.HTTPHeader;
 import org.arquivo.solr.SolrDocumentWrapper;
@@ -103,24 +105,24 @@ public class WARCParser {
         // System.out.println(header.getHeaderValue(HEADER_KEY_TYPE));
     }
 
-    protected void parseURL(String targetUrl) throws URIException {
-        UsableURI url = UsableURIFactory.getInstance(targetUrl);
+    // protected void parseURL(String targetUrl) throws URIException {
+    //     UsableURI url = UsableURIFactory.getInstance(targetUrl);
 
-        // Record the host (an canonicalised), the domain
-        // and the public suffix:
-        String host = url.getHost();
-        System.out.println("HOST: " + host);
-        // host = Normalisation.canonicaliseHost(host);
+    //     // Record the host (an canonicalised), the domain
+    //     // and the public suffix:
+    //     String host = url.getHost();
+    //     System.out.println("HOST: " + host);
+    //     // host = Normalisation.canonicaliseHost(host);
 
-        // get domain
-        // final String domain = LinkExtractor.extractPrivateSuffixFromHost(host);
+    //     // get domain
+    //     // final String domain = LinkExtractor.extractPrivateSuffixFromHost(host);
 
-        // Force correct escaping:
-        org.apache.commons.httpclient.URI tempUri = new org.apache.commons.httpclient
-                .URI(url.getEscapedURI(),
-                false);
-        System.out.println("URI: " + tempUri );
-    }
+    //     // Force correct escaping:
+    //     org.apache.commons.httpclient.URI tempUri = new org.apache.commons.httpclient
+    //             .URI(url.getEscapedURI(),
+    //             false);
+    //     System.out.println("URI: " + tempUri );
+    // }
 
     /**
      * Returns a Java Date object representing the crawled date.
@@ -223,18 +225,10 @@ public class WARCParser {
             if (firstLine.length > 1) {
                 statusCode = firstLine[1].trim();
                 httpHeaders.setHttpStatus(statusCode);
-                try {
-                    Header[] headers = HttpParser.parseHeaders(record, "UTF-8");
-                    httpHeaders.addAll(headers);
-                    this.processHTTPHeaders(httpHeaders, targetUrl, doc);
-                } catch (ProtocolException p) {
-                    log.error(
-                            "ProtocolException [" + statusCode + "]: "
-                                    + warcHeader.getHeaderValue(WARCConstants.HEADER_KEY_FILENAME)
-                                    + "@"
-                                    + warcHeader.getHeaderValue(WARCConstants.ABSOLUTE_OFFSET_KEY),
-                            p);
-                }
+
+                Header[] headers = HttpParser.parseHeaders(record, "UTF-8");
+                httpHeaders.addAll(headers);
+                this.processHTTPHeaders(httpHeaders, targetUrl, doc);
             } else {
                 log.warn("Could not parse status line: " + statusLine);
             }
@@ -253,9 +247,10 @@ public class WARCParser {
 
     public SolrDocumentWrapper extract(String archiveName, ArchiveRecord record) throws NoSuchAlgorithmException, IOException, TikaException, SAXException {
         final ArchiveRecordHeader header = record.getHeader();
-        SolrDocumentWrapper doc = new SolrDocumentWrapper(archiveName);
 
-        doc.setWarcOffset(String.valueOf(header.getOffset()));
+        SolrDocumentWrapper doc = new SolrDocumentWrapper(archiveName);
+        // TODO REMOVE or FIX THIS
+        // doc.setWarcOffset(String.valueOf(header.getOffset()));
 
         if ( !header.getHeaderFields().isEmpty()){
             // if WARC-TYPE is a WARC if not, probably is a ARC
@@ -327,7 +322,14 @@ public class WARCParser {
         Config conf = ConfigFactory.load();
         WARCParser warcParser = new WARCParser(conf);
 
-        ArchiveReader reader = ArchiveReaderFactory.get("/home/dbicho/IdeaProjects/indexing/src/main/resources/test.warc.gz");
+        // FIXME
+        final String SOLR_URL = "http://localhost:8983/solr/searchpages";
+        SolrClient solrClient = new HttpSolrClient.Builder(SOLR_URL)
+                .withConnectionTimeout(10000)
+                .withSocketTimeout(60000)
+                .build();
+
+        ArchiveReader reader = ArchiveReaderFactory.get("/home/dbicho/IdeaProjects/searchpages/src/main/resources/test.warc.gz");
         Iterator<ArchiveRecord> ir = reader.iterator();
         int recordCount = 1;
         int lastFailedRecord = 0;
@@ -338,7 +340,13 @@ public class WARCParser {
                 ArchiveRecord rec = ir.next();
                 try {
                     SolrDocumentWrapper doc = warcParser.extract("test.warc.gz", rec);
+
+                    // move this code
                     System.out.println(doc.getSolrInputDOcument());
+
+                    solrClient.add(doc.getSolrInputDOcument());
+                    solrClient.commit();
+
                 } catch (Exception e) {
                     continue;
                 } catch (OutOfMemoryError e) {

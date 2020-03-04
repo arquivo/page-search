@@ -32,7 +32,6 @@ package org.arquivo.indexer;
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
  */
 
-import com.sun.istack.internal.NotNull;
 import org.apache.commons.httpclient.Header;
 
 import java.util.ArrayList;
@@ -51,7 +50,7 @@ public class HTTPHeader extends ArrayList<Header> {
     public HTTPHeader() {
     }
 
-    public HTTPHeader(@NotNull Collection<? extends Header> c) {
+    public HTTPHeader(Collection<? extends Header> c) {
         super(c);
     }
 

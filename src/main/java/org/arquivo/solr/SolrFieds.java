@@ -7,11 +7,11 @@ public interface SolrFieds {
     public static final String COLLECTION = "collection";
 
     public static final String CONTENT = "content";
-    public static final String CONTENT_LENGHT = "content_lenght";
+    public static final String CONTENT_LENGHT = "contentLength";
     public static final String DIGEST = "digest";
 
     public static final String DATE = "date";
-    public static final String TSTAMP = "tsamp";
+    public static final String TSTAMP = "tstamp";
 
     // WHAT IS THE DIFERENCE BETWEEN THIS AND DOMAIN?
     public static final String DOMAIN = "domain";
@@ -23,8 +23,8 @@ public interface SolrFieds {
     public static final String OUTLINKS = "outlinks";
 
     public static final String TYPE = "type";
-    public static final String PRIMARY_TYPE = "primary_type";
-    public static final String SUB_TYPE = "sub_type";
+    public static final String PRIMARY_TYPE = "primaryType";
+    public static final String SUB_TYPE = "subType";
     public static final String ENCODING = "encoding";
 
     public static final String WARCNAME = "warc_name";

@@ -65,7 +65,7 @@ public class SolrWebServer {
 
         if( conf.hasPath(CONF_HTTP_SERVER)) {
             log.info("Setting up HttpSolrServer client from a url: "+conf.getString(CONF_HTTP_SERVER));
-            // solrServer = new HttpSolrClient(conf.getString(CONF_HTTP_SERVER));
+            //solrServer = new HttpSolrClient(conf.getString(CONF_HTTP_SERVER));
 
         } else if (conf.hasPath(CONF_ZOOKEEPERS)) {
             log.info("Setting up CloudSolrServer client via zookeepers.");

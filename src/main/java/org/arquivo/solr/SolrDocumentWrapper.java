@@ -7,6 +7,7 @@ import java.util.Date;
 
 // Has the Logic to build a SolrInputDocument
 // Setting up each field information, normalizing or truncating if needed.
+// TODO use Solrj Field annotation instead of this shit
 
 public class SolrDocumentWrapper {
     private SolrInputDocument doc = new SolrInputDocument();
@@ -16,7 +17,8 @@ public class SolrDocumentWrapper {
     }
 
     public SolrDocumentWrapper(String warcName){
-        this.setWarcName(warcName);
+        // TODO REMOVE THIS
+        // this.setWarcName(warcName);
     }
 
     public void setContentType(String contentType){
