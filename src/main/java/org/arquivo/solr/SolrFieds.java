@@ -1,32 +1,32 @@
 package org.arquivo.solr;
 
 public interface SolrFieds {
-    public static final String ID = "id";
-    public static final String ANCHOR = "anchor";
-    // or arc?
-    public static final String COLLECTION = "collection";
+    String ID = "id";
+    String TITLE = "title";
+    String ANCHOR = "anchor";
+    String COLLECTION = "collection";
 
-    public static final String CONTENT = "content";
-    public static final String CONTENT_LENGHT = "contentLength";
-    public static final String DIGEST = "digest";
+    String CONTENT = "content";
+    String CONTENT_LENGHT = "contentLength";
+    String DIGEST = "digest";
 
-    public static final String DATE = "date";
-    public static final String TSTAMP = "tstamp";
+    String TSTAMP = "tstamp";
 
-    // WHAT IS THE DIFERENCE BETWEEN THIS AND DOMAIN?
-    public static final String DOMAIN = "domain";
-    public static final String HOST = "host";
-    public static final String SITE = "site";
-    public static final String URL = "url";
+    // FIXME WHAT IS THE DIFERENCE BETWEEN THIS AND DOMAIN?
+    String DOMAIN = "domain";
+    String HOST = "host";
+    String SITE = "site";
+    String URL = "url";
 
-    public static final String INLINKS = "inlinks";
-    public static final String OUTLINKS = "outlinks";
+    String INLINKS = "inlinks";
+    String OUTLINKS = "outlinks";
 
-    public static final String TYPE = "type";
-    public static final String PRIMARY_TYPE = "primaryType";
-    public static final String SUB_TYPE = "subType";
-    public static final String ENCODING = "encoding";
+    String TYPE = "type";
+    String PRIMARY_TYPE = "primaryType";
+    String SUB_TYPE = "subType";
+    String TIKE_TYPE = "tika_content_type";
+    String ENCODING = "encoding";
 
-    public static final String WARCNAME = "warc_name";
-    public static final String WARC_OFFSET = "warc_offset";
+    String WARCNAME = "warc_name";
+    String WARC_OFFSET = "warc_offset";
 }

@@ -2,23 +2,18 @@ package org.arquivo.solr;
 
 import org.apache.solr.common.SolrInputDocument;
 
-import java.net.URL;
-import java.util.Date;
-
 // Has the Logic to build a SolrInputDocument
 // Setting up each field information, normalizing or truncating if needed.
-// TODO use Solrj Field annotation instead of this shit
-
 public class SolrDocumentWrapper {
-    private SolrInputDocument doc = new SolrInputDocument();
+    private SolrInputDocument doc;
 
     public SolrDocumentWrapper(){
         this.doc = new SolrInputDocument();
     }
 
     public SolrDocumentWrapper(String warcName){
-        // TODO REMOVE THIS
-        // this.setWarcName(warcName);
+        this.doc = new SolrInputDocument();
+        this.setWarcName(warcName);
     }
 
     public void setContentType(String contentType){
@@ -60,9 +55,6 @@ public class SolrDocumentWrapper {
         doc.setField(SolrFieds.CONTENT_LENGHT, contentLength);
     }
 
-    public void setDate(String date) {
-        doc.setField(SolrFieds.DATE, date);
-    }
 
     public void setDigest(String digest) {
         doc.setField(SolrFieds.DIGEST, digest);
@@ -76,6 +68,8 @@ public class SolrDocumentWrapper {
         doc.setField(SolrFieds.ENCODING, encoding);
     }
 
+    public void setTitle(String title) { doc.setField(SolrFieds.TITLE, title);}
+
     public void setHost(String host) {
         doc.setField(SolrFieds.HOST, host);
     }
@@ -87,6 +81,8 @@ public class SolrDocumentWrapper {
     public void setOutLinks(int outLinks) {
         doc.setField(SolrFieds.OUTLINKS, outLinks);
     }
+
+    public void setTikaType(String tikaType) { doc.setField(SolrFieds.TIKE_TYPE, tikaType);}
 
     public void setType(String type) {
         doc.setField(SolrFieds.TYPE, type);
@@ -112,7 +108,7 @@ public class SolrDocumentWrapper {
         doc.setField(SolrFieds.URL, url);
     }
 
-    public SolrInputDocument getSolrInputDOcument(){
+    public SolrInputDocument getSolrInputDocument(){
         return this.doc;
     }
 }
