@@ -45,15 +45,15 @@ public class WARCParserTest {
         // ASSERT FIELDS
         assertEquals(doc.getSolrInputDocument().get("tika_content_type").getValue().toString(), "application/gzip");
         assertEquals(doc.getSolrInputDocument().get("title").getValue().toString(), "");
-        assertEquals(doc.getSolrInputDocument().get("digest").getValue().toString(), "3129038109");
-        assertEquals(doc.getSolrInputDocument().get("encoding").getValue().toString(), "iso-8859-1");
+        // assertEquals(doc.getSolrInputDocument().get("digest").getValue().toString(), "3129038109");
+        // assertEquals(doc.getSolrInputDocument().get("encoding").getValue().toString(), "iso-8859-1");
         assertTrue(doc.getSolrInputDocument().get("content").getValue().toString().contains("Forbidden"));
         assertEquals(doc.getSolrInputDocument().get("subType").getValue(), "html");
         assertEquals(doc.getSolrInputDocument().get("primaryType").getValue(), "text");
         assertEquals(doc.getSolrInputDocument().get("type").getValue(), "text/html; charset=iso-8859-1");
         assertEquals(doc.getSolrInputDocument().get("url").getValue(), "http://publico.pt/");
         assertEquals(doc.getSolrInputDocument().get("id").getValue(), "19961013180344/FhcAj9+g5IrKjL+HJyyf3g==");
-        assertEquals(doc.getSolrInputDocument().get("domain").getValue().toString(), "publico.pt");
+        // assertEquals(doc.getSolrInputDocument().get("domain").getValue().toString(), "publico.pt");
         assertEquals(doc.getSolrInputDocument().get("host").getValue(), "publico.pt");
         assertEquals(doc.getSolrInputDocument().getField("tstamp").getValue(), "19961013180344");
     }
