@@ -24,6 +24,7 @@
 	<field name="outlinks" type="pint" stored="true"/>
 
 	<!-- not tokenized -->
+    <field name="encoding" type="string" stored="true"/>
     <field name="tika_content_type" type="string" stored="true" />
 	<field name="type" type="string" indexed="true" stored="false"/>
 	<field name="primaryType" type="string" indexed="true"/>
@@ -34,7 +35,7 @@
 	<!-- TODO should we use the default text_pt?? -->
 	<field name="anchor" type="text_general" indexed="true" stored="false"/>
 	<field name="content" type="text_general" indexed="true" stored="false"/>
-	<field name="tile" type="text_general" indexed="true" stored="false"/>
+	<field name="title" type="text_general" indexed="true" stored="false"/>
 
     <uniqueKey>id</uniqueKey>
 
