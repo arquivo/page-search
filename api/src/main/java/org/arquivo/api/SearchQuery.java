@@ -2,7 +2,7 @@ package org.arquivo.api;
 
 import com.google.gson.annotations.SerializedName;
 
-public class TextSearchRequestParameters {
+public class SearchQuery {
 
     @SerializedName("q")
     private String queryTerms;
@@ -29,13 +29,13 @@ public class TextSearchRequestParameters {
     private String fields;
     private String prettyPrint;
 
-    public TextSearchRequestParameters(String queryTerms) {
+    public SearchQuery(String queryTerms) {
         this.queryTerms = queryTerms;
     }
 
-    public TextSearchRequestParameters(String queryTerms, String offset, String maxItems, String limitPerSite,
-                                       String from, String to, String type, String site,
-                                       String collection, String fields, String prettyPrint) {
+    public SearchQuery(String queryTerms, String offset, String maxItems, String limitPerSite,
+                       String from, String to, String type, String site,
+                       String collection, String fields, String prettyPrint) {
         this.queryTerms = queryTerms;
         this.offset = offset;
         this.maxItems = maxItems;
@@ -47,9 +47,6 @@ public class TextSearchRequestParameters {
         this.collection = collection;
         this.setFields(fields);
         this.prettyPrint = prettyPrint;
-    }
-
-    public TextSearchRequestParameters() {
     }
 
 

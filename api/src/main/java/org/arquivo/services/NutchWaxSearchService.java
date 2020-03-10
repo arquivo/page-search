@@ -1,8 +1,17 @@
 package org.arquivo.services;
 
-public class NutchWaxSearchService {
+import org.arquivo.api.SearchQuery;
 
-    public String search(String query){
-       return "result";
+import java.util.ArrayList;
+
+public class NutchWaxSearchService implements SearchService {
+
+    @Override
+    public ArrayList<SearchResult> query(SearchQuery searchQuery) {
+        ArrayList<SearchResult> searchResults = new ArrayList<>();
+        SearchResult searchResult = new SearchResult();
+        searchResult.setTitle("TESTE");
+        searchResults.add(searchResult);
+        return searchResults;
     }
 }
