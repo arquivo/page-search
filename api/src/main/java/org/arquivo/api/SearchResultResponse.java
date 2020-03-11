@@ -1,5 +1,6 @@
 package org.arquivo.api;
 
+import org.arquivo.services.SearchQuery;
 import org.arquivo.services.SearchResult;
 
 import java.util.ArrayList;

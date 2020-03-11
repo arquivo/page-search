@@ -1,7 +1,5 @@
 package org.arquivo.services;
 
-import org.arquivo.api.SearchQuery;
-
 import java.util.ArrayList;
 
 // SHOULD HAVE THE SAME INTERFACE AS NutchWaxService

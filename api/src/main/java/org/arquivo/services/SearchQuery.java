@@ -1,4 +1,4 @@
-package org.arquivo.api;
+package org.arquivo.services;
 
 import com.google.gson.annotations.SerializedName;
 

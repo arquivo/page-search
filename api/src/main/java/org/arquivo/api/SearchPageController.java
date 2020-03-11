@@ -1,6 +1,7 @@
 package org.arquivo.api;
 
 import org.arquivo.services.NutchWaxSearchService;
+import org.arquivo.services.SearchQuery;
 import org.arquivo.services.SearchResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +29,9 @@ public class SearchPageController {
         NutchWaxSearchService searchService = new NutchWaxSearchService();
 
         SearchQuery searchQuery = new SearchQuery(query);
-        ArrayList<SearchResult> searchResults = searchService.query(searchQuery);
+        ArrayList<SearchResult> searchResults = null;
+
+        searchResults = searchService.query(searchQuery);
 
         SearchResultResponse searchResultResponse = new SearchResultResponse();
 

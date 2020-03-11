@@ -1,7 +1,6 @@
 package org.arquivo.services;
 
-import org.arquivo.api.SearchQuery;
-
+import java.io.IOException;
 import java.util.ArrayList;
 
 public interface SearchService {

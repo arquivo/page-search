@@ -21,7 +21,7 @@ public class SearchPageControllerTest{
 
     @Test
     public void getSearchResult() {
-        SearchResultResponse response = this.restTemplate.getForObject("http://localhost:" + this.port + "/textsearch?q=sapo", SearchResultResponse.class);
+        SearchResultResponse response = this.restTemplate.getForObject("http://localhost:" + this.port + "/textsearch?q=de", SearchResultResponse.class);
         assert (true);
     }
 
