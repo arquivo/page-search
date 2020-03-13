@@ -1,7 +1,7 @@
 package org.arquivo.api;
 
-import org.arquivo.services.NutchWaxSearchQuery;
-import org.arquivo.services.NutchWaxSearchResult;
+import org.arquivo.services.SearchQuery;
+import org.arquivo.services.SearchResult;
 
 import java.util.ArrayList;
 
@@ -13,9 +13,9 @@ public class SearchResultResponse {
     private String previousPage;
     private long totalItems;
     private long estimatedNumberResults;
-    private NutchWaxSearchQuery requestParameters;
+    private SearchQuery requestParameters;
 
-    private ArrayList<NutchWaxSearchResult> responseItems;
+    private ArrayList<SearchResult> responseItems;
 
     public String getServiceName() {
         return serviceName;
@@ -56,6 +56,7 @@ public class SearchResultResponse {
     public void setTotalItems(long totalItems) {
         this.totalItems = totalItems;
     }
+
     public long getEstimatedNumberResults() {
         return estimatedNumberResults;
     }
@@ -64,19 +65,19 @@ public class SearchResultResponse {
         this.estimatedNumberResults = estimatedNumberResults;
     }
 
-    public NutchWaxSearchQuery getRequestParameters() {
+    public SearchQuery getRequestParameters() {
         return requestParameters;
     }
 
-    public void setRequestParameters(NutchWaxSearchQuery requestParameters) {
+    public void setRequestParameters(SearchQuery requestParameters) {
         this.requestParameters = requestParameters;
     }
 
-    public ArrayList<NutchWaxSearchResult> getResponseItems() {
+    public ArrayList<SearchResult> getResponseItems() {
         return responseItems;
     }
 
-    public void setResponseItems(ArrayList<NutchWaxSearchResult> responseItems) {
+    public void setResponseItems(ArrayList<SearchResult> responseItems) {
         this.responseItems = responseItems;
     }
 }

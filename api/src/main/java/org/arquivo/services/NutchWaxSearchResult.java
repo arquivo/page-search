@@ -2,7 +2,6 @@ package org.arquivo.services;
 
 import org.apache.nutch.searcher.HitDetails;
 import org.apache.nutch.searcher.NutchBean;
-import org.springframework.context.annotation.Lazy;
 
 import java.beans.Transient;
 import java.io.IOException;

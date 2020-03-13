@@ -1,6 +1,8 @@
 package org.arquivo.services;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.lucene.search.PwaFunctionsWritable;
 import org.apache.nutch.global.Global;
@@ -20,6 +22,8 @@ import java.util.Date;
 
 public class NutchWaxSearchService implements SearchService {
 
+    private static final Log LOG = LogFactory.getLog(NutchWaxSearchService.class);
+
     private int numberResultsRanked;
     private Configuration conf;
     private NutchwaxBean bean;
@@ -27,7 +31,7 @@ public class NutchWaxSearchService implements SearchService {
     @Value("${searchpages.api.startdate}")
     private String startDate;
 
-    private DateFormat dateFormat = new SimpleDateFormat("YYYYMMDDGGMMSS");
+    private DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
     @Value("${searchpages.service.link}")
     private String serviceName;
@@ -51,14 +55,14 @@ public class NutchWaxSearchService implements SearchService {
         this.bean = new NutchwaxBean(conf);
     }
 
-    private boolean isTimeBoundedQuery(SearchQuery searchQuery){
+    private boolean isTimeBoundedQuery(SearchQuery searchQuery) {
         return (searchQuery.getTo() != null || searchQuery.getFrom() != null);
     }
 
     @Override
     public SearchResults query(SearchQuery searchQuery) {
         SearchResults results = new SearchResults();
-        ArrayList<NutchWaxSearchResult> searchResults = new ArrayList<>();
+        ArrayList<SearchResult> searchResults = new ArrayList<>();
 
         StringBuilder queryString = new StringBuilder();
 
@@ -82,7 +86,7 @@ public class NutchWaxSearchService implements SearchService {
                 hitsPerDup = 0;
 
                 for (String siteP : siteParameters) {
-                    // TODO LOG.debug("siteP = " + siteP);
+                    LOG.debug("siteP = " + siteP);
                     if (siteP.equals(""))
                         continue;
 
@@ -114,36 +118,30 @@ public class NutchWaxSearchService implements SearchService {
                         continue;
                     String collections = "";
                     collections = " collection:".concat(collection);
-                    // TODO LOG.debug("Collections Append: " + collections);
+                    LOG.debug("Collections Append: " + collections);
                     queryString.append(collections);
                 }
             }
         }
 
-        // Date date = new Date();
-        // searchQuery.setTo(dateFormat.format(date));
-        // Handle date
-        // to has a default. From doesn't have a default
-        // we want to do a timebounded query if 'to' and 'from' were specified on the query
-        // FIXME handle from > to
+        // Handle time bounded query
+        // 'from' has a default. 'to' doesn't have a default
+        // We want to do a timebounded query if 'to' and 'from' were specified on the query
         if (isTimeBoundedQuery(searchQuery)) {
-            if (searchQuery.getFrom() == null){
+            if (searchQuery.getFrom() == null) {
                 searchQuery.setFrom(startDate);
-            } else if(searchQuery.getFrom().length() != 14) {
-                searchQuery.setFrom(StringUtils.rightPad(searchQuery.getFrom(),14, "0"));
+            } else if (searchQuery.getFrom().length() != 14) {
+                searchQuery.setFrom(StringUtils.rightPad(searchQuery.getFrom(), 14, "0"));
             }
 
-            if (searchQuery.getTo() == null){
+            if (searchQuery.getTo() == null) {
                 Date endDate = new Date();
                 searchQuery.setTo(dateFormat.format(endDate));
-            } else if(searchQuery.getTo().length() != 14) {
-                searchQuery.setTo(StringUtils.rightPad(searchQuery.getTo(),14, "0"));
+            } else if (searchQuery.getTo().length() != 14) {
+                searchQuery.setTo(StringUtils.rightPad(searchQuery.getTo(), 14, "0"));
             }
             queryString.append(" date:".concat(searchQuery.getFrom()).concat(searchQuery.getTo()));
         }
-
-
-
 
         try {
             Query query = Query.parse(queryString.toString(), conf);
@@ -170,8 +168,7 @@ public class NutchWaxSearchService implements SearchService {
                 }
             }
         } catch (IOException ex) {
-            // TODO
-            ex.printStackTrace();
+            LOG.error("Exception performing the query", ex);
         }
 
         results.setResults(searchResults);
@@ -181,7 +178,7 @@ public class NutchWaxSearchService implements SearchService {
     private void populateSearchResult(NutchWaxSearchResult searchResult, HitDetails detail, Summary summary) {
         searchResult.setTitle(detail.getValue("title"));
         searchResult.setOriginalURL(detail.getValue("url"));
-        searchResult.setTimeStamp(Long.parseLong(this.parseTimeStamp(detail.getValue("tstamp"))));
+        searchResult.setTimeStamp(Long.parseLong(this.parseTimeStamp(detail.getValue("tstamp").substring(0,14))));
         searchResult.setContentLength(Long.parseLong(detail.getValue("contentLength")));
         searchResult.setDigest(detail.getValue("digest"));
         searchResult.setMimeType(detail.getValue("primaryType").concat("/").concat(detail.getValue("subType")));
@@ -198,10 +195,20 @@ public class NutchWaxSearchService implements SearchService {
     }
 
     private void populateEndpointsLinks(NutchWaxSearchResult searchResult) {
-        searchResult.setLinkToArchive(waybackServiceEndpoint + "/" + searchResult.getTimeStamp() + "/" + searchResult.getOriginalURL());
-        searchResult.setLinkToScreenshot(screenshotServiceEndpoint + "?url=" + searchResult.getLinkToArchive());
-        searchResult.setLinkToNoFrame(waybackNoFrameServiceEndpoint + "/" + searchResult.getTimeStamp() + "/" + searchResult.getOriginalURL());
-        searchResult.setLinkToExtractedText(extractedTextServiceEndpoint + "?m=" + searchResult.getTimeStamp() + "/" + searchResult.getOriginalURL());
+        searchResult.setLinkToArchive(waybackServiceEndpoint +
+                "/" + searchResult.getTimeStamp() +
+                "/" + searchResult.getOriginalURL());
+
+        searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
+                "?url=" + searchResult.getLinkToArchive());
+
+        searchResult.setLinkToNoFrame(waybackNoFrameServiceEndpoint +
+                "/" + searchResult.getTimeStamp() +
+                "/" + searchResult.getOriginalURL());
+
+        searchResult.setLinkToExtractedText(extractedTextServiceEndpoint +
+                "?m=" + searchResult.getTimeStamp() +
+                "/" + searchResult.getOriginalURL());
     }
 
     private String parseTimeStamp(String tstamp) {
@@ -209,7 +216,7 @@ public class NutchWaxSearchService implements SearchService {
             Date d = this.dateFormat.parse(tstamp);
             return this.dateFormat.format(d);
         } catch (ParseException e) {
-            // TODO LOG.error(e);
+            LOG.error("Exception parsing a timestamp", e);
             return "";
         }
     }

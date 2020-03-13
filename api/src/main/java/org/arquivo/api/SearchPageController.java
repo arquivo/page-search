@@ -44,7 +44,7 @@ public class SearchPageController {
                 SearchResults searchResults = searchService.query(searchQuery);
 
                 // SANITY CHECK ONLY 1 RESULT
-                ArrayList<NutchWaxSearchResult> searchResultsArray = searchResults.getResults();
+                ArrayList<SearchResult> searchResultsArray = searchResults.getResults();
                 extractedText = searchResultsArray.get(0).getExtractedText();
             }
         }

@@ -6,13 +6,13 @@ public class SearchResults {
 
     private long numberEstimatedResults;
     private long numberResults;
-    private ArrayList<NutchWaxSearchResult> results;
+    private ArrayList<SearchResult> results;
 
-    public ArrayList<NutchWaxSearchResult> getResults() {
+    public ArrayList<SearchResult> getResults() {
         return results;
     }
 
-    public void setResults(ArrayList<NutchWaxSearchResult> results) {
+    public void setResults(ArrayList<SearchResult> results) {
         this.results = results;
     }
 
