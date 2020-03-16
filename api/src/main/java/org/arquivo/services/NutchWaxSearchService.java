@@ -164,6 +164,8 @@ public class NutchWaxSearchService implements SearchService {
                     NutchWaxSearchResult searchResult = new NutchWaxSearchResult();
                     populateSearchResult(searchResult, details[i], summaries[i]);
                     populateEndpointsLinks(searchResult);
+
+                    searchResult.setFields(((NutchWaxSearchQuery) searchQuery).getFields());
                     searchResults.add(searchResult);
                 }
             }

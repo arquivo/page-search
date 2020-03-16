@@ -1,11 +1,13 @@
 package org.arquivo.services;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.nutch.searcher.HitDetails;
 import org.apache.nutch.searcher.NutchBean;
 
 import java.beans.Transient;
 import java.io.IOException;
 
+@JsonSerialize(using = NutchWaxSearchResultSerializer.class)
 public class NutchWaxSearchResult implements SearchResult {
 
     private String title;
@@ -27,6 +29,7 @@ public class NutchWaxSearchResult implements SearchResult {
     private String collection;
     private long offset;
 
+    private String[] fields;
     private NutchBean bean;
     private HitDetails details;
 
@@ -202,6 +205,14 @@ public class NutchWaxSearchResult implements SearchResult {
 
     public void setBean(NutchBean bean) {
         this.bean = bean;
+    }
+
+    public String[] getFields() {
+        return fields;
+    }
+
+    public void setFields(String[] fields) {
+        this.fields = fields;
     }
 }
 

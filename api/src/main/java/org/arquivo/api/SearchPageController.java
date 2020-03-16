@@ -63,7 +63,7 @@ public class SearchPageController {
                                     @RequestParam(value = "to", required = false) String to,
                                     @RequestParam(value = "type", required = false) String type,
                                     @RequestParam(value = "collection", required = false) String collection,
-                                    @RequestParam(value = "fields", required = false) String fields,
+                                    @RequestParam(value = "fields", required = false) String[] fields,
                                     @RequestParam(value = "prettyPrint", required = false) String prettyPrint
     ) {
 

@@ -1,7 +1,9 @@
 package org.arquivo.services;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.gson.annotations.SerializedName;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class NutchWaxSearchQuery implements SearchQuery {
 
     @SerializedName("q")
@@ -26,7 +28,7 @@ public class NutchWaxSearchQuery implements SearchQuery {
     @SerializedName("collection")
     private String collection;
 
-    private String fields;
+    private String[] fields;
     private String prettyPrint;
 
     public NutchWaxSearchQuery(String queryTerms) {
@@ -35,7 +37,7 @@ public class NutchWaxSearchQuery implements SearchQuery {
 
     public NutchWaxSearchQuery(String queryTerms, String offset, String maxItems, String limitPerSite,
                                String from, String to, String type, String site,
-                               String collection, String fields, String prettyPrint) {
+                               String collection, String fields[], String prettyPrint) {
 
         this.queryTerms = queryTerms;
         this.offset = offset;
@@ -88,7 +90,7 @@ public class NutchWaxSearchQuery implements SearchQuery {
     }
 
     public void setFrom(String from) {
-        this.from = from;
+        this.from = from.substring(0, 14);
     }
 
     public String getTo() {
@@ -132,18 +134,26 @@ public class NutchWaxSearchQuery implements SearchQuery {
     }
 
 
-    public String getFields() {
+    public String[] getFields() {
         return fields;
     }
 
-    public void setFields(String fields) {
+    public void setFields(String[] fields) {
         this.fields = fields;
     }
 
     @Override
     public String toString() {
+        StringBuilder strFieldsBuilder = new StringBuilder();
+        if (fields != null) {
+            for (String field : fields) {
+                strFieldsBuilder.append(field);
+                strFieldsBuilder.append(",");
+            }
+        }
+        String strFields = strFieldsBuilder.toString().substring(0, strFieldsBuilder.length() - 1);
         return "TextSearchRequestParameters [queryTerms=" + queryTerms + ", offset=" + offset + ", maxitems=" + maxItems
                 + ", limitPerSite=" + limitPerSite + ", from=" + from + ", to=" + to + ", type="
-                + type + ", site=" + site + ", prettyPrint=" + prettyPrint + "]";
+                + type + ", site=" + site + ", collection=" + collection + ", fields=" + strFields + ", prettyPrint=" + prettyPrint + "]";
     }
 }
