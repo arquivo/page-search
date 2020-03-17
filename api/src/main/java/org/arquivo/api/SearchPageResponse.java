@@ -5,7 +5,7 @@ import org.arquivo.services.SearchResult;
 
 import java.util.ArrayList;
 
-public class SearchResultResponse {
+public class SearchPageResponse {
 
     private String serviceName;
     private String linkToService;

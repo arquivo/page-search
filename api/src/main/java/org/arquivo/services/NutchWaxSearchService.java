@@ -79,6 +79,7 @@ public class NutchWaxSearchService implements SearchService {
 
         int hitsPerDup = Integer.parseInt(searchQuery.getLimitPerSite());
 
+        // TODO handle this as a String array
         String siteParameter = searchQuery.getSite();
         if (siteParameter != null && !siteParameter.equals("")) {
             String[] siteParameters = siteParameter.split(",");
@@ -99,6 +100,7 @@ public class NutchWaxSearchService implements SearchService {
             }
         }
 
+        // TODO handle this as a String array
         //Full-text search on specified type documents
         String typeParameter = searchQuery.getType();
         if (typeParameter == null)
@@ -108,6 +110,7 @@ public class NutchWaxSearchService implements SearchService {
             queryString.append(type);
         }
 
+        // TODO handle this as a String array
         //Full-text search on specified collections
         String collectionParameter = searchQuery.getCollection();
         if (collectionParameter != null && !collectionParameter.equals("")) {

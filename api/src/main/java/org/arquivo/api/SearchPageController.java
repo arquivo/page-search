@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -54,17 +55,18 @@ public class SearchPageController {
     // TODO default values to configuration file
     @RequestMapping(value = "/textsearch", method = {RequestMethod.GET})
     public @ResponseBody
-    SearchResultResponse pageSearch(@RequestParam(value = "q") String query,
-                                    @RequestParam(value = "offset", required = false, defaultValue = "0") String offset,
-                                    @RequestParam(value = "maxItems", required = false, defaultValue = "50") String maxItems,
-                                    @RequestParam(value = "siteSearch", required = false, defaultValue = "") String siteSearch,
-                                    @RequestParam(value = "limitPerSite", required = false, defaultValue = "2") String limitPerSite,
-                                    @RequestParam(value = "from", required = false) String from,
-                                    @RequestParam(value = "to", required = false) String to,
-                                    @RequestParam(value = "type", required = false) String type,
-                                    @RequestParam(value = "collection", required = false) String collection,
-                                    @RequestParam(value = "fields", required = false) String[] fields,
-                                    @RequestParam(value = "prettyPrint", required = false) String prettyPrint
+    SearchPageResponse pageSearch(@RequestParam(value = "q") String query,
+                                  @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
+                                  @RequestParam(value = "maxItems", required = false, defaultValue = "50") int maxItems,
+                                  @RequestParam(value = "siteSearch", required = false) String siteSearch,
+                                  @RequestParam(value = "limitPerSite", required = false, defaultValue = "2") int limitPerSite,
+                                  @RequestParam(value = "from", required = false) String from,
+                                  @RequestParam(value = "to", required = false) String to,
+                                  @RequestParam(value = "type", required = false) String type,
+                                  @RequestParam(value = "collection", required = false) String collection,
+                                  @RequestParam(value = "fields", required = false) String[] fields,
+                                  @RequestParam(value = "prettyPrint", required = false) String prettyPrint,
+                                  HttpServletRequest request
     ) {
 
         NutchWaxSearchQuery searchQuery = new NutchWaxSearchQuery(query, offset, maxItems, limitPerSite, from, to, type,
@@ -73,17 +75,38 @@ public class SearchPageController {
         SearchResults searchResults;
         searchResults = searchService.query(searchQuery);
 
-        SearchResultResponse searchResultResponse = new SearchResultResponse();
+        SearchPageResponse searchPageResponse = new SearchPageResponse();
 
-        searchResultResponse.setServiceName(serviceName);
-        searchResultResponse.setLinkToService(linkToService);
+        searchPageResponse.setServiceName(serviceName);
+        searchPageResponse.setLinkToService(linkToService);
 
-        searchResultResponse.setRequestParameters(searchQuery);
-        searchResultResponse.setResponseItems(searchResults.getResults());
-        searchResultResponse.setEstimatedNumberResults(searchResults.getNumberEstimatedResults());
-        searchResultResponse.setTotalItems(searchResults.getNumberResults());
+        String queryString = request.getQueryString();
+        setPagination(maxItems, offset, queryString, searchPageResponse);
 
-        return searchResultResponse;
+
+        searchPageResponse.setRequestParameters(searchQuery);
+        searchPageResponse.setResponseItems(searchResults.getResults());
+        searchPageResponse.setEstimatedNumberResults(searchResults.getNumberEstimatedResults());
+        searchPageResponse.setTotalItems(searchResults.getNumberResults());
+
+        return searchPageResponse;
+    }
+
+    private void setPagination(int maxItems, int offset, String queryString, SearchPageResponse searchPageResponse) {
+
+        if (queryString.contains("offset=")){
+            String queryStringNextPage = queryString.replace("offset=" + offset, "offset=" + (offset + maxItems));
+            searchPageResponse.setNextPage(linkToService + "/textsearch?" + queryStringNextPage);
+
+
+            String queryStringPreviousPage = queryString.replace("offset=" + offset, "offset="
+                    + ((offset != 0) ? (offset - maxItems) : 0));
+            searchPageResponse.setPreviousPage(linkToService + "/textsearch?" + queryStringPreviousPage);
+        }
+        else {
+            searchPageResponse.setNextPage(linkToService + "/textsearch?" + queryString + "&offset=" + maxItems);
+            searchPageResponse.setPreviousPage(linkToService + "/textsearch?" + queryString + "&offset=0");
+        }
     }
 
     /**

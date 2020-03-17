@@ -35,6 +35,24 @@ public class NutchWaxSearchQuery implements SearchQuery {
         this.queryTerms = queryTerms;
     }
 
+    public NutchWaxSearchQuery(String queryTerms, int offset, int maxItems, int limitPerSite,
+                               String from, String to, String type, String site,
+                               String collection, String fields[], String prettyPrint) {
+
+        this.queryTerms = queryTerms;
+        this.offset = String.valueOf(offset);
+        this.maxItems = String.valueOf(maxItems);
+        this.limitPerSite = String.valueOf(limitPerSite);
+        this.from = from;
+        this.to = to;
+        this.type = type;
+        this.site = site;
+        this.collection = collection;
+        this.prettyPrint = prettyPrint;
+
+        this.setFields(fields);
+    }
+
     public NutchWaxSearchQuery(String queryTerms, String offset, String maxItems, String limitPerSite,
                                String from, String to, String type, String site,
                                String collection, String fields[], String prettyPrint) {
