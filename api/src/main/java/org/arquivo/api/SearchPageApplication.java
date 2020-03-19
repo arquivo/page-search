@@ -1,6 +1,6 @@
 package org.arquivo.api;
 
-import org.arquivo.services.NutchWaxSearchService;
+import org.arquivo.services.nutchwax.NutchWaxSearchService;
 import org.arquivo.services.SearchService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

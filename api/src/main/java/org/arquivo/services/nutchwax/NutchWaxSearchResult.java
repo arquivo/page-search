@@ -1,8 +1,9 @@
-package org.arquivo.services;
+package org.arquivo.services.nutchwax;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.nutch.searcher.HitDetails;
 import org.apache.nutch.searcher.NutchBean;
+import org.arquivo.services.SearchResult;
 
 import java.beans.Transient;
 import java.io.IOException;
@@ -24,7 +25,6 @@ public class NutchWaxSearchResult implements SearchResult {
     private String linkToExtractedText;
     private String linkToMetadata;
     private String snippet;
-    private String statusCode;
     private String fileName;
     private String collection;
     private long offset;
@@ -143,14 +143,6 @@ public class NutchWaxSearchResult implements SearchResult {
 
     public void setSnippet(String snippet) {
         this.snippet = snippet;
-    }
-
-    public String getStatusCode() {
-        return statusCode;
-    }
-
-    public void setStatusCode(String statusCode) {
-        this.statusCode = statusCode;
     }
 
     public String getFileName() {

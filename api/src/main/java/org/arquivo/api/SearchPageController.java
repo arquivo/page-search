@@ -1,6 +1,11 @@
 package org.arquivo.api;
 
-import org.arquivo.services.*;
+import org.arquivo.services.SearchQuery;
+import org.arquivo.services.SearchResult;
+import org.arquivo.services.SearchResults;
+import org.arquivo.services.SearchService;
+import org.arquivo.services.cdx.CDXSearchService;
+import org.arquivo.services.nutchwax.NutchWaxSearchQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +26,19 @@ public class SearchPageController {
     @Autowired
     private SearchService searchService;
 
+
+    @RequestMapping(value = {"/urlsearch", "/textsearch?versionHistory"})
+    public @ResponseBody SearchPageResponse searchUrl(@RequestParam(value = "url") String url,
+                                                      @RequestParam(value = "from", required = false) String from,
+                                                      @RequestParam(value = "to" ,required = false) String to,
+                                                      @RequestParam(value = "maxItems", required = false) int limit,
+                                                      @RequestParam(value = "offset", required = false) int start) {
+        CDXSearchService cdxSearchService = new CDXSearchService();
+        SearchPageResponse searchPageResponse = new SearchPageResponse();
+        SearchResults searchResults = cdxSearchService.getResults(url, from, to, limit, start);
+        searchPageResponse.setResponseItems(searchResults.getResults());
+        return searchPageResponse;
+    }
 
     // TODO why not use EXACTURL ????
     @RequestMapping(value = "/extractedtext")
@@ -94,7 +112,7 @@ public class SearchPageController {
 
     private void setPagination(int maxItems, int offset, String queryString, SearchPageResponse searchPageResponse) {
 
-        if (queryString.contains("offset=")){
+        if (queryString.contains("offset=")) {
             String queryStringNextPage = queryString.replace("offset=" + offset, "offset=" + (offset + maxItems));
             searchPageResponse.setNextPage(linkToService + "/textsearch?" + queryStringNextPage);
 
@@ -102,8 +120,7 @@ public class SearchPageController {
             String queryStringPreviousPage = queryString.replace("offset=" + offset, "offset="
                     + ((offset != 0) ? (offset - maxItems) : 0));
             searchPageResponse.setPreviousPage(linkToService + "/textsearch?" + queryStringPreviousPage);
-        }
-        else {
+        } else {
             searchPageResponse.setNextPage(linkToService + "/textsearch?" + queryString + "&offset=" + maxItems);
             searchPageResponse.setPreviousPage(linkToService + "/textsearch?" + queryString + "&offset=0");
         }

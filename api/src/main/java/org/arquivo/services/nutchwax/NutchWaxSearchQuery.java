@@ -1,7 +1,8 @@
-package org.arquivo.services;
+package org.arquivo.services.nutchwax;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.gson.annotations.SerializedName;
+import org.arquivo.services.SearchQuery;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class NutchWaxSearchQuery implements SearchQuery {

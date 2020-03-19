@@ -1,4 +1,4 @@
-package org.arquivo.services;
+package org.arquivo.services.nutchwax;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -10,6 +10,10 @@ import org.apache.nutch.html.Entities;
 import org.apache.nutch.searcher.*;
 import org.archive.access.nutch.NutchwaxBean;
 import org.archive.access.nutch.NutchwaxConfiguration;
+import org.arquivo.services.SearchQuery;
+import org.arquivo.services.SearchResult;
+import org.arquivo.services.SearchResults;
+import org.arquivo.services.SearchService;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
@@ -189,7 +193,6 @@ public class NutchWaxSearchService implements SearchService {
         searchResult.setMimeType(detail.getValue("primaryType").concat("/").concat(detail.getValue("subType")));
         searchResult.setEncoding(detail.getValue("encoding"));
         searchResult.setDate(detail.getValue("date"));
-        searchResult.setStatusCode(detail.getValue("statusCode"));
         searchResult.setFileName(detail.getValue("arcname"));
         searchResult.setOffset(Long.parseLong(detail.getValue("arcoffset")));
         searchResult.setCollection(detail.getValue("collection"));

@@ -1,4 +1,4 @@
-package org.arquivo.services;
+package org.arquivo.services.nutchwax;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
