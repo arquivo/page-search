@@ -62,11 +62,11 @@ public class NutchWaxSearchQuery implements SearchQuery {
         this.queryTerms = queryTerms;
     }
 
-    public int getStart() {
+    public int getOffset() {
         return offset;
     }
 
-    public void setStart(int offset) {
+    public void setOffset(int offset) {
         this.offset = offset;
     }
 

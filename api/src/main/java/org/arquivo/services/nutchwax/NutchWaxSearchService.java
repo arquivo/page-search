@@ -28,6 +28,7 @@ public class NutchWaxSearchService implements SearchService {
 
     private static final Log LOG = LogFactory.getLog(NutchWaxSearchService.class);
 
+    private final int searcherMaxHits;
     private int numberResultsRanked;
     private Configuration conf;
     private NutchwaxBean bean;
@@ -57,6 +58,7 @@ public class NutchWaxSearchService implements SearchService {
         conf.addFinalResource("wax-default.xml");
         this.numberResultsRanked = Integer.parseInt(this.conf.get(Global.MAX_FULLTEXT_MATCHES_RANKED));
         this.bean = new NutchwaxBean(conf);
+        this.searcherMaxHits = Integer.parseInt(this.conf.get(Global.MAX_FULLTEXT_MATCHES_RETURNED));
     }
 
     private boolean isTimeBoundedQuery(SearchQuery searchQuery) {
@@ -81,10 +83,12 @@ public class NutchWaxSearchService implements SearchService {
             limit = numberResultsRanked;
         }
 
+        int numberOfHits = searchQuery.getOffset() + limit;
+
         int hitsPerDup = searchQuery.getLimitPerSite();
 
         String[] siteParameter = searchQuery.getSite();
-        if (siteParameter != null && !siteParameter.equals("")) {
+        if (siteParameter != null) {
             hitsPerDup = 0;
             for (int i = 0; i < siteParameter.length; i++) {
                 LOG.debug("siteP = " + siteParameter[i]);
@@ -147,7 +151,7 @@ public class NutchWaxSearchService implements SearchService {
 
         try {
             Query query = Query.parse(queryString.toString(), conf);
-            Hits hits = bean.search(query, limit, 2000,
+            Hits hits = bean.search(query, numberOfHits, searcherMaxHits,
                     hitsPerDup, "site", null, false,
                     PwaFunctionsWritable.parse(conf.get(Global.RANKING_FUNCTIONS)), 1);
 
@@ -157,12 +161,12 @@ public class NutchWaxSearchService implements SearchService {
 
             // build SearchResults
             if (hits.getLength() >= 1) {
-                Hit[] show = hits.getHits(0, hits.getLength());
+                Hit[] show = hits.getHits(searchQuery.getOffset(), limit);
                 HitDetails[] details = bean.getDetails(show);
                 Summary[] summaries = bean.getSummary(details, query);
                 results.setNumberResults(hits.getLength());
 
-                for (int i = 0; i < hits.getLength(); i++) {
+                for (int i = 0; i < limit; i++) {
                     NutchWaxSearchResult searchResult = new NutchWaxSearchResult();
                     populateSearchResult(searchResult, details[i], summaries[i]);
                     populateEndpointsLinks(searchResult);

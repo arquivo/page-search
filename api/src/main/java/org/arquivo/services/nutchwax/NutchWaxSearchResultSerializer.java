@@ -34,12 +34,12 @@ public class NutchWaxSearchResultSerializer extends JsonSerializer {
             for (Field field : searchResult.getClass().getDeclaredFields()){
                 field.setAccessible(true);
                 try {
-                    if (field.getName().equals("bean") && field.getName().equals("details") &&
-                            field.getName().equals("fields")){
+                    if (!field.getName().equals("LOG") && !field.getName().equals("bean")
+                            && !field.getName().equals("details") && !field.getName().equals("fields")){
                         jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
                     }
                 } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                    LOG.error("Error trying to access field", e);
                 }
             }
         }

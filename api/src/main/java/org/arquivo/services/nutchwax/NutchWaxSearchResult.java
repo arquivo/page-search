@@ -184,7 +184,6 @@ public class NutchWaxSearchResult implements SearchResult {
         return "";
     }
 
-    @Transient
     public HitDetails getDetails() {
         return details;
     }
@@ -193,7 +192,6 @@ public class NutchWaxSearchResult implements SearchResult {
         this.details = details;
     }
 
-    @Transient
     public NutchBean getBean() {
         return bean;
     }

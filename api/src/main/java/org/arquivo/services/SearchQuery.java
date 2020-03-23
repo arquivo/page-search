@@ -4,6 +4,9 @@ public interface SearchQuery {
     String getQueryTerms();
     void setQueryTerms(String queryTerms);
 
+    public int getOffset();
+    public void setOffset(int offset);
+
     int getLimit();
     void setLimit(int limit);
 

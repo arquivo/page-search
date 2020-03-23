@@ -30,13 +30,13 @@ public class NutchWaxSearchQueryTest {
 
     @Test
     public void getStart() {
-        assertEquals(searchQuery.getStart(),0);
+        assertEquals(searchQuery.getOffset(),0);
     }
 
     @Test
     public void setStart() {
-        searchQuery.setStart(10);
-        assertEquals(searchQuery.getStart(), 10);
+        searchQuery.setOffset(10);
+        assertEquals(searchQuery.getOffset(), 10);
     }
 
     @Test
