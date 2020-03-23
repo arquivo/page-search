@@ -8,9 +8,6 @@ import org.springframework.context.annotation.Bean;
 
 import java.io.IOException;
 
-// @EnableAutoConfiguration
-// @EnableWebMvc
-// @ComponentScan
 @SpringBootApplication
 public class SearchPageApplication {
 
