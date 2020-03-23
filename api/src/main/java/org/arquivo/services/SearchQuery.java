@@ -4,14 +4,14 @@ public interface SearchQuery {
     String getQueryTerms();
     void setQueryTerms(String queryTerms);
 
-    String getLimit();
-    void setLimit(String limit);
+    int getLimit();
+    void setLimit(int limit);
 
-    String getLimitPerSite();
-    void setLimitPerSite(String limitPerSite);
+    int getLimitPerSite();
+    void setLimitPerSite(int limitPerSite);
 
-    String getSite();
-    void setSite(String site);
+    String[] getSite();
+    void setSite(String[] site);
 
     String getType();
     void setType(String type);

@@ -73,7 +73,7 @@ public class NutchWaxSearchService implements SearchService {
         String queryTerms = searchQuery.getQueryTerms();
         queryString.append(queryTerms);
 
-        int limit = Integer.parseInt(searchQuery.getLimit());
+        int limit = searchQuery.getLimit();
         if (limit < 0) {
             limit = 0;
         }
@@ -81,26 +81,21 @@ public class NutchWaxSearchService implements SearchService {
             limit = numberResultsRanked;
         }
 
-        int hitsPerDup = Integer.parseInt(searchQuery.getLimitPerSite());
+        int hitsPerDup = searchQuery.getLimitPerSite();
 
-        // TODO handle this as a String array
-        String siteParameter = searchQuery.getSite();
+        String[] siteParameter = searchQuery.getSite();
         if (siteParameter != null && !siteParameter.equals("")) {
-            String[] siteParameters = siteParameter.split(",");
-            if (siteParameters != null) {
-                hitsPerDup = 0;
+            hitsPerDup = 0;
+            for (int i = 0; i < siteParameter.length; i++) {
+                LOG.debug("siteP = " + siteParameter[i]);
+                if (siteParameter[i].equals(""))
+                    continue;
 
-                for (String siteP : siteParameters) {
-                    LOG.debug("siteP = " + siteP);
-                    if (siteP.equals(""))
-                        continue;
-
-                    String site = "";
-                    site = " site:".concat(siteP);
-                    site = site.replaceAll("site:http://", "site:");
-                    site = site.replaceAll("site:https://", "site:");
-                    queryString.append(site);
-                }
+                String site = "";
+                site = " site:".concat(siteParameter[i]);
+                site = site.replaceAll("site:http://", "site:");
+                site = site.replaceAll("site:https://", "site:");
+                queryString.append(site);
             }
         }
 
@@ -187,7 +182,7 @@ public class NutchWaxSearchService implements SearchService {
     private void populateSearchResult(NutchWaxSearchResult searchResult, HitDetails detail, Summary summary) {
         searchResult.setTitle(detail.getValue("title"));
         searchResult.setOriginalURL(detail.getValue("url"));
-        searchResult.setTimeStamp(Long.parseLong(this.parseTimeStamp(detail.getValue("tstamp").substring(0,14))));
+        searchResult.setTimeStamp(Long.parseLong(this.parseTimeStamp(detail.getValue("tstamp").substring(0, 14))));
         searchResult.setContentLength(Long.parseLong(detail.getValue("contentLength")));
         searchResult.setDigest(detail.getValue("digest"));
         searchResult.setMimeType(detail.getValue("primaryType").concat("/").concat(detail.getValue("subType")));

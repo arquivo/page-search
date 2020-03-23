@@ -1,20 +1,20 @@
 package org.arquivo.services;
 
+import org.arquivo.services.nutchwax.NutchWaxSearchQuery;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-
 public class NutchWaxSearchQueryTest {
 
-    NutchWaxSearchQuery searchQuery;
+    private NutchWaxSearchQuery searchQuery;
 
     @Before
     public void setupSearchQuery(){
-        searchQuery = new NutchWaxSearchQuery("sapo ya", "0",
-                "10", "2","20190101010101", "202001010101", "text/html",
-                "http://sapo.pt", "FAWP", new String[]{"title", "collection"}, "false");
+        searchQuery = new NutchWaxSearchQuery("sapo ya", 0,
+                10, 2,"20190101010101", "202001010101", "text/html",
+                new String[] { "http://sapo.pt" } , "FAWP", new String[]{"title", "collection"}, "false");
     }
 
     @Test
@@ -30,35 +30,35 @@ public class NutchWaxSearchQueryTest {
 
     @Test
     public void getStart() {
-        assertEquals(searchQuery.getStart(),"0");
+        assertEquals(searchQuery.getStart(),0);
     }
 
     @Test
     public void setStart() {
-        searchQuery.setStart("10");
-        assertEquals(searchQuery.getStart(), "10");
+        searchQuery.setStart(10);
+        assertEquals(searchQuery.getStart(), 10);
     }
 
     @Test
     public void getLimit() {
-       assertEquals(searchQuery.getLimit(), "10");
+       assertEquals(searchQuery.getLimit(), 10);
     }
 
     @Test
     public void setLimit() {
-        searchQuery.setLimit("50");
-        assertEquals(searchQuery.getLimit(), "50");
+        searchQuery.setLimit(50);
+        assertEquals(searchQuery.getLimit(), 50);
     }
 
     @Test
     public void getLimitPerSite() {
-        assertEquals(searchQuery.getLimitPerSite(), ("2"));
+        assertEquals(searchQuery.getLimitPerSite(), 2);
     }
 
     @Test
     public void setLimitPerSite() {
-        searchQuery.setLimitPerSite("4");
-        assertEquals(searchQuery.getLimitPerSite(), "4");
+        searchQuery.setLimitPerSite(4);
+        assertEquals(searchQuery.getLimitPerSite(), 4);
     }
 
     @Test
@@ -100,13 +100,13 @@ public class NutchWaxSearchQueryTest {
 
     @Test
     public void getSite() {
-        assertEquals(searchQuery.getSite(), "http://sapo.pt");
+        assertEquals(searchQuery.getSite()[0], "http://sapo.pt");
     }
 
     @Test
     public void setSite() {
-        searchQuery.setSite("http://arquivo.pt");
-        assertEquals(searchQuery.getSite(), "http://arquivo.pt");
+        searchQuery.setSite(new String[] {"http://arquivo.pt"} );
+        assertEquals(searchQuery.getSite()[0], "http://arquivo.pt");
     }
 
     @Test
@@ -144,8 +144,8 @@ public class NutchWaxSearchQueryTest {
     }
 
     @Test public void testToString() {
-        assertEquals(searchQuery.toString(), "TextSearchRequestParameters [queryTerms=sapo ya, offset=0, maxitems=10, " +
+        assertEquals( "TextSearchRequestParameters [queryTerms=sapo ya, offset=0, maxitems=10, " +
                 "limitPerSite=2, from=" + "20190101010101" + ", to=202001010101" + ", type=text/html, site=http://sapo.pt," +
-                " collection=FAWP, fields=title,collection, prettyPrint=false]");
+                " collection=FAWP, fields=title,collection, prettyPrint=false]", searchQuery.toString());
     }
 }

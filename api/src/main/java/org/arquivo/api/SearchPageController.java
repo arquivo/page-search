@@ -1,5 +1,7 @@
 package org.arquivo.api;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.arquivo.services.SearchQuery;
 import org.arquivo.services.SearchResult;
 import org.arquivo.services.SearchResults;
@@ -17,6 +19,8 @@ import java.util.regex.Pattern;
 @RestController
 public class SearchPageController {
 
+    private static final Log LOG = LogFactory.getLog(SearchPageController.class);
+
     @Value("${searchpages.api.servicename}")
     private String serviceName;
 
@@ -28,11 +32,12 @@ public class SearchPageController {
 
 
     @RequestMapping(value = {"/urlsearch", "/textsearch?versionHistory"})
-    public @ResponseBody SearchPageResponse searchUrl(@RequestParam(value = "url") String url,
-                                                      @RequestParam(value = "from", required = false) String from,
-                                                      @RequestParam(value = "to" ,required = false) String to,
-                                                      @RequestParam(value = "maxItems", required = false) int limit,
-                                                      @RequestParam(value = "offset", required = false) int start) {
+    public @ResponseBody
+    SearchPageResponse searchUrl(@RequestParam(value = "url") String url,
+                                 @RequestParam(value = "from", required = false) String from,
+                                 @RequestParam(value = "to", required = false) String to,
+                                 @RequestParam(value = "maxItems", required = false) int limit,
+                                 @RequestParam(value = "offset", required = false) int start) {
         CDXSearchService cdxSearchService = new CDXSearchService();
         SearchPageResponse searchPageResponse = new SearchPageResponse();
         SearchResults searchResults = cdxSearchService.getResults(url, from, to, limit, start);
@@ -40,7 +45,6 @@ public class SearchPageController {
         return searchPageResponse;
     }
 
-    // TODO why not use EXACTURL ????
     @RequestMapping(value = "/extractedtext")
     public String extractedText(@RequestParam(value = "m") String metadata) {
         String extractedText = "";
@@ -57,12 +61,10 @@ public class SearchPageController {
                 String qLucene = dateLucene.concat(extractUrl);
 
                 SearchQuery searchQuery = new NutchWaxSearchQuery(qLucene);
-                // FIXME no sense being a string
-                searchQuery.setLimit("1");
+                searchQuery.setLimit(1);
 
                 SearchResults searchResults = searchService.query(searchQuery);
 
-                // SANITY CHECK ONLY 1 RESULT
                 ArrayList<SearchResult> searchResultsArray = searchResults.getResults();
                 extractedText = searchResultsArray.get(0).getExtractedText();
             }
@@ -76,7 +78,7 @@ public class SearchPageController {
     SearchPageResponse pageSearch(@RequestParam(value = "q") String query,
                                   @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
                                   @RequestParam(value = "maxItems", required = false, defaultValue = "50") int maxItems,
-                                  @RequestParam(value = "siteSearch", required = false) String siteSearch,
+                                  @RequestParam(value = "siteSearch", required = false) String[] siteSearch,
                                   @RequestParam(value = "limitPerSite", required = false, defaultValue = "2") int limitPerSite,
                                   @RequestParam(value = "from", required = false) String from,
                                   @RequestParam(value = "to", required = false) String to,
@@ -126,25 +128,13 @@ public class SearchPageController {
         }
     }
 
-    /**
-     * Check if parameter url is URL
-     *
-     * @param url
-     * @return
-     */
     private static boolean urlValidator(String url) {
         Pattern URL_PATTERN = Pattern.compile("^.*? ?((https?:\\/\\/)?([a-zA-Z\\d][-\\w\\.]+)\\.([a-z\\.]{2,6})([-\\/\\w\\p{L}\\.~,;:%&=?+$#*]*)*\\/?) ?.*$");
         return URL_PATTERN.matcher(url).matches();
     }
 
-    /**
-     * Check if parameter versionId is format url/tstamp
-     *
-     * @param versionIdsplited
-     * @return
-     */
     private static boolean metadataValidator(String[] versionIdsplited) {
-        // TODO LOG.info( "metadata versionId[0]["+versionIdsplited[ 0 ]+"] versionId[1]["+versionIdsplited[ 1 ]+"]" );
+        LOG.info("metadata versionId[0][" + versionIdsplited[0] + "] versionId[1][" + versionIdsplited[1] + "]");
         if (urlValidator(versionIdsplited[1]) && versionIdsplited[0].matches("[0-9]+"))
             return true;
         else

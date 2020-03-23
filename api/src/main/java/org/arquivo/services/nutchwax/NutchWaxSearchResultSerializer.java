@@ -3,13 +3,16 @@ package org.arquivo.services.nutchwax;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 
 
-// TODO ughhhh should try to do this in other way
 public class NutchWaxSearchResultSerializer extends JsonSerializer {
+
+    private static final Log LOG = LogFactory.getLog(NutchWaxSearchResultSerializer.class);
 
     @Override
     public void serialize(Object o, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
@@ -22,9 +25,8 @@ public class NutchWaxSearchResultSerializer extends JsonSerializer {
                         field.setAccessible(true);
                         jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
                     } catch (IllegalAccessException e) {
-                        // TODO handle this
-                        e.printStackTrace();
-                    };
+                        LOG.error("Error trying to access field", e);
+                    }
                 }
             }
         }
@@ -32,7 +34,8 @@ public class NutchWaxSearchResultSerializer extends JsonSerializer {
             for (Field field : searchResult.getClass().getDeclaredFields()){
                 field.setAccessible(true);
                 try {
-                    if (field.getName() != "bean" && field.getName() != "details" && field.getName() != "fields"){
+                    if (field.getName().equals("bean") && field.getName().equals("details") &&
+                            field.getName().equals("fields")){
                         jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
                     }
                 } catch (IllegalAccessException e) {

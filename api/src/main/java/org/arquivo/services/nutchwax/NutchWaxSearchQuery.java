@@ -11,20 +11,20 @@ public class NutchWaxSearchQuery implements SearchQuery {
     private String queryTerms;
 
     @SerializedName("offset")
-    private String offset = "0";
+    private int offset = 0;
 
     @SerializedName("maxItems")
-    private String maxItems = "50";
+    private int maxItems = 50;
 
     @SerializedName("itemsPerSite")
-    private String limitPerSite = "2";
+    private int limitPerSite = 2;
 
     private String from;
     private String to;
     private String type;
 
     @SerializedName("siteSearch")
-    private String site;
+    private String[] site;
 
     @SerializedName("collection")
     private String collection;
@@ -37,26 +37,8 @@ public class NutchWaxSearchQuery implements SearchQuery {
     }
 
     public NutchWaxSearchQuery(String queryTerms, int offset, int maxItems, int limitPerSite,
-                               String from, String to, String type, String site,
-                               String collection, String fields[], String prettyPrint) {
-
-        this.queryTerms = queryTerms;
-        this.offset = String.valueOf(offset);
-        this.maxItems = String.valueOf(maxItems);
-        this.limitPerSite = String.valueOf(limitPerSite);
-        this.from = from;
-        this.to = to;
-        this.type = type;
-        this.site = site;
-        this.collection = collection;
-        this.prettyPrint = prettyPrint;
-
-        this.setFields(fields);
-    }
-
-    public NutchWaxSearchQuery(String queryTerms, String offset, String maxItems, String limitPerSite,
-                               String from, String to, String type, String site,
-                               String collection, String fields[], String prettyPrint) {
+                               String from, String to, String type, String[] site,
+                               String collection, String[] fields, String prettyPrint) {
 
         this.queryTerms = queryTerms;
         this.offset = offset;
@@ -67,10 +49,10 @@ public class NutchWaxSearchQuery implements SearchQuery {
         this.type = type;
         this.site = site;
         this.collection = collection;
-        this.setFields(fields);
         this.prettyPrint = prettyPrint;
-    }
 
+        this.setFields(fields);
+    }
 
     public String getQueryTerms() {
         return queryTerms;
@@ -80,27 +62,29 @@ public class NutchWaxSearchQuery implements SearchQuery {
         this.queryTerms = queryTerms;
     }
 
-    public String getStart() {
+    public int getStart() {
         return offset;
     }
 
-    public void setStart(String offset) {
+    public void setStart(int offset) {
         this.offset = offset;
     }
 
-    public String getLimit() {
+    public int getLimit() {
         return maxItems;
     }
 
-    public void setLimit(String maxItems) {
+    @Override
+    public void setLimit(int maxItems) {
         this.maxItems = maxItems;
+
     }
 
-    public String getLimitPerSite() {
+    public int getLimitPerSite() {
         return limitPerSite;
     }
 
-    public void setLimitPerSite(String limitPerSite) {
+    public void setLimitPerSite(int limitPerSite) {
         this.limitPerSite = limitPerSite;
     }
 
@@ -128,11 +112,11 @@ public class NutchWaxSearchQuery implements SearchQuery {
         this.type = type;
     }
 
-    public String getSite() {
+    public String[] getSite() {
         return site;
     }
 
-    public void setSite(String site) {
+    public void setSite(String[] site) {
         this.site = site;
     }
 
@@ -170,9 +154,18 @@ public class NutchWaxSearchQuery implements SearchQuery {
                 strFieldsBuilder.append(",");
             }
         }
+
+        StringBuilder stringBuilderSite = new StringBuilder();
+        for (int i = 0; i < site.length; i++) {
+                stringBuilderSite.append(site[i]);
+                if (i != site.length - 1){
+                    stringBuilderSite.append(",");
+                }
+        }
+
         String strFields = strFieldsBuilder.toString().substring(0, strFieldsBuilder.length() - 1);
         return "TextSearchRequestParameters [queryTerms=" + queryTerms + ", offset=" + offset + ", maxitems=" + maxItems
                 + ", limitPerSite=" + limitPerSite + ", from=" + from + ", to=" + to + ", type="
-                + type + ", site=" + site + ", collection=" + collection + ", fields=" + strFields + ", prettyPrint=" + prettyPrint + "]";
+                + type + ", site=" + stringBuilderSite.toString() + ", collection=" + collection + ", fields=" + strFields + ", prettyPrint=" + prettyPrint + "]";
     }
 }
