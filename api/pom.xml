@@ -12,22 +12,7 @@
     <artifactId>api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>searchpages-api</name>
-    <repositories>
-    <repository>
-        <snapshots>
-            <enabled>false</enabled>
-        </snapshots>
-        <id>central</id>
-        <name>libs-releases</name>
-        <url>https://fccn.jfrog.io/fccn/libs-releases</url>
-    </repository>
-    <repository>
-        <snapshots />
-        <id>snapshots</id>
-        <name>libs-snapshot</name>
-        <url>https://fccn.jfrog.io/fccn/libs-snapshot</url>
-    </repository>
-    </repositories>
+
 
     <dependencies>
         <dependency>
@@ -99,12 +84,34 @@
         </dependency>
     </dependencies>
 
+    <repositories>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>central</id>
+            <name>libs-releases</name>
+            <url>https://fccn.jfrog.io/fccn/libs-releases</url>
+        </repository>
+        <repository>
+            <snapshots />
+            <id>snapshots</id>
+            <name>libs-snapshot</name>
+            <url>https://fccn.jfrog.io/fccn/libs-snapshot</url>
+        </repository>
+    </repositories>
+
     <build>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.2.4.RELEASE</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>2.5.3</version>
             </plugin>
         </plugins>
     </build>
