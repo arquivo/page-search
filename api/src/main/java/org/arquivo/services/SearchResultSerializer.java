@@ -1,4 +1,4 @@
-package org.arquivo.services.nutchwax;
+package org.arquivo.services;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -10,13 +10,13 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 
 
-public class NutchWaxSearchResultSerializer extends JsonSerializer {
+public class SearchResultSerializer extends JsonSerializer {
 
-    private static final Log LOG = LogFactory.getLog(NutchWaxSearchResultSerializer.class);
+    private static final Log LOG = LogFactory.getLog(SearchResultSerializer.class);
 
     @Override
     public void serialize(Object o, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-        NutchWaxSearchResult searchResult = (NutchWaxSearchResult) o;
+        SearchResultImpl searchResult = (SearchResultImpl) o;
         jsonGenerator.writeStartObject();
         if (searchResult.getFields() != null) {
             for (Field field : searchResult.getClass().getDeclaredFields()){

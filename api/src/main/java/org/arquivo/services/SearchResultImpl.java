@@ -1,19 +1,18 @@
-package org.arquivo.services.nutchwax;
+package org.arquivo.services;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.nutch.searcher.HitDetails;
 import org.apache.nutch.searcher.NutchBean;
-import org.arquivo.services.SearchResult;
 
 import java.beans.Transient;
 import java.io.IOException;
 
-@JsonSerialize(using = NutchWaxSearchResultSerializer.class)
-public class NutchWaxSearchResult implements SearchResult {
+@JsonSerialize(using = SearchResultSerializer.class)
+public class SearchResultImpl implements SearchResult {
 
-    private static final Log LOG = LogFactory.getLog(NutchWaxSearchResult.class);
+    private static final Log LOG = LogFactory.getLog(SearchResultImpl.class);
 
     private String title;
     private String originalURL;

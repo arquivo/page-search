@@ -10,10 +10,7 @@ import org.apache.nutch.html.Entities;
 import org.apache.nutch.searcher.*;
 import org.archive.access.nutch.NutchwaxBean;
 import org.archive.access.nutch.NutchwaxConfiguration;
-import org.arquivo.services.SearchQuery;
-import org.arquivo.services.SearchResult;
-import org.arquivo.services.SearchResults;
-import org.arquivo.services.SearchService;
+import org.arquivo.services.*;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
@@ -167,11 +164,11 @@ public class NutchWaxSearchService implements SearchService {
                 results.setNumberResults(hits.getLength());
 
                 for (int i = 0; i < limit; i++) {
-                    NutchWaxSearchResult searchResult = new NutchWaxSearchResult();
+                    SearchResultImpl searchResult = new SearchResultImpl();
                     populateSearchResult(searchResult, details[i], summaries[i]);
                     populateEndpointsLinks(searchResult);
 
-                    searchResult.setFields(((NutchWaxSearchQuery) searchQuery).getFields());
+                    searchResult.setFields(((SearchQueryImpl) searchQuery).getFields());
                     searchResults.add(searchResult);
                 }
             }
@@ -183,7 +180,7 @@ public class NutchWaxSearchService implements SearchService {
         return results;
     }
 
-    private void populateSearchResult(NutchWaxSearchResult searchResult, HitDetails detail, Summary summary) {
+    private void populateSearchResult(SearchResultImpl searchResult, HitDetails detail, Summary summary) {
         searchResult.setTitle(detail.getValue("title"));
         searchResult.setOriginalURL(detail.getValue("url"));
         searchResult.setTimeStamp(Long.parseLong(this.parseTimeStamp(detail.getValue("tstamp").substring(0, 14))));
@@ -201,7 +198,7 @@ public class NutchWaxSearchService implements SearchService {
         searchResult.setBean(this.bean);
     }
 
-    private void populateEndpointsLinks(NutchWaxSearchResult searchResult) {
+    private void populateEndpointsLinks(SearchResultImpl searchResult) {
         searchResult.setLinkToArchive(waybackServiceEndpoint +
                 "/" + searchResult.getTimeStamp() +
                 "/" + searchResult.getOriginalURL());

@@ -2,7 +2,7 @@ import org.arquivo.api.SearchPageApplication;
 import org.arquivo.services.SearchResult;
 import org.arquivo.services.SearchResults;
 import org.arquivo.services.SearchService;
-import org.arquivo.services.nutchwax.NutchWaxSearchResult;
+import org.arquivo.services.SearchResultImpl;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -39,10 +39,10 @@ public class SearchPageControllerTest {
     @Test
     public void testSearchServiceQuery() throws Exception {
 
-        NutchWaxSearchResult mockSearchResult1 = new NutchWaxSearchResult();
+        SearchResultImpl mockSearchResult1 = new SearchResultImpl();
         mockSearchResult1.setTitle("test result 1");
 
-        NutchWaxSearchResult mockSearchResult2 = new NutchWaxSearchResult();
+        SearchResultImpl mockSearchResult2 = new SearchResultImpl();
         mockSearchResult2.setTitle("test result 2");
 
         ArrayList<SearchResult> searchResults = new ArrayList<>();

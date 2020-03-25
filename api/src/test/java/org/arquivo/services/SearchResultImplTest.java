@@ -4,7 +4,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class NutchWaxSearchResultTest {
+public class SearchResultImplTest {
 
     @Test
     public void getTitle() {

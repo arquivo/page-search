@@ -7,7 +7,7 @@ import org.arquivo.services.SearchResult;
 import org.arquivo.services.SearchResults;
 import org.arquivo.services.SearchService;
 import org.arquivo.services.cdx.CDXSearchService;
-import org.arquivo.services.nutchwax.NutchWaxSearchQuery;
+import org.arquivo.services.SearchQueryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -60,7 +60,7 @@ public class SearchPageController {
                 String dateLucene = "date:".concat(versionIdSplited[0].concat(" "));
                 String qLucene = dateLucene.concat(extractUrl);
 
-                SearchQuery searchQuery = new NutchWaxSearchQuery(qLucene);
+                SearchQuery searchQuery = new SearchQueryImpl(qLucene);
                 searchQuery.setLimit(1);
 
                 SearchResults searchResults = searchService.query(searchQuery);
@@ -89,7 +89,7 @@ public class SearchPageController {
                                   HttpServletRequest request
     ) {
 
-        NutchWaxSearchQuery searchQuery = new NutchWaxSearchQuery(query, offset, maxItems, limitPerSite, from, to, type,
+        SearchQueryImpl searchQuery = new SearchQueryImpl(query, offset, maxItems, limitPerSite, from, to, type,
                 siteSearch, collection, fields, prettyPrint);
 
         SearchResults searchResults;

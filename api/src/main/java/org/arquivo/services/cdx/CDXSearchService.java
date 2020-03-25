@@ -7,7 +7,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.arquivo.services.SearchResult;
 import org.arquivo.services.SearchResults;
-import org.arquivo.services.nutchwax.NutchWaxSearchResult;
+import org.arquivo.services.SearchResultImpl;
 import org.springframework.beans.factory.annotation.Value;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -67,7 +67,7 @@ public class CDXSearchService {
                     continue;
                 }
 
-                SearchResult searchResult = gson.fromJson(jsonValues.get(i), NutchWaxSearchResult.class);
+                SearchResult searchResult = gson.fromJson(jsonValues.get(i), SearchResultImpl.class);
                 results.add(searchResult);
             }
             searchResults.setResults(results);

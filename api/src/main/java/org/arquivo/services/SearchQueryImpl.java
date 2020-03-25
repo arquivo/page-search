@@ -1,11 +1,10 @@
-package org.arquivo.services.nutchwax;
+package org.arquivo.services;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.gson.annotations.SerializedName;
-import org.arquivo.services.SearchQuery;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class NutchWaxSearchQuery implements SearchQuery {
+public class SearchQueryImpl implements SearchQuery {
 
     @SerializedName("q")
     private String queryTerms;
@@ -32,13 +31,13 @@ public class NutchWaxSearchQuery implements SearchQuery {
     private String[] fields;
     private String prettyPrint;
 
-    public NutchWaxSearchQuery(String queryTerms) {
+    public SearchQueryImpl(String queryTerms) {
         this.queryTerms = queryTerms;
     }
 
-    public NutchWaxSearchQuery(String queryTerms, int offset, int maxItems, int limitPerSite,
-                               String from, String to, String type, String[] site,
-                               String collection, String[] fields, String prettyPrint) {
+    public SearchQueryImpl(String queryTerms, int offset, int maxItems, int limitPerSite,
+                           String from, String to, String type, String[] site,
+                           String collection, String[] fields, String prettyPrint) {
 
         this.queryTerms = queryTerms;
         this.offset = offset;
@@ -145,27 +144,27 @@ public class NutchWaxSearchQuery implements SearchQuery {
         this.fields = fields;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder strFieldsBuilder = new StringBuilder();
-        if (fields != null) {
-            for (String field : fields) {
-                strFieldsBuilder.append(field);
-                strFieldsBuilder.append(",");
-            }
-        }
-
-        StringBuilder stringBuilderSite = new StringBuilder();
-        for (int i = 0; i < site.length; i++) {
-                stringBuilderSite.append(site[i]);
-                if (i != site.length - 1){
-                    stringBuilderSite.append(",");
-                }
-        }
-
-        String strFields = strFieldsBuilder.toString().substring(0, strFieldsBuilder.length() - 1);
-        return "TextSearchRequestParameters [queryTerms=" + queryTerms + ", offset=" + offset + ", maxitems=" + maxItems
-                + ", limitPerSite=" + limitPerSite + ", from=" + from + ", to=" + to + ", type="
-                + type + ", site=" + stringBuilderSite.toString() + ", collection=" + collection + ", fields=" + strFields + ", prettyPrint=" + prettyPrint + "]";
-    }
+//    @Override
+//    public String toString() {
+//        StringBuilder strFieldsBuilder = new StringBuilder();
+//        if (fields != null) {
+//            for (String field : fields) {
+//                strFieldsBuilder.append(field);
+//                strFieldsBuilder.append(",");
+//            }
+//        }
+//
+//        StringBuilder stringBuilderSite = new StringBuilder();
+//        for (int i = 0; i < site.length; i++) {
+//                stringBuilderSite.append(site[i]);
+//                if (i != site.length - 1){
+//                    stringBuilderSite.append(",");
+//                }
+//        }
+//
+//        String strFields = strFieldsBuilder.toString().substring(0, strFieldsBuilder.length() - 1);
+//        return "TextSearchRequestParameters [queryTerms=" + queryTerms + ", offset=" + offset + ", maxitems=" + maxItems
+//                + ", limitPerSite=" + limitPerSite + ", from=" + from + ", to=" + to + ", type="
+//                + type + ", site=" + stringBuilderSite.toString() + ", collection=" + collection + ", fields=" + strFields + ", prettyPrint=" + prettyPrint + "]";
+//    }
 }

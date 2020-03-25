@@ -2,6 +2,7 @@ package org.arquivo.api;
 
 import org.arquivo.services.nutchwax.NutchWaxSearchService;
 import org.arquivo.services.SearchService;
+import org.arquivo.services.solr.SolrSearchService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -13,7 +14,8 @@ public class SearchPageApplication {
 
     @Bean
     SearchService generateService() throws IOException {
-        return new NutchWaxSearchService();
+        return new SolrSearchService();
+        // return new NutchWaxSearchService();
     };
 
     public static void main(String[] args) {

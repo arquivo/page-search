@@ -4,8 +4,8 @@ public interface SearchQuery {
     String getQueryTerms();
     void setQueryTerms(String queryTerms);
 
-    public int getOffset();
-    public void setOffset(int offset);
+    int getOffset();
+    void setOffset(int offset);
 
     int getLimit();
     void setLimit(int limit);
@@ -27,4 +27,7 @@ public interface SearchQuery {
 
     String getTo();
     void setTo(String to);
+
+    String[] getFields();
+    void setFields(String[] fields);
 }
