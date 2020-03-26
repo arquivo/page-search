@@ -33,9 +33,10 @@
 	<field name="url" type="string" indexed="true" stored="true"/>
 
 	<!-- TODO should we use the default text_pt?? -->
-	<field name="anchor" type="text_general" indexed="true" stored="false"/>
-	<field name="content" type="text_general" indexed="true" stored="false"/>
-	<field name="title" type="text_general" indexed="true" stored="false"/>
+    <!-- does host needs this== -->
+	<field name="anchor" type="text_general" indexed="true" stored="true" multiValued="false"/>
+	<field name="content" type="text_general" indexed="true" stored="true" multiValued="false" storeOffsetsWithPositions="true" />
+	<field name="title" type="text_general" indexed="true" stored="true" multiValued="false" storeOffsetsWithPositions="true" />
 
     <uniqueKey>id</uniqueKey>
 

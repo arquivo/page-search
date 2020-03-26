@@ -2,6 +2,7 @@ package org.arquivo.services.solr;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.math3.ml.neuralnet.MapUtils;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -16,9 +17,13 @@ import org.arquivo.services.SearchService;
 import org.arquivo.services.SearchResultImpl;
 import org.springframework.beans.factory.annotation.Value;
 
+
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SolrSearchService implements SearchService {
@@ -26,6 +31,26 @@ public class SolrSearchService implements SearchService {
     private static final Log LOG = LogFactory.getLog(SolrSearchService.class);
     // TODO should upgrade this for the SolrCloudClient
     private HttpSolrClient solrClient;
+
+    @Value("${searchpages.api.startdate}")
+    private String startDate;
+
+    private DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+
+    @Value("${searchpages.service.link}")
+    private String serviceName;
+
+    @Value("${screenshot.service.endpoint}")
+    private String screenshotServiceEndpoint;
+
+    @Value("${wayback.service.endpoint}")
+    private String waybackServiceEndpoint;
+
+    @Value("${wayback.noframe.service.endpoint}")
+    private String waybackNoFrameServiceEndpoint;
+
+    @Value("${searchpages.extractedtext.service.link}")
+    private String extractedTextServiceEndpoint;
 
     @Value("${searchpages.solr.service.link}")
     private String baseSolrUrl;
@@ -35,6 +60,23 @@ public class SolrSearchService implements SearchService {
 
     private boolean isTimeBoundedQuery(SearchQuery searchQuery) {
         return (searchQuery.getTo() != null || searchQuery.getFrom() != null);
+    }
+
+    private void populateEndpointsLinks(SearchResultImpl searchResult) {
+        searchResult.setLinkToArchive(waybackServiceEndpoint +
+                "/" + searchResult.getTimeStamp() +
+                "/" + searchResult.getOriginalURL());
+
+        searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
+                "?url=" + searchResult.getLinkToArchive());
+
+        searchResult.setLinkToNoFrame(waybackNoFrameServiceEndpoint +
+                "/" + searchResult.getTimeStamp() +
+                "/" + searchResult.getOriginalURL());
+
+        searchResult.setLinkToExtractedText(extractedTextServiceEndpoint +
+                "?m=" + searchResult.getTimeStamp() +
+                "/" + searchResult.getOriginalURL());
     }
 
     SolrParams convertSearchQuery(SearchQuery searchQuery){
@@ -54,6 +96,9 @@ public class SolrSearchService implements SearchService {
         queryParamMap.put("q", searchQuery.getQueryTerms());
         queryParamMap.put("start", String.valueOf(searchQuery.getOffset()));
         queryParamMap.put("rows", String.valueOf(searchQuery.getLimit()));
+
+        // enable highlighting
+        queryParamMap.put("hl", "on");
 
         if (searchQuery.getCollection() != null){
             queryParamMap.put("fq", "collection:" + searchQuery.getCollection());
@@ -76,11 +121,40 @@ public class SolrSearchService implements SearchService {
 
             queryParamMap.put("fl", stringBuilderFields.toString());
         }
-        // TODO implement site Search
 
+        // TODO implement site Search
         MapSolrParams queryParams = new MapSolrParams(queryParamMap);
         return queryParams;
     }
+
+   public String getHighlightedText(final QueryResponse queryResponse, final String fieldName, final String docId) {
+      String highlightedText = "";
+        Map<String, Map<String, List<String>>> highlights = queryResponse.getHighlighting();
+
+       Map<String, List<String>> fieldsSnippet;
+       fieldsSnippet = highlights.getOrDefault(docId, null);
+
+       if (fieldsSnippet != null){
+          List<String> snippets = fieldsSnippet.getOrDefault(fieldName, null);
+          if (snippets != null){
+              highlightedText = getFragments(snippets);
+          }
+       }
+        return highlightedText;
+    }
+
+    // TODO REVIEW THIS
+    private static final String getFragments(List<String> snippets){
+        StringBuilder fragments = new StringBuilder();
+        for (int i = 0; i < snippets.size(); i++) {
+            if (i > 0) {
+                fragments.append("............");
+            }
+            fragments.append(snippets.get(i));
+        }
+        return fragments.toString();
+    }
+
 
     SearchResults parseQueryResponse(QueryResponse queryResponse){
         SearchResults searchResults = new SearchResults();
@@ -88,12 +162,21 @@ public class SolrSearchService implements SearchService {
 
         SolrDocumentList solrDocumentList = queryResponse.getResults();
         for (SolrDocument doc : solrDocumentList){
+
             // TODO change this to SolrSearchResult or generalize
             SearchResultImpl searchResult = new SearchResultImpl();
+            searchResult.setTitle((String) doc.getFieldValue("title"));
             searchResult.setOriginalURL((String) doc.getFieldValue("url"));
             searchResult.setMimeType((String) doc.getFieldValue("type"));
             searchResult.setTimeStamp((Long) doc.getFieldValue("tstamp"));
+            searchResult.setOffset((Long) doc.getFieldValue("warc_offset"));
+            searchResult.setFileName((String) doc.getFieldValue("warc_name"));
+            searchResult.setCollection((String) doc.getFieldValue("collection"));
+            searchResult.setContentLength((Long) doc.getFieldValue("contentLength"));
+            searchResult.setDigest((String) doc.getFieldValue("digest"));
 
+            searchResult.setSnippet(getHighlightedText(queryResponse, "content", (String) doc.get("id")));
+            populateEndpointsLinks(searchResult);
             searchResultArrayList.add(searchResult);
         }
         searchResults.setResults(searchResultArrayList);
@@ -106,6 +189,7 @@ public class SolrSearchService implements SearchService {
     // TODO Which SearchQuery to use? apparently we can still use the same as NutchWaxSearchQuery
     @Override
     public SearchResults query(SearchQuery searchQuery) {
+
         // TODO have this already instanciated before doing the query. Is not that way because how @Value works
         LOG.info("Initing SolrClient poiting to "+ this.baseSolrUrl);
         this.solrClient = new HttpSolrClient.Builder(this.baseSolrUrl).build();
