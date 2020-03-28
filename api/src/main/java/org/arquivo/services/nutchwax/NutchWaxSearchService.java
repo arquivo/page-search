@@ -168,7 +168,7 @@ public class NutchWaxSearchService implements SearchService {
                     populateSearchResult(searchResult, details[i], summaries[i]);
                     populateEndpointsLinks(searchResult);
 
-                    searchResult.setFields(((SearchQueryImpl) searchQuery).getFields());
+                    searchResult.setFields(searchQuery.getFields());
                     searchResults.add(searchResult);
                 }
             }

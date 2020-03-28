@@ -7,8 +7,10 @@ import org.apache.commons.httpclient.HttpParser;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHeaders;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -26,10 +28,14 @@ import org.netpreserve.urlcanon.ParsedUrl;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.io.IOException;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.archive.format.warc.WARCConstants.CONTENT_TYPE;
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_TYPE;
@@ -92,6 +98,7 @@ public class WARCParser {
     private void processEnvelopHeader(ArchiveRecordHeader header, SolrDocumentWrapper doc) throws NoSuchAlgorithmException {
         String timeStamp = (header.getDate().replaceAll("[^0-9]", ""));
         // Date date = getWaybackDate(waybackDate);
+        // TODO change to digest utils?
         MessageDigest md5 = MessageDigest.getInstance("MD5");
         ParsedUrl parsedUrl = ParsedUrl.parseUrl(header.getUrl());
         Canonicalizer.WHATWG.canonicalize(parsedUrl);
@@ -222,19 +229,23 @@ public class WARCParser {
         // PAYLOAD HANDLING
         doc.setContentLength(record.available());
 
+        // Calculate DIGEST
         // Should we use HashedCachedInputStream ?!?!?
+        // TODO use other type of hashing It should be SHA1 right???
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        DigestInputStream digestInputStream = new DigestInputStream(record, md5);
+
         Parser parser = new AutoDetectParser();
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
 
-        // if Content-Encoding is brotli, unwrapped before sending to Tika since Tika is not being able to handle
-        // this content
+        // if Content-Encoding is brotli, unwrapped before sending to Tika since Tika is not being able to handle this content
         if (httpHeader.getHeader("Content-Encoding", "").equalsIgnoreCase("br")) {
-            BrotliInputStream brotliRecord = new BrotliInputStream(record);
+            BrotliInputStream brotliRecord = new BrotliInputStream(digestInputStream);
             parser.parse(brotliRecord, handler, metadata, context);
         } else {
-            parser.parse(record, handler, metadata, context);
+            parser.parse(digestInputStream, handler, metadata, context);
         }
 
         if (metadata.get("title") == null) {
@@ -245,11 +256,23 @@ public class WARCParser {
 
         doc.setEncoding(metadata.get("Content-Encoding"));
         doc.setTikaType(metadata.get("Content-Type"));
-        doc.setContent(handler.toString());
+        doc.setContent(removeJunkCharacters(handler.toString()));
+
+        HexBinaryAdapter hexBinaryAdapter = new HexBinaryAdapter();
+        String digest = hexBinaryAdapter.marshal(digestInputStream.getMessageDigest().digest());
+        doc.setDigest(digest);
 
         return doc;
     }
+
+    public String removeJunkCharacters(String str) {
+        Pattern pattern = Pattern.compile("\\s+");
+        Matcher matcher = pattern.matcher(str.trim().replaceAll("[\\n\\t]", " "));
+        return matcher.replaceAll(" ");
+    }
 }
+
+
 //    public static void main(String[] args) throws IOException {
 //        Config conf = ConfigFactory.load();
 //        WARCParser warcParser = new WARCParser(conf);

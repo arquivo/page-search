@@ -1,6 +1,6 @@
 package org.arquivo.solr;
 
-public interface SolrFieds {
+public interface SolrFields {
     String ID = "id";
     String TITLE = "title";
     String ANCHOR = "anchor";
@@ -24,7 +24,7 @@ public interface SolrFieds {
     String TYPE = "type";
     String PRIMARY_TYPE = "primaryType";
     String SUB_TYPE = "subType";
-    String TIKE_TYPE = "tika_content_type";
+    String TIKA_TYPE = "tika_content_type";
     String ENCODING = "encoding";
 
     String WARCNAME = "warc_name";

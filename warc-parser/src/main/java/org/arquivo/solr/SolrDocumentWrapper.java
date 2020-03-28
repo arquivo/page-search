@@ -17,95 +17,93 @@ public class SolrDocumentWrapper {
     }
 
     public void setContentType(String contentType){
-        // this doesnt make sense
-        this.setType(contentType);
+        String type = contentType.split(";")[0];
+        this.setType(type);
 
-        String[] contentTypeParts = contentType.split("/");
+        String[] contentTypeParts = type.split("/");
         this.setPrimaryType(contentTypeParts[0]);
-
-        // remove enconding hits passed on the content-type
-        this.setSubType(contentTypeParts[1].split(";")[0]);
+        this.setSubType(contentTypeParts[1]);
     }
 
     public void setId(String id){
-        doc.setField(SolrFieds.ID, id);
+        doc.setField(SolrFields.ID, id);
     }
 
     public void setAnchor(String anchorContent) {
-        doc.setField(SolrFieds.ANCHOR, anchorContent);
+        doc.setField(SolrFields.ANCHOR, anchorContent);
     }
 
     public void setWarcName(String warcName) {
-        doc.setField(SolrFieds.WARCNAME, warcName);
+        doc.setField(SolrFields.WARCNAME, warcName);
     }
 
     public void setWarcOffset(String warcOffset) {
-        doc.setField(SolrFieds.WARC_OFFSET, warcOffset);
+        doc.setField(SolrFields.WARC_OFFSET, warcOffset);
     }
 
     public void setCollection(String collectionName) {
-        doc.setField(SolrFieds.COLLECTION, collectionName);
+        doc.setField(SolrFields.COLLECTION, collectionName);
     }
 
     public void setContent(String textContent) {
-        doc.setField(SolrFieds.CONTENT, textContent);
+        doc.setField(SolrFields.CONTENT, textContent);
     }
 
     public void setContentLength(int contentLength) {
-        doc.setField(SolrFieds.CONTENT_LENGHT, contentLength);
+        doc.setField(SolrFields.CONTENT_LENGHT, contentLength);
     }
 
 
     public void setDigest(String digest) {
-        doc.setField(SolrFieds.DIGEST, digest);
+        doc.setField(SolrFields.DIGEST, digest);
     }
 
     public void setDomain(String domain) {
-        doc.setField(SolrFieds.DOMAIN, domain);
+        doc.setField(SolrFields.DOMAIN, domain);
     }
 
     public void setEncoding(String encoding) {
-        doc.setField(SolrFieds.ENCODING, encoding);
+        doc.setField(SolrFields.ENCODING, encoding);
     }
 
-    public void setTitle(String title) { doc.setField(SolrFieds.TITLE, title);}
+    public void setTitle(String title) { doc.setField(SolrFields.TITLE, title);}
 
     public void setHost(String host) {
-        doc.setField(SolrFieds.HOST, host);
+        doc.setField(SolrFields.HOST, host);
     }
 
     public void setInLinks(int inLinks) {
-        doc.setField(SolrFieds.INLINKS, inLinks);
+        doc.setField(SolrFields.INLINKS, inLinks);
     }
 
     public void setOutLinks(int outLinks) {
-        doc.setField(SolrFieds.OUTLINKS, outLinks);
+        doc.setField(SolrFields.OUTLINKS, outLinks);
     }
 
-    public void setTikaType(String tikaType) { doc.setField(SolrFieds.TIKE_TYPE, tikaType);}
+    public void setTikaType(String tikaType) { doc.setField(SolrFields.TIKA_TYPE, tikaType);}
 
     public void setType(String type) {
-        doc.setField(SolrFieds.TYPE, type);
+        doc.setField(SolrFields.TYPE, type);
     }
 
     public void setPrimaryType(String primaryType) {
-        doc.setField(SolrFieds.PRIMARY_TYPE, primaryType);
+        doc.setField(SolrFields.PRIMARY_TYPE, primaryType);
     }
 
     public void setSubType(String subType) {
-        doc.setField(SolrFieds.SUB_TYPE, subType);
+        doc.setField(SolrFields.SUB_TYPE, subType);
     }
 
     public void setSite(String site) {
-        doc.setField(SolrFieds.SITE, site);
+        doc.setField(SolrFields.SITE, site);
     }
 
     public void setTimeStamp(String timeStamp) {
-        doc.setField(SolrFieds.TSTAMP, timeStamp);
+        doc.setField(SolrFields.TSTAMP, timeStamp);
     }
 
     public void setUrl(String url) {
-        doc.setField(SolrFieds.URL, url);
+        doc.setField(SolrFields.URL, url);
     }
 
     public SolrInputDocument getSolrInputDocument(){
