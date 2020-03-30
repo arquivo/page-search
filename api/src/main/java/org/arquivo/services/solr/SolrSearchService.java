@@ -80,6 +80,7 @@ public class SolrSearchService implements SearchService {
     }
 
     SolrParams convertSearchQuery(SearchQuery searchQuery){
+        // TODO add site search option, and make sure to canolize the URL
         /*
             getQueryTerms - "q"
             getOffset - "start"
@@ -174,6 +175,7 @@ public class SolrSearchService implements SearchService {
             searchResult.setCollection((String) doc.getFieldValue("collection"));
             searchResult.setContentLength((Long) doc.getFieldValue("contentLength"));
             searchResult.setDigest((String) doc.getFieldValue("digest"));
+            searchResult.setEncoding((String) doc.getFieldValue("encoding"));
 
             searchResult.setSnippet(getHighlightedText(queryResponse, "content", (String) doc.get("id")));
             populateEndpointsLinks(searchResult);

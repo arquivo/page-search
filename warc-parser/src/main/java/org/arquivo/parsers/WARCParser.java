@@ -7,10 +7,8 @@ import org.apache.commons.httpclient.HttpParser;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHeaders;
-import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -20,8 +18,8 @@ import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.archive.io.arc.ARCRecord;
 import org.archive.io.warc.WARCRecord;
-import org.arquivo.indexer.HTTPHeader;
 import org.arquivo.solr.SolrDocumentWrapper;
+import org.arquivo.utils.HTTPHeader;
 import org.brotli.dec.BrotliInputStream;
 import org.netpreserve.urlcanon.Canonicalizer;
 import org.netpreserve.urlcanon.ParsedUrl;
@@ -110,6 +108,10 @@ public class WARCParser {
 
         doc.setUrl(parsedUrl.toString());
         doc.setHost(parsedUrl.getHost());
+
+        // strip out the schema (http(s)://from url, we dont want this in the site field
+        String site = parsedUrl.toString().split("://")[1];
+        doc.setSite(site);
         doc.setTimeStamp(timeStamp);
         doc.setId(id);
     }
@@ -231,6 +233,8 @@ public class WARCParser {
 
         // Calculate DIGEST
         // Should we use HashedCachedInputStream ?!?!?
+        // ArchiveRecord doesn't support mark/reset stream operations
+        // I am wrapping it in a DigestInputStream so it calculates the digest in the end
         // TODO use other type of hashing It should be SHA1 right???
         MessageDigest md5 = MessageDigest.getInstance("MD5");
         DigestInputStream digestInputStream = new DigestInputStream(record, md5);
