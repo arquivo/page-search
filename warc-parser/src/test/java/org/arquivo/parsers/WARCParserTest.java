@@ -50,7 +50,7 @@ public class WARCParserTest {
         assertTrue(doc.getSolrInputDocument().get("content").getValue().toString().contains("Forbidden"));
         assertEquals(doc.getSolrInputDocument().get("subType").getValue(), "html");
         assertEquals(doc.getSolrInputDocument().get("primaryType").getValue(), "text");
-        assertEquals(doc.getSolrInputDocument().get("type").getValue(), "text/html; charset=iso-8859-1");
+        assertEquals(doc.getSolrInputDocument().get("type").getValue(), "text/html");
         assertEquals(doc.getSolrInputDocument().get("url").getValue(), "http://publico.pt/");
         assertEquals(doc.getSolrInputDocument().get("id").getValue(), "19961013180344/FhcAj9+g5IrKjL+HJyyf3g==");
         // assertEquals(doc.getSolrInputDocument().get("domain").getValue().toString(), "publico.pt");

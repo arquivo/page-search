@@ -702,6 +702,8 @@
       <str name="echoParams">explicit</str>
       <int name="rows">10</int>
         <str name="df">content</str>
+        <str name="df">title</str>
+        <str name="df">host</str>
       <!-- Change from JSON to XML format (the default prior to Solr 7.0)
          <str name="wt">xml</str>
         -->
