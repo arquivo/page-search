@@ -1,11 +1,9 @@
 package org.arquivo.indexer.mapreduce;
 
-import com.google.gson.Gson;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.log4j.Logger;
@@ -23,15 +21,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 public class SolrDocumentMapper extends Mapper<LongWritable, Text, Text, PageSearchData> {
-    // maps from an ArchiveRecord to a SolrDocument intermediate format
+    // maps from an ArchiveRecord to a intermediate format
     private final Logger logger = Logger.getLogger(SolrDocumentMapper.class);
     private WARCParser warcParser;
-    private Gson gson;
 
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
         Config conf = ConfigFactory.load();
-        this.gson = new Gson();
         this.warcParser = new WARCParser(conf);
         super.setup(context);
     }
@@ -75,10 +71,13 @@ public class SolrDocumentMapper extends Mapper<LongWritable, Text, Text, PageSea
                         ArchiveRecord rec = ir.next();
                         try {
                             PageSearchData doc = warcParser.extract("teste", rec);
+                            doc.setCollection(context.getConfiguration().get("collection", ""));
                             if (doc != null) {
                                 listDocs.add(doc);
                             }
-                            logger.debug(doc);
+                            // TODO Replace with Counters
+                            logger.debug(doc.getUrl());
+                            logger.debug(doc.getTitle());
                         } catch (Exception e) {
                             // TODO log more information about the record that failed.
                             logger.error("Unable to parse record due to unknow reasons", e);
@@ -100,8 +99,6 @@ public class SolrDocumentMapper extends Mapper<LongWritable, Text, Text, PageSea
                 e.printStackTrace();
             }
             for (PageSearchData doc : listDocs) {
-                // TODO
-                // Serialize Object instead of texting it, need to do a class that implesmentes Writable
                 context.write(new Text(doc.getId()), doc);
             }
 

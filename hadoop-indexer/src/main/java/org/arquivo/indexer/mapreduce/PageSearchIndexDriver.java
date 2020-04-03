@@ -24,9 +24,8 @@ public class PageSearchIndexDriver extends Configured implements Tool {
             return -1;
         }
 
-        Configuration conf = new Configuration();
-        // TODO change this
-        String jobName = "teste";
+        Configuration conf = getConf();
+        String jobName = conf.get("jobName", "teste");
 
         Job job = Job.getInstance(conf);
         job.setJarByClass(getClass());
