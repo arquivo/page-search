@@ -143,7 +143,7 @@ public class NutchWaxSearchService implements SearchService {
             } else if (searchQuery.getTo().length() != 14) {
                 searchQuery.setTo(StringUtils.rightPad(searchQuery.getTo(), 14, "0"));
             }
-            queryString.append(" date:".concat(searchQuery.getFrom()).concat(searchQuery.getTo()));
+            queryString.append(" date:".concat(searchQuery.getFrom()).concat("-").concat(searchQuery.getTo()));
         }
 
         try {
