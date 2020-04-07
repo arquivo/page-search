@@ -71,7 +71,7 @@ public class WARCParser {
                 return true;
             }
         }
-        log.debug("Skipping record response with mime type: " + mimeType);
+        log.info("Skipping record response with mime type: " + mimeType);
         return false;
     }
 
@@ -80,7 +80,7 @@ public class WARCParser {
             if (statuscode.startsWith(includedStatusCode))
                 return true;
         }
-        log.debug("Skipping record response with status code: " + statuscode);
+        log.info("Skipping record response with status code: " + statuscode);
         return false;
     }
 
@@ -88,7 +88,7 @@ public class WARCParser {
         if (record_type_includes.contains(type)) {
             return true;
         }
-        log.debug("Skipping record of type " + type);
+        log.info("Skipping record of type " + type);
         return false;
     }
 
@@ -235,11 +235,13 @@ public class WARCParser {
         doc.setContentLength(record.available());
 
         // Calculate DIGEST
-        // Should we use HashedCachedInputStream ?!?!?
-        // ArchiveRecord doesn't support mark/reset stream operations
-        // I am wrapping it in a DigestInputStream so it calculates the digest in the end
+        // Should we use HashedCachedInputStream since ArchiveRecord doesn't support mark/reset stream operations
+
         // TODO use other type of hashing It should be SHA1 right???
         MessageDigest md5 = MessageDigest.getInstance("MD5");
+
+        // I am wrapping it in a DigestInputStream so it calculates the digest in the end
+        // TODO Confirm if the digest is being well calculated
         DigestInputStream digestInputStream = new DigestInputStream(record, md5);
 
         Parser parser = new AutoDetectParser();

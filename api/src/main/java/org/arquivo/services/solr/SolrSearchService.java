@@ -2,7 +2,6 @@ package org.arquivo.services.solr;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.math3.ml.neuralnet.MapUtils;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -10,13 +9,8 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.MapSolrParams;
 import org.apache.solr.common.params.SolrParams;
-import org.arquivo.services.SearchQuery;
-import org.arquivo.services.SearchResult;
-import org.arquivo.services.SearchResults;
-import org.arquivo.services.SearchService;
-import org.arquivo.services.SearchResultImpl;
+import org.arquivo.services.*;
 import org.springframework.beans.factory.annotation.Value;
-
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -55,7 +49,7 @@ public class SolrSearchService implements SearchService {
     @Value("${searchpages.solr.service.link}")
     private String baseSolrUrl;
 
-    public SolrSearchService(){
+    public SolrSearchService() {
     }
 
     private boolean isTimeBoundedQuery(SearchQuery searchQuery) {
@@ -79,7 +73,7 @@ public class SolrSearchService implements SearchService {
                 "/" + searchResult.getOriginalURL());
     }
 
-    SolrParams convertSearchQuery(SearchQuery searchQuery){
+    SolrParams convertSearchQuery(SearchQuery searchQuery) {
         // TODO add site search option, and make sure to canolize the URL
         /*
             getQueryTerms - "q"
@@ -101,22 +95,22 @@ public class SolrSearchService implements SearchService {
         // enable highlighting
         queryParamMap.put("hl", "on");
 
-        if (searchQuery.getCollection() != null){
+        if (searchQuery.getCollection() != null) {
             queryParamMap.put("fq", "collection:" + searchQuery.getCollection());
         }
 
         if (isTimeBoundedQuery(searchQuery)) {
             String dateEnd = searchQuery.getTo() != null ? searchQuery.getTo() : "*";
-            queryParamMap.put("fq", "timestamp:[" + searchQuery.getFrom() + "TO" + dateEnd + "]" );
+            queryParamMap.put("fq", "timestamp:[" + searchQuery.getFrom() + "TO" + dateEnd + "]");
         }
 
         // filter fields
-        if (searchQuery.getFields() != null){
+        if (searchQuery.getFields() != null) {
             String[] fieldsArray = searchQuery.getFields();
             StringBuilder stringBuilderFields = new StringBuilder();
             for (int i = 0; i <= fieldsArray.length - 1; i++) {
-               stringBuilderFields.append(fieldsArray[i]);
-               stringBuilderFields.append(",");
+                stringBuilderFields.append(fieldsArray[i]);
+                stringBuilderFields.append(",");
             }
             stringBuilderFields.append(fieldsArray[fieldsArray.length - 1]);
 
@@ -128,24 +122,24 @@ public class SolrSearchService implements SearchService {
         return queryParams;
     }
 
-   public String getHighlightedText(final QueryResponse queryResponse, final String fieldName, final String docId) {
-      String highlightedText = "";
+    public String getHighlightedText(final QueryResponse queryResponse, final String fieldName, final String docId) {
+        String highlightedText = "";
         Map<String, Map<String, List<String>>> highlights = queryResponse.getHighlighting();
 
-       Map<String, List<String>> fieldsSnippet;
-       fieldsSnippet = highlights.getOrDefault(docId, null);
+        Map<String, List<String>> fieldsSnippet;
+        fieldsSnippet = highlights.getOrDefault(docId, null);
 
-       if (fieldsSnippet != null){
-          List<String> snippets = fieldsSnippet.getOrDefault(fieldName, null);
-          if (snippets != null){
-              highlightedText = getFragments(snippets);
-          }
-       }
+        if (fieldsSnippet != null) {
+            List<String> snippets = fieldsSnippet.getOrDefault(fieldName, null);
+            if (snippets != null) {
+                highlightedText = getFragments(snippets);
+            }
+        }
         return highlightedText;
     }
 
     // TODO REVIEW THIS
-    private static final String getFragments(List<String> snippets){
+    private static final String getFragments(List<String> snippets) {
         StringBuilder fragments = new StringBuilder();
         for (int i = 0; i < snippets.size(); i++) {
             if (i > 0) {
@@ -157,12 +151,12 @@ public class SolrSearchService implements SearchService {
     }
 
 
-    SearchResults parseQueryResponse(QueryResponse queryResponse){
+    SearchResults parseQueryResponse(QueryResponse queryResponse) {
         SearchResults searchResults = new SearchResults();
         ArrayList<SearchResult> searchResultArrayList = new ArrayList<>();
 
         SolrDocumentList solrDocumentList = queryResponse.getResults();
-        for (SolrDocument doc : solrDocumentList){
+        for (SolrDocument doc : solrDocumentList) {
 
             // TODO change this to SolrSearchResult or generalize
             SearchResultImpl searchResult = new SearchResultImpl();
@@ -193,7 +187,7 @@ public class SolrSearchService implements SearchService {
     public SearchResults query(SearchQuery searchQuery) {
 
         // TODO have this already instanciated before doing the query. Is not that way because how @Value works
-        LOG.info("Initing SolrClient poiting to "+ this.baseSolrUrl);
+        LOG.info("Initing SolrClient poiting to " + this.baseSolrUrl);
         this.solrClient = new HttpSolrClient.Builder(this.baseSolrUrl).build();
 
         SolrParams solrParams = convertSearchQuery(searchQuery);

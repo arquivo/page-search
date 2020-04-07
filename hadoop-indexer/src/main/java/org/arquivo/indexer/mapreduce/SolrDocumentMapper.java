@@ -71,13 +71,13 @@ public class SolrDocumentMapper extends Mapper<LongWritable, Text, Text, PageSea
                         ArchiveRecord rec = ir.next();
                         try {
                             PageSearchData doc = warcParser.extract("teste", rec);
-                            doc.setCollection(context.getConfiguration().get("collection", ""));
                             if (doc != null) {
+                                // TODO Replace with Counters
+                                logger.info("Processing Record with ".concat(doc.getUrl()));
+                                doc.setCollection(context.getConfiguration().get("collection", ""));
                                 listDocs.add(doc);
                             }
-                            // TODO Replace with Counters
-                            logger.debug(doc.getUrl());
-                            logger.debug(doc.getTitle());
+                            // TODO add counter of discarded records
                         } catch (Exception e) {
                             // TODO log more information about the record that failed.
                             logger.error("Unable to parse record due to unknow reasons", e);
