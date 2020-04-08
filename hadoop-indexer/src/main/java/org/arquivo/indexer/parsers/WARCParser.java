@@ -14,11 +14,15 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.Link;
+import org.apache.tika.sax.LinkContentHandler;
+import org.apache.tika.sax.TeeContentHandler;
 import org.archive.format.warc.WARCConstants;
 import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.archive.io.arc.ARCRecord;
 import org.archive.io.warc.WARCRecord;
+import org.arquivo.indexer.data.Outlink;
 import org.arquivo.indexer.data.PageSearchData;
 import org.arquivo.indexer.utils.HTTPHeader;
 import org.brotli.dec.BrotliInputStream;
@@ -179,6 +183,7 @@ public class WARCParser {
     }
 
 
+    // TODO refactor this code
     public PageSearchData extract(String archiveName, ArchiveRecord record) throws NoSuchAlgorithmException,
             IOException, TikaException, SAXException {
         final ArchiveRecordHeader header = record.getHeader();
@@ -249,9 +254,14 @@ public class WARCParser {
         TikaConfig config = new TikaConfig(classLoader.getResourceAsStream("tika-config.xml"));
 
         Parser parser = new AutoDetectParser(config);
-        ContentHandler handler = new BodyContentHandler();
+
+        BodyContentHandler bodyHandler = new BodyContentHandler();
+        LinkContentHandler linkHandler = new LinkContentHandler();
+        ContentHandler handler = new TeeContentHandler(bodyHandler, linkHandler);
+
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
+
 
         // if Content-Encoding is brotli, unwrapped before sending to Tika since Tika is not being able to handle this content
         if (httpHeader.getHeader("Content-Encoding", "").equalsIgnoreCase("br")) {
@@ -270,8 +280,19 @@ public class WARCParser {
         String encoding = metadata.get("Content-Encoding") != null ? metadata.get("Content-Encoding") : "";
         doc.setEncoding(encoding);
         doc.setTikaContentType(metadata.get("Content-Type"));
-        doc.setContent(removeJunkCharacters(handler.toString()));
+        doc.setContent(removeJunkCharacters(bodyHandler.toString()));
 
+        // SET OUTLINKS
+        // TODO max number of outlinks (put this on a config file)
+        int outlinksLimit = 1000;
+        Outlink[] outlinks = new Outlink[outlinksLimit];
+        List<Link> links = linkHandler.getLinks();
+        for (int i = 0; i <= links.size() - 1 && i <= outlinksLimit - 1; i++) {
+            Outlink outlink = new Outlink(links.get(i).getUri(), removeJunkCharacters(links.get(i).getText()));
+            outlinks[i] = outlink;
+        }
+        doc.setnOutLinks(links.size());
+        doc.setOutLinks(outlinks);
 
         HexBinaryAdapter hexBinaryAdapter = new HexBinaryAdapter();
         String digest = hexBinaryAdapter.marshal(digestInputStream.getMessageDigest().digest());

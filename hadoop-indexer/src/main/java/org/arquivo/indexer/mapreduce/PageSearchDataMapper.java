@@ -29,7 +29,7 @@ public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageS
         WARCS_COUNT,
         WARCS_DOWNLOAD_ERROR,
         RECORDS_COUNT,
-        RECORDS_PARSED_COUNT,
+        RECORDS_ACCEPTED_COUNT,
         RECORDS_DISCARDED_COUNT,
         RECORDS_DISCARDED_ERROR_COUNT
     }
@@ -84,9 +84,10 @@ public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageS
                                 logger.info("Processing Record with URL: ".concat(doc.getUrl()));
                                 doc.setCollection(context.getConfiguration().get("collection", ""));
                                 listDocs.add(doc);
-                                context.getCounter(PagesCounters.RECORDS_PARSED_COUNT).increment(1);
+                                context.getCounter(PagesCounters.RECORDS_ACCEPTED_COUNT).increment(1);
+                            } else {
+                                context.getCounter(PagesCounters.RECORDS_DISCARDED_COUNT).increment(1);
                             }
-                            context.getCounter(PagesCounters.RECORDS_DISCARDED_COUNT).increment(1);
                         } catch (Exception e) {
                             logger.error("Unable to parse record due to unknow reasons", e);
                             context.getCounter(PagesCounters.RECORDS_DISCARDED_ERROR_COUNT).increment(1);
