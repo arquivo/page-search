@@ -20,10 +20,19 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class SolrDocumentMapper extends Mapper<LongWritable, Text, Text, PageSearchData> {
+public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageSearchData> {
     // maps from an ArchiveRecord to a intermediate format
-    private final Logger logger = Logger.getLogger(SolrDocumentMapper.class);
+    private final Logger logger = Logger.getLogger(PageSearchDataMapper.class);
     private WARCParser warcParser;
+
+    enum PagesCounters {
+        WARCS_COUNT,
+        WARCS_DOWNLOAD_ERROR,
+        RECORDS_COUNT,
+        RECORDS_PARSED_COUNT,
+        RECORDS_DISCARDED_COUNT,
+        RECORDS_DISCARDED_ERROR_COUNT
+    }
 
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
@@ -37,7 +46,7 @@ public class SolrDocumentMapper extends Mapper<LongWritable, Text, Text, PageSea
         String arcURL = value.toString();
         if (!arcURL.isEmpty()) {
             logger.info("(W)ARCNAME: " + arcURL);
-            //context.getCounter(IMAGE_COUNTERS.WARCS).increment(1);
+            context.getCounter(PagesCounters.WARCS_COUNT).increment(1);
 
             URL url = null;
             try {
@@ -53,11 +62,10 @@ public class SolrDocumentMapper extends Mapper<LongWritable, Text, Text, PageSea
             try {
                 FileUtils.copyURLToFile(url, dest);
             } catch (IOException e) {
-                e.printStackTrace();
-                //context.getCounter(IMAGE_COUNTERS.WARCS_DOWNLOAD_ERROR).increment(1);
+                context.getCounter(PagesCounters.WARCS_DOWNLOAD_ERROR).increment(1);
             }
 
-            ArchiveReader reader = null;
+            ArchiveReader reader;
             ArrayList<PageSearchData> listDocs = new ArrayList();
             try {
                 reader = ArchiveReaderFactory.get(dest);
@@ -69,20 +77,21 @@ public class SolrDocumentMapper extends Mapper<LongWritable, Text, Text, PageSea
                 while (ir.hasNext()) {
                     try {
                         ArchiveRecord rec = ir.next();
+                        context.getCounter(PagesCounters.RECORDS_COUNT).increment(1);
                         try {
                             PageSearchData doc = warcParser.extract("teste", rec);
                             if (doc != null) {
-                                // TODO Replace with Counters
-                                logger.info("Processing Record with ".concat(doc.getUrl()));
+                                logger.info("Processing Record with URL: ".concat(doc.getUrl()));
                                 doc.setCollection(context.getConfiguration().get("collection", ""));
                                 listDocs.add(doc);
+                                context.getCounter(PagesCounters.RECORDS_PARSED_COUNT);
                             }
-                            // TODO add counter of discarded records
+                            context.getCounter(PagesCounters.RECORDS_DISCARDED_COUNT);
                         } catch (Exception e) {
-                            // TODO log more information about the record that failed.
                             logger.error("Unable to parse record due to unknow reasons", e);
-                            continue;
+                            context.getCounter(PagesCounters.RECORDS_DISCARDED_ERROR_COUNT);
                         } catch (OutOfMemoryError e) {
+                            context.getCounter(PagesCounters.RECORDS_DISCARDED_ERROR_COUNT);
                             logger.error("Unable to parse record due to out of memory problems", e);
                             continue;
                         }

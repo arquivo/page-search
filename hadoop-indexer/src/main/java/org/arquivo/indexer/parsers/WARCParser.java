@@ -7,6 +7,7 @@ import org.apache.commons.httpclient.HttpParser;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHeaders;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -244,7 +245,10 @@ public class WARCParser {
         // TODO Confirm if the digest is being well calculated
         DigestInputStream digestInputStream = new DigestInputStream(record, md5);
 
-        Parser parser = new AutoDetectParser();
+        ClassLoader classLoader = getClass().getClassLoader();
+        TikaConfig config = new TikaConfig(classLoader.getResourceAsStream("tika-config.xml"));
+
+        Parser parser = new AutoDetectParser(config);
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
@@ -267,6 +271,7 @@ public class WARCParser {
         doc.setEncoding(encoding);
         doc.setTikaContentType(metadata.get("Content-Type"));
         doc.setContent(removeJunkCharacters(handler.toString()));
+
 
         HexBinaryAdapter hexBinaryAdapter = new HexBinaryAdapter();
         String digest = hexBinaryAdapter.marshal(digestInputStream.getMessageDigest().digest());

@@ -32,7 +32,7 @@ public class PageSearchIndexDriver extends Configured implements Tool {
         job.setInputFormatClass(NLineInputFormat.class);
         NLineInputFormat.addInputPath(job, new Path(args[0]));
 
-        job.setMapperClass(SolrDocumentMapper.class);
+        job.setMapperClass(PageSearchDataMapper.class);
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(PageSearchData.class);
 
