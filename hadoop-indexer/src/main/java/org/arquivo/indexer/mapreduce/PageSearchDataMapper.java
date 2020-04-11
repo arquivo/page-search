@@ -56,7 +56,8 @@ public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageS
             }
 
             String[] surl = url.getPath().split("/");
-            String filename = System.currentTimeMillis() + "_" + surl[surl.length - 1];
+            String warcName = surl[surl.length - 1];
+            String filename = System.currentTimeMillis() + "_" + warcName;
             File dest = new File("/tmp/" + filename);
 
             try {
@@ -79,7 +80,7 @@ public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageS
                         ArchiveRecord rec = ir.next();
                         context.getCounter(PagesCounters.RECORDS_COUNT).increment(1);
                         try {
-                            PageSearchData doc = warcParser.extract("teste", rec);
+                            PageSearchData doc = warcParser.extract(warcName, rec);
                             if (doc != null) {
                                 logger.info("Processing Record with URL: ".concat(doc.getUrl()));
                                 doc.setCollection(context.getConfiguration().get("collection", ""));

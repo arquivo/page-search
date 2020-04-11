@@ -285,13 +285,19 @@ public class WARCParser {
         // SET OUTLINKS
         // TODO max number of outlinks (put this on a config file)
         int outlinksLimit = 1000;
+
         Outlink[] outlinks = new Outlink[outlinksLimit];
         List<Link> links = linkHandler.getLinks();
-        for (int i = 0; i <= links.size() - 1 && i <= outlinksLimit - 1; i++) {
+        for (int i = 0; i < links.size() && i < outlinksLimit; i++) {
             Outlink outlink = new Outlink(links.get(i).getUri(), removeJunkCharacters(links.get(i).getText()));
             outlinks[i] = outlink;
         }
-        doc.setnOutLinks(links.size());
+        if (links.size() <= outlinksLimit) {
+            doc.setnOutLinks(links.size());
+        }
+        else {
+            doc.setnOutLinks(outlinksLimit);
+        }
         doc.setOutLinks(outlinks);
 
         HexBinaryAdapter hexBinaryAdapter = new HexBinaryAdapter();

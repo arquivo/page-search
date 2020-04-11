@@ -223,7 +223,7 @@ public class PageSearchData implements Writable {
         Text.writeString(out, url);
         Text.writeString(out, String.valueOf(nInLinks));
         Text.writeString(out, String.valueOf(nOutLinks));
-        for (int i = 0; i <= outLinks.length - 1; i++) {
+        for (int i = 0; i < nOutLinks ; i++) {
             outLinks[i].write(out);
         }
         inLinks.write(out);
@@ -250,7 +250,7 @@ public class PageSearchData implements Writable {
         this.url = Text.readString(in);
         this.nInLinks = Integer.parseInt(Text.readString(in));
         this.nOutLinks = Integer.parseInt(Text.readString(in));
-        for (int i = 0; i <= nOutLinks - 1; i++) {
+        for (int i = 0; i < nOutLinks; i++) {
             Outlink[] outlinks = new Outlink[nOutLinks];
             Outlink oul = new Outlink();
             oul.readFields(in);
