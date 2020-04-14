@@ -8,7 +8,7 @@ import org.arquivo.indexer.data.PageSearchData;
 
 import java.io.IOException;
 
-public class SolrDocumentReducer extends Reducer<Text, PageSearchData, NullWritable, Text> {
+public class HdfsPageSearchDataReducer extends Reducer<Text, PageSearchData, NullWritable, Text> {
     // Do some stuff with a SolrDocument and dump to textual format
     private Gson gson;
 
@@ -23,7 +23,6 @@ public class SolrDocumentReducer extends Reducer<Text, PageSearchData, NullWrita
         for (PageSearchData value : values) {
             PageSearchData doc = value;
             context.write(NullWritable.get(), new Text(gson.toJson(doc)));
-
         }
     }
 }

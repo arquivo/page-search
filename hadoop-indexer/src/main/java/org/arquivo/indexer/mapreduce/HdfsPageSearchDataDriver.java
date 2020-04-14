@@ -3,6 +3,7 @@ package org.arquivo.indexer.mapreduce;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
@@ -12,7 +13,7 @@ import org.arquivo.indexer.data.ArchiveFileInputFormat;
 import org.arquivo.indexer.data.PageSearchData;
 
 
-public class HdfsPageSearchIndexDriver extends Configured implements Tool {
+public class HdfsPageSearchDataDriver extends Configured implements Tool {
 
     @Override
     public int run(String[] args) throws Exception {
@@ -36,8 +37,8 @@ public class HdfsPageSearchIndexDriver extends Configured implements Tool {
         job.setMapOutputValueClass(PageSearchData.class);
 
         // set reduces
-        job.setReducerClass(SolrDocumentReducer.class);
-        job.setOutputKeyClass(Text.class);
+        job.setReducerClass(HdfsPageSearchDataReducer.class);
+        job.setOutputKeyClass(NullWritable.class);
         job.setOutputValueClass(Text.class);
 
         //set outputFormat
@@ -50,7 +51,7 @@ public class HdfsPageSearchIndexDriver extends Configured implements Tool {
     }
 
     public static void main(String[] args) throws Exception {
-        int exitCode = ToolRunner.run(new HdfsPageSearchIndexDriver(), args);
+        int exitCode = ToolRunner.run(new HdfsPageSearchDataDriver(), args);
         System.exit(exitCode);
     }
 }

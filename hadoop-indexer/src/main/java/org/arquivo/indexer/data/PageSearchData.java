@@ -9,6 +9,8 @@ import java.io.IOException;
 
 public class PageSearchData implements Writable {
 
+    public static final String DIR_NAME = "page_data";
+
     String id = "";
     String title = "";
     String anchor = "";
@@ -250,15 +252,19 @@ public class PageSearchData implements Writable {
         this.url = Text.readString(in);
         this.nInLinks = Integer.parseInt(Text.readString(in));
         this.nOutLinks = Integer.parseInt(Text.readString(in));
+
+        Outlink[] outlinks = new Outlink[nOutLinks];
         for (int i = 0; i < nOutLinks; i++) {
-            Outlink[] outlinks = new Outlink[nOutLinks];
             Outlink oul = new Outlink();
             oul.readFields(in);
             outlinks[i] = oul;
         }
+        this.outLinks = outlinks;
+
         Inlinks inl = new Inlinks();
         inl.readFields(in);
         this.inLinks = inl;
+
         this.type = Text.readString(in);
         this.primaryType = Text.readString(in);
         this.subType = Text.readString(in);

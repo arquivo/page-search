@@ -151,7 +151,7 @@
                             <archive>
                                 <manifest>
                                     <addClasspath>true</addClasspath>
-                                    <mainClass>org.arquivo.indexer.mapreduce.PageSearchIndexDriver</mainClass>
+                                    <mainClass>org.arquivo.indexer.mapreduce.PageSearchDataDriver</mainClass>
                                 </manifest>
                             </archive>
                         </configuration>

@@ -13,6 +13,7 @@ import java.util.*;
  * A list of {@link Inlink}s.
  */
 public class Inlinks implements Writable {
+    public static final String DIR_NAME = "inlinks_data";
     private HashSet<Inlink> inlinks = new HashSet<Inlink>(1);
 
     public void add(Inlink inlink) {

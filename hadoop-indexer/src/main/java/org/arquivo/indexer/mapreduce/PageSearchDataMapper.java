@@ -110,7 +110,7 @@ public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageS
                 e.printStackTrace();
             }
             for (PageSearchData doc : listDocs) {
-                context.write(new Text(doc.getId()), doc);
+                context.write(new Text(doc.getUrl()), doc);
             }
 
             FileUtils.deleteQuietly(dest);
