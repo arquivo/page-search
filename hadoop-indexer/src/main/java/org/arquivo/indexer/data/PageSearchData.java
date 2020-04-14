@@ -29,8 +29,8 @@ public class PageSearchData implements Writable {
     int nInLinks = 0;
     int nOutLinks = 0;
 
-    Outlink[] outLinks = new Outlink[0];
-    Inlinks inLinks = new Inlinks();
+    transient Outlink[] outLinks = new Outlink[0];
+    transient Inlinks inLinks = new Inlinks();
 
     String type = "";
     String primaryType = "";

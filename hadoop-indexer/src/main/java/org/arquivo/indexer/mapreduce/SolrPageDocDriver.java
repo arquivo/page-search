@@ -15,6 +15,7 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.arquivo.indexer.data.Inlink;
 import org.arquivo.indexer.data.Inlinks;
 import org.arquivo.indexer.data.PageSearchData;
 
@@ -63,7 +64,12 @@ public class SolrPageDocDriver extends Configured implements Tool {
             }
             if (pagedata != null) {
                 if (inlinks != null) {
-                    pagedata.setInLinks(inlinks);
+                    String[] anchors = inlinks.getAnchors();
+                    StringBuilder anchorText = new StringBuilder();
+                    for (int i = 0; i < anchors.length; i++) {
+                       anchorText.append(anchors[i]);
+                    }
+                    pagedata.setAnchor(anchorText.toString());
                     pagedata.setnInLinks(inlinks.size());
                 }
                 context.write(NullWritable.get(), new Text(gson.toJson(pagedata)));
