@@ -15,9 +15,8 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.arquivo.indexer.data.Inlink;
 import org.arquivo.indexer.data.Inlinks;
-import org.arquivo.indexer.data.PageSearchData;
+import org.arquivo.indexer.data.PageData;
 
 import java.io.IOException;
 
@@ -25,9 +24,9 @@ public class SolrPageDocDriver extends Configured implements Tool {
 
     public static final String DIR_NAME = "solr_data";
 
-    public static class PageDataMapper extends Mapper<Text, PageSearchData, Text, ObjectWritable> {
+    public static class PageDataMapper extends Mapper<Text, PageData, Text, ObjectWritable> {
         @Override
-        protected void map(Text key, PageSearchData value, Context context) throws IOException, InterruptedException {
+        protected void map(Text key, PageData value, Context context) throws IOException, InterruptedException {
             context.write(key, new ObjectWritable(value));
         }
     }
@@ -52,11 +51,11 @@ public class SolrPageDocDriver extends Configured implements Tool {
 
         @Override
         protected void reduce(Text key, Iterable<ObjectWritable> values, Context context) throws IOException, InterruptedException {
-            PageSearchData pagedata = null;
+            PageData pagedata = null;
             Inlinks inlinks = null;
             for (ObjectWritable objectWritable : values) {
-                if (objectWritable.get() instanceof PageSearchData) {
-                    pagedata = (PageSearchData) objectWritable.get();
+                if (objectWritable.get() instanceof PageData) {
+                    pagedata = (PageData) objectWritable.get();
                 }
                 if (objectWritable.get() instanceof Inlinks) {
                     inlinks = (Inlinks) objectWritable.get();
@@ -91,7 +90,7 @@ public class SolrPageDocDriver extends Configured implements Tool {
         Job job = Job.getInstance(conf);
         job.setJarByClass(getClass());
 
-        MultipleInputs.addInputPath(job, new Path(args[0], PageSearchData.DIR_NAME), SequenceFileInputFormat.class, PageDataMapper.class);
+        MultipleInputs.addInputPath(job, new Path(args[0], PageSearchDataDriver.DIR_NAME), SequenceFileInputFormat.class, PageDataMapper.class);
         MultipleInputs.addInputPath(job, new Path(args[0], Inlinks.DIR_NAME), SequenceFileInputFormat.class, InvertedLinksMapper.class);
 
         job.setOutputFormatClass(TextOutputFormat.class);

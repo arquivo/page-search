@@ -7,11 +7,11 @@ import org.arquivo.indexer.data.*;
 
 import java.io.IOException;
 
-public class InvertLinksMapper extends Mapper<Text, PageSearchData, WebArchiveKey, Inlink> {
+public class InvertLinksMapper extends Mapper<Text, PageData, WebArchiveKey, Inlink> {
     private final Logger logger = Logger.getLogger(InvertLinksMapper.class);
 
     @Override
-    protected void map(Text key, PageSearchData value, Context context) throws IOException, InterruptedException {
+    protected void map(Text key, PageData value, Context context) throws IOException, InterruptedException {
 
         Outlink[] outlinks = value.getOutLinks();
         for (int i = 0; i < value.getnOutLinks(); i++){

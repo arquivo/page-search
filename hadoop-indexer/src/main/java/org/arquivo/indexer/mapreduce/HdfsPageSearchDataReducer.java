@@ -4,12 +4,11 @@ import com.google.gson.Gson;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.arquivo.indexer.data.PageSearchData;
+import org.arquivo.indexer.data.PageData;
 
 import java.io.IOException;
 
-public class HdfsPageSearchDataReducer extends Reducer<Text, PageSearchData, NullWritable, Text> {
-    // Do some stuff with a SolrDocument and dump to textual format
+public class HdfsPageSearchDataReducer extends Reducer<Text, PageData, NullWritable, Text> {
     private Gson gson;
 
     @Override
@@ -19,9 +18,9 @@ public class HdfsPageSearchDataReducer extends Reducer<Text, PageSearchData, Nul
     }
 
     @Override
-    protected void reduce(Text key, Iterable<PageSearchData> values, Context context) throws IOException, InterruptedException {
-        for (PageSearchData value : values) {
-            PageSearchData doc = value;
+    protected void reduce(Text key, Iterable<PageData> values, Context context) throws IOException, InterruptedException {
+        for (PageData value : values) {
+            PageData doc = value;
             context.write(NullWritable.get(), new Text(gson.toJson(doc)));
         }
     }

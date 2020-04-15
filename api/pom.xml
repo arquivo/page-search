@@ -96,12 +96,20 @@
         </repository>
     </repositories>
 
+    <properties>
+        <start-class>org.arquivo.api.SearchPageApplicatio</start-class>
+    </properties>
+
     <build>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.2.4.RELEASE</version>
+                <configuration>
+                    <mainClass>org.arquivo.api.SearchPageApplication</mainClass>
+                    <layout>ZIP</layout>
+                </configuration>
             </plugin>
         </plugins>
     </build>

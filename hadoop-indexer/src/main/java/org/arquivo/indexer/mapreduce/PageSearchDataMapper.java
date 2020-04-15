@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
-import org.arquivo.indexer.data.PageSearchData;
+import org.arquivo.indexer.data.PageData;
 import org.arquivo.indexer.parsers.WARCParser;
 
 import java.io.File;
@@ -20,7 +20,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageSearchData> {
+public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageData> {
     // maps from an ArchiveRecord to a intermediate format
     private final Logger logger = Logger.getLogger(PageSearchDataMapper.class);
     private WARCParser warcParser;
@@ -67,7 +67,7 @@ public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageS
             }
 
             ArchiveReader reader;
-            ArrayList<PageSearchData> listDocs = new ArrayList();
+            ArrayList<PageData> listDocs = new ArrayList();
             try {
                 reader = ArchiveReaderFactory.get(dest);
                 Iterator<ArchiveRecord> ir = reader.iterator();
@@ -80,7 +80,7 @@ public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageS
                         ArchiveRecord rec = ir.next();
                         context.getCounter(PagesCounters.RECORDS_COUNT).increment(1);
                         try {
-                            PageSearchData doc = warcParser.extract(warcName, rec);
+                            PageData doc = warcParser.extract(warcName, rec);
                             if (doc != null) {
                                 logger.info("Processing Record with URL: ".concat(doc.getUrl()));
                                 doc.setCollection(context.getConfiguration().get("collection", ""));
@@ -109,7 +109,7 @@ public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageS
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            for (PageSearchData doc : listDocs) {
+            for (PageData doc : listDocs) {
                 context.write(new Text(doc.getUrl()), doc);
             }
 

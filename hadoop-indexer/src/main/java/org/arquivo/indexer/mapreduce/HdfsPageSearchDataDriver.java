@@ -6,14 +6,17 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.arquivo.indexer.data.ArchiveFileInputFormat;
-import org.arquivo.indexer.data.PageSearchData;
+import org.arquivo.indexer.data.PageData;
 
 
 public class HdfsPageSearchDataDriver extends Configured implements Tool {
+
+    public static final String DIR_NAME = "page_data";
 
     @Override
     public int run(String[] args) throws Exception {
@@ -24,7 +27,7 @@ public class HdfsPageSearchDataDriver extends Configured implements Tool {
         }
 
         Configuration conf = getConf();
-        String jobName = conf.get("jobName", "teste");
+        String jobName = conf.get("jobName", "CreatePageData");
 
         Job job = Job.getInstance(conf);
         job.setJarByClass(getClass());
@@ -32,18 +35,18 @@ public class HdfsPageSearchDataDriver extends Configured implements Tool {
         job.setInputFormatClass(ArchiveFileInputFormat.class);
         ArchiveFileInputFormat.addInputPath(job, new Path(args[0]));
 
-        job.setMapperClass(HdfsPageSearchDataMapper.class);
-        job.setMapOutputKeyClass(Text.class);
-        job.setMapOutputValueClass(PageSearchData.class);
+        job.setOutputFormatClass(SequenceFileOutputFormat.class);
+        SequenceFileOutputFormat.setOutputPath(job, new Path(args[1], HdfsPageSearchDataDriver.DIR_NAME));
 
-        // set reduces
-        job.setReducerClass(HdfsPageSearchDataReducer.class);
+        // map only job
+        job.setNumReduceTasks(0);
+        job.setMapperClass(HdfsPageSearchDataMapper.class);
+
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(PageData.class);
+
         job.setOutputKeyClass(NullWritable.class);
         job.setOutputValueClass(Text.class);
-
-        //set outputFormat
-        job.setOutputFormatClass(TextOutputFormat.class);
-        TextOutputFormat.setOutputPath(job, new Path(args[1]));
 
         job.setJobName(jobName);
 

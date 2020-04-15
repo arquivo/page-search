@@ -12,11 +12,12 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.arquivo.indexer.data.Inlink;
 import org.arquivo.indexer.data.Inlinks;
-import org.arquivo.indexer.data.PageSearchData;
 import org.arquivo.indexer.data.WebArchiveKey;
 
 public class InvertLinksDriver extends Configured implements Tool {
 
+    // Specify Time Dimension through configuration
+    // This can be Yearly, Monthly, Daily
     @Override
     public int run(String[] args) throws Exception {
         if (args.length != 1) {
@@ -33,7 +34,7 @@ public class InvertLinksDriver extends Configured implements Tool {
         job.setInputFormatClass(SequenceFileInputFormat.class);
         job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-        SequenceFileInputFormat.addInputPath(job, new Path(args[0], PageSearchData.DIR_NAME));
+        SequenceFileInputFormat.addInputPath(job, new Path(args[0], PageSearchDataDriver.DIR_NAME));
         MapFileOutputFormat.setOutputPath(job, new Path(args[0], Inlinks.DIR_NAME));
 
         job.setMapperClass(InvertLinksMapper.class);

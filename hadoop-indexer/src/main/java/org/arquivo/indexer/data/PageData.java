@@ -7,9 +7,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class PageSearchData implements Writable {
+public class PageData implements Writable {
 
-    public static final String DIR_NAME = "page_data";
 
     String id = "";
     String title = "";

@@ -6,9 +6,8 @@ import org.apache.tika.exception.TikaException;
 import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
-import org.arquivo.indexer.data.PageSearchData;
+import org.arquivo.indexer.data.PageData;
 import org.arquivo.indexer.parsers.WARCParser;
-import org.arquivo.indexer.solr.SolrDocumentWrapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -40,7 +39,7 @@ public class WARCParserTest {
         Iterator<ArchiveRecord> ir = reader.iterator();
 
         ArchiveRecord rec = ir.next();
-        PageSearchData doc = warcParser.extract(reader.getFileName(), rec);
+        PageData doc = warcParser.extract(reader.getFileName(), rec);
 
         // ASSERT FIELDS
         assertEquals(doc.getTikaContentType(), "application/gzip");

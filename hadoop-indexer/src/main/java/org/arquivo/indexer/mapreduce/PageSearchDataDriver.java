@@ -9,10 +9,12 @@ import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.arquivo.indexer.data.PageSearchData;
+import org.arquivo.indexer.data.PageData;
 
 
 public class PageSearchDataDriver extends Configured implements Tool {
+
+    public static final String DIR_NAME = "page_data";
 
     @Override
     public int run(String[] args) throws Exception {
@@ -23,7 +25,7 @@ public class PageSearchDataDriver extends Configured implements Tool {
         }
 
         Configuration conf = getConf();
-        String jobName = conf.get("jobName", "CreatePageSearchData");
+        String jobName = conf.get("jobName", "CreatePageData");
 
         Job job = Job.getInstance(conf);
         job.setJarByClass(getClass());
@@ -35,7 +37,7 @@ public class PageSearchDataDriver extends Configured implements Tool {
         // SequenceFileOutputFormat.setCompressOutput(job, true);
 
         NLineInputFormat.addInputPath(job, new Path(args[0]));
-        SequenceFileOutputFormat.setOutputPath(job, new Path(args[1], PageSearchData.DIR_NAME));
+        SequenceFileOutputFormat.setOutputPath(job, new Path(args[1], PageSearchDataDriver.DIR_NAME));
 
         job.setMapperClass(PageSearchDataMapper.class);
         // map-only job
@@ -46,10 +48,10 @@ public class PageSearchDataDriver extends Configured implements Tool {
 
         // probably need to change this key right?
         job.setMapOutputKeyClass(Text.class);
-        job.setMapOutputValueClass(PageSearchData.class);
+        job.setMapOutputValueClass(PageData.class);
 
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(PageSearchData.class);
+        job.setOutputValueClass(PageData.class);
 
         job.setJobName(jobName);
 

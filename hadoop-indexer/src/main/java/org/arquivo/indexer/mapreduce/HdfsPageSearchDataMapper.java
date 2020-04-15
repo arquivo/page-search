@@ -7,14 +7,14 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.log4j.Logger;
 import org.archive.io.ArchiveRecord;
-import org.arquivo.indexer.data.PageSearchData;
+import org.arquivo.indexer.data.PageData;
 import org.arquivo.indexer.data.WritableArchiveRecord;
 import org.arquivo.indexer.parsers.WARCParser;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class HdfsPageSearchDataMapper extends Mapper<LongWritable, WritableArchiveRecord, Text, PageSearchData> {
+public class HdfsPageSearchDataMapper extends Mapper<LongWritable, WritableArchiveRecord, Text, PageData> {
     // maps from an ArchiveRecord to a intermediate format
     private final Logger logger = Logger.getLogger(HdfsPageSearchDataMapper.class);
     private WARCParser warcParser;
@@ -35,12 +35,12 @@ public class HdfsPageSearchDataMapper extends Mapper<LongWritable, WritableArchi
 
     @Override
     protected void map(LongWritable key, WritableArchiveRecord value, Context context) throws IOException, InterruptedException {
-        ArrayList<PageSearchData> listDocs = new ArrayList();
+        ArrayList<PageData> listDocs = new ArrayList();
         ArchiveRecord rec = value.getRecord();
         context.getCounter(PagesCounters.RECORDS_COUNT).increment(1);
         try {
             // TODO get warcName
-            PageSearchData doc = warcParser.extract("", rec);
+            PageData doc = warcParser.extract("", rec);
             if (doc != null) {
                 logger.info("Processing Record with URL: ".concat(doc.getUrl()));
                 doc.setCollection(context.getConfiguration().get("collection", ""));
@@ -57,7 +57,7 @@ public class HdfsPageSearchDataMapper extends Mapper<LongWritable, WritableArchi
             logger.error("Unable to parse record due to out of memory problems", e);
         }
 
-        for (PageSearchData doc : listDocs) {
+        for (PageData doc : listDocs) {
             context.write(new Text(doc.getId()), doc);
         }
     }

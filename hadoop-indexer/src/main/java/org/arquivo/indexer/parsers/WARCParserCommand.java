@@ -10,7 +10,7 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
-import org.arquivo.indexer.data.PageSearchData;
+import org.arquivo.indexer.data.PageData;
 import org.arquivo.indexer.solr.SolrDocumentWrapper;
 
 import java.io.File;
@@ -36,7 +36,7 @@ public class WARCParserCommand {
                 try {
                     ArchiveRecord rec = ir.next();
                     try {
-                        PageSearchData doc = warcParser.extract("teste", rec);
+                        PageData doc = warcParser.extract("teste", rec);
                         if (doc != null) {
                             SolrDocumentWrapper solrDocumentWrapper = new SolrDocumentWrapper();
 

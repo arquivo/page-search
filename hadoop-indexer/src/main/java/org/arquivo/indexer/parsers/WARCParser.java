@@ -23,7 +23,7 @@ import org.archive.io.ArchiveRecordHeader;
 import org.archive.io.arc.ARCRecord;
 import org.archive.io.warc.WARCRecord;
 import org.arquivo.indexer.data.Outlink;
-import org.arquivo.indexer.data.PageSearchData;
+import org.arquivo.indexer.data.PageData;
 import org.arquivo.indexer.utils.HTTPHeader;
 import org.brotli.dec.BrotliInputStream;
 import org.netpreserve.urlcanon.Canonicalizer;
@@ -98,7 +98,7 @@ public class WARCParser {
     }
 
 
-    private void processEnvelopHeader(ArchiveRecordHeader header, PageSearchData doc) throws NoSuchAlgorithmException {
+    private void processEnvelopHeader(ArchiveRecordHeader header, PageData doc) throws NoSuchAlgorithmException {
         String timeStamp = (header.getDate().replaceAll("[^0-9]", ""));
         // Date date = getWaybackDate(waybackDate);
         // TODO change to digest utils?
@@ -124,7 +124,7 @@ public class WARCParser {
     /**
      * Adds selected HTTP headers to the Solr document.
      */
-    private void processHTTPHeaders(HTTPHeader httpHeaders, String targetUrl, PageSearchData doc) {
+    private void processHTTPHeaders(HTTPHeader httpHeaders, String targetUrl, PageData doc) {
         try {
             // This is a simple test that the status code setting worked:
             int statusCodeInt = Integer.parseInt(httpHeaders.getHttpStatus());
@@ -153,7 +153,7 @@ public class WARCParser {
      */
 
     private HTTPHeader processWARCHTTPHeaders(
-            ArchiveRecord record, ArchiveRecordHeader warcHeader, String targetUrl, PageSearchData doc)
+            ArchiveRecord record, ArchiveRecordHeader warcHeader, String targetUrl, PageData doc)
             throws IOException {
         String statusCode;
 
@@ -184,11 +184,11 @@ public class WARCParser {
 
 
     // TODO refactor this code
-    public PageSearchData extract(String archiveName, ArchiveRecord record) throws NoSuchAlgorithmException,
+    public PageData extract(String archiveName, ArchiveRecord record) throws NoSuchAlgorithmException,
             IOException, TikaException, SAXException {
         final ArchiveRecordHeader header = record.getHeader();
 
-        PageSearchData doc = new PageSearchData();
+        PageData doc = new PageData();
         doc.setWarcName(archiveName);
 
         doc.setWarcOffset(header.getOffset());
