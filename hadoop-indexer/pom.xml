@@ -147,7 +147,7 @@
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
-                            <finalName>pagesearch-index-job-${version}</finalName>
+                            <finalName>pagesearch-indexer-${version}</finalName>
                             <archive>
                                 <manifest>
                                     <addClasspath>true</addClasspath>

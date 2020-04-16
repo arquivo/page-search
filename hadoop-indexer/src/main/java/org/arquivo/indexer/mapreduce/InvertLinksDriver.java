@@ -43,7 +43,7 @@ public class InvertLinksDriver extends Configured implements Tool {
         job.setMapOutputKeyClass(WebArchiveKey.class);
         job.setMapOutputValueClass(Inlink.class);
 
-        job.setOutputKeyClass(Text.class);
+        job.setOutputKeyClass(WebArchiveKey.class);
         job.setOutputValueClass(Inlinks.class);
 
         job.setJobName(jobName);

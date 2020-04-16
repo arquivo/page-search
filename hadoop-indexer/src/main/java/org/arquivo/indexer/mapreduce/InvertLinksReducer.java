@@ -8,7 +8,7 @@ import org.arquivo.indexer.data.WebArchiveKey;
 
 import java.io.IOException;
 
-public class InvertLinksReducer extends Reducer<WebArchiveKey, Inlink, Text, Inlinks> {
+public class InvertLinksReducer extends Reducer<WebArchiveKey, Inlink, WebArchiveKey, Inlinks> {
 
     @Override
     protected void reduce(WebArchiveKey key, Iterable<Inlink> values, Context context) throws IOException, InterruptedException {
@@ -16,6 +16,6 @@ public class InvertLinksReducer extends Reducer<WebArchiveKey, Inlink, Text, Inl
         for (Inlink inlink : values){
             inlinks.add(inlink);
         }
-        context.write(new Text(key.getUrl()), inlinks);
+        context.write(key, inlinks);
     }
 }

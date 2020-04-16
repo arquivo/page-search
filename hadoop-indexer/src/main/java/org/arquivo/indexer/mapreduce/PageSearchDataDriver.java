@@ -10,6 +10,7 @@ import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.arquivo.indexer.data.PageData;
+import org.arquivo.indexer.data.WebArchiveKey;
 
 
 public class PageSearchDataDriver extends Configured implements Tool {
@@ -47,10 +48,10 @@ public class PageSearchDataDriver extends Configured implements Tool {
         // job.setReducerClass(PageSearchDataReducer.class);
 
         // probably need to change this key right?
-        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputKeyClass(WebArchiveKey.class);
         job.setMapOutputValueClass(PageData.class);
 
-        job.setOutputKeyClass(Text.class);
+        job.setOutputKeyClass(WebArchiveKey.class);
         job.setOutputValueClass(PageData.class);
 
         job.setJobName(jobName);

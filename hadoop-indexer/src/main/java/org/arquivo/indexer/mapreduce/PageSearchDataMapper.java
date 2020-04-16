@@ -11,6 +11,7 @@ import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
 import org.arquivo.indexer.data.PageData;
+import org.arquivo.indexer.data.WebArchiveKey;
 import org.arquivo.indexer.parsers.WARCParser;
 
 import java.io.File;
@@ -20,10 +21,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageData> {
+public class PageSearchDataMapper extends Mapper<LongWritable, Text, WebArchiveKey, PageData> {
     // maps from an ArchiveRecord to a intermediate format
     private final Logger logger = Logger.getLogger(PageSearchDataMapper.class);
     private WARCParser warcParser;
+    private int graphTimeSlice;
 
     enum PagesCounters {
         WARCS_COUNT,
@@ -34,10 +36,13 @@ public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageD
         RECORDS_DISCARDED_ERROR_COUNT
     }
 
+
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
         Config conf = ConfigFactory.load();
         this.warcParser = new WARCParser(conf);
+        String graphTimePolicy = context.getConfiguration().get("GraphTimeSlice", "none");
+        this.graphTimeSlice = WebArchiveKey.keyTimeSlice(graphTimePolicy);
         super.setup(context);
     }
 
@@ -110,7 +115,8 @@ public class PageSearchDataMapper extends Mapper<LongWritable, Text, Text, PageD
                 e.printStackTrace();
             }
             for (PageData doc : listDocs) {
-                context.write(new Text(doc.getUrl()), doc);
+                WebArchiveKey webArchiveKey = new WebArchiveKey(doc.getUrl(), doc.getTstamp().substring(0, graphTimeSlice));
+                context.write(webArchiveKey, doc);
             }
 
             FileUtils.deleteQuietly(dest);

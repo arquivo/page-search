@@ -17,6 +17,7 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.arquivo.indexer.data.Inlinks;
 import org.arquivo.indexer.data.PageData;
+import org.arquivo.indexer.data.WebArchiveKey;
 
 import java.io.IOException;
 
@@ -24,22 +25,22 @@ public class SolrPageDocDriver extends Configured implements Tool {
 
     public static final String DIR_NAME = "solr_data";
 
-    public static class PageDataMapper extends Mapper<Text, PageData, Text, ObjectWritable> {
+    public static class PageDataMapper extends Mapper<WebArchiveKey, PageData, WebArchiveKey, ObjectWritable> {
         @Override
-        protected void map(Text key, PageData value, Context context) throws IOException, InterruptedException {
+        protected void map(WebArchiveKey key, PageData value, Context context) throws IOException, InterruptedException {
             context.write(key, new ObjectWritable(value));
         }
     }
 
-    public static class InvertedLinksMapper extends Mapper<Text, Inlinks, Text, ObjectWritable> {
+    public static class InvertedLinksMapper extends Mapper<WebArchiveKey, Inlinks, WebArchiveKey, ObjectWritable> {
 
         @Override
-        protected void map(Text key, Inlinks value, Context context) throws IOException, InterruptedException {
+        protected void map(WebArchiveKey key, Inlinks value, Context context) throws IOException, InterruptedException {
             context.write(key, new ObjectWritable(value));
         }
     }
 
-    public static class SolrPageDocReducer extends Reducer<Text, ObjectWritable, NullWritable, Text> {
+    public static class SolrPageDocReducer extends Reducer<WebArchiveKey, ObjectWritable, NullWritable, Text> {
 
         private Gson gson;
 
@@ -50,7 +51,7 @@ public class SolrPageDocDriver extends Configured implements Tool {
         }
 
         @Override
-        protected void reduce(Text key, Iterable<ObjectWritable> values, Context context) throws IOException, InterruptedException {
+        protected void reduce(WebArchiveKey key, Iterable<ObjectWritable> values, Context context) throws IOException, InterruptedException {
             PageData pagedata = null;
             Inlinks inlinks = null;
             for (ObjectWritable objectWritable : values) {
@@ -98,7 +99,7 @@ public class SolrPageDocDriver extends Configured implements Tool {
 
         job.setReducerClass(SolrPageDocReducer.class);
 
-        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputKeyClass(WebArchiveKey.class);
         job.setMapOutputValueClass(ObjectWritable.class);
 
         job.setOutputKeyClass(NullWritable.class);

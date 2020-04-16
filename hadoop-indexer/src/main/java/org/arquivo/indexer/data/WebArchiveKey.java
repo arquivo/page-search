@@ -1,6 +1,5 @@
 package org.arquivo.indexer.data;
 
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 
@@ -11,30 +10,30 @@ import java.io.IOException;
 public class WebArchiveKey implements WritableComparable<WebArchiveKey> {
 
     private Text url;
-    private LongWritable timeStamp;
+    private Text timeStamp;
 
-    public WebArchiveKey(){
-        set(new Text(), new LongWritable());
+    public WebArchiveKey() {
+        set(new Text(), new Text());
     }
 
-    public void set(Text url, LongWritable timeStamp){
+    public void set(Text url, Text timeStamp) {
         this.url = url;
         this.timeStamp = timeStamp;
     }
 
-    public WebArchiveKey(Text url, LongWritable timeStamp){
+    public WebArchiveKey(Text url, Text timeStamp) {
         this.url = url;
         this.timeStamp = timeStamp;
     }
 
-    public WebArchiveKey(String url, Long timeStamp){
-        set(new Text(url), new LongWritable(timeStamp));
+    public WebArchiveKey(String url, String timeStamp) {
+        set(new Text(url), new Text(timeStamp));
     }
 
     @Override
     public int compareTo(WebArchiveKey key) {
         int cmp = this.url.compareTo(key.getUrl());
-        if (cmp != 0){
+        if (cmp != 0) {
             return cmp;
         }
         return this.timeStamp.compareTo(key.getTimeStamp());
@@ -56,7 +55,28 @@ public class WebArchiveKey implements WritableComparable<WebArchiveKey> {
         return url;
     }
 
-    public LongWritable getTimeStamp() {
+    public Text getTimeStamp() {
         return timeStamp;
+    }
+
+    public static int keyTimeSlice(String graphTimeSlicePolicy) throws IllegalArgumentException{
+        int graphTimeSlice;
+        switch (graphTimeSlicePolicy) {
+            case "none":
+                graphTimeSlice = 0;
+                break;
+            case "year":
+                graphTimeSlice = 4;
+                break;
+            case "montly":
+                graphTimeSlice = 6;
+                break;
+            case "daily":
+                graphTimeSlice = 8;
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid GraphTimeSlice option: " + graphTimeSlicePolicy);
+        }
+        return graphTimeSlice;
     }
 }
