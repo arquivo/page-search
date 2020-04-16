@@ -12,7 +12,6 @@
    <inceptionYear>2020</inceptionYear>
 
    <modules>
-      <module>warc-parser</module>
       <module>api</module>
        <module>hadoop-indexer</module>
    </modules>
