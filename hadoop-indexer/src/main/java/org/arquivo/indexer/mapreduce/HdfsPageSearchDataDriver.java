@@ -7,11 +7,11 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.arquivo.indexer.data.ArchiveFileInputFormat;
 import org.arquivo.indexer.data.PageData;
+import org.arquivo.indexer.data.WebArchiveKey;
 
 
 public class HdfsPageSearchDataDriver extends Configured implements Tool {
@@ -42,7 +42,7 @@ public class HdfsPageSearchDataDriver extends Configured implements Tool {
         job.setNumReduceTasks(0);
         job.setMapperClass(HdfsPageSearchDataMapper.class);
 
-        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputKeyClass(WebArchiveKey.class);
         job.setMapOutputValueClass(PageData.class);
 
         job.setOutputKeyClass(NullWritable.class);

@@ -3,21 +3,23 @@ package org.arquivo.indexer.mapreduce;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.log4j.Logger;
 import org.archive.io.ArchiveRecord;
 import org.arquivo.indexer.data.PageData;
+import org.arquivo.indexer.data.WebArchiveKey;
 import org.arquivo.indexer.data.WritableArchiveRecord;
 import org.arquivo.indexer.parsers.WARCParser;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class HdfsPageSearchDataMapper extends Mapper<LongWritable, WritableArchiveRecord, Text, PageData> {
+public class HdfsPageSearchDataMapper extends Mapper<LongWritable, WritableArchiveRecord, WebArchiveKey, PageData> {
+
     // maps from an ArchiveRecord to a intermediate format
     private final Logger logger = Logger.getLogger(HdfsPageSearchDataMapper.class);
     private WARCParser warcParser;
+    private int graphTimeSlice;
 
     enum PagesCounters {
         RECORDS_COUNT,
@@ -30,6 +32,8 @@ public class HdfsPageSearchDataMapper extends Mapper<LongWritable, WritableArchi
     protected void setup(Context context) throws IOException, InterruptedException {
         Config conf = ConfigFactory.load();
         this.warcParser = new WARCParser(conf);
+        String graphTimePolicy = context.getConfiguration().get("GraphTimeSlice", "none");
+        this.graphTimeSlice = WebArchiveKey.keyTimeSlice(graphTimePolicy);
         super.setup(context);
     }
 
@@ -58,7 +62,8 @@ public class HdfsPageSearchDataMapper extends Mapper<LongWritable, WritableArchi
         }
 
         for (PageData doc : listDocs) {
-            context.write(new Text(doc.getId()), doc);
+            WebArchiveKey webArchiveKey = new WebArchiveKey(doc.getUrl(), doc.getTstamp().substring(0, graphTimeSlice));
+            context.write(webArchiveKey, doc);
         }
     }
 

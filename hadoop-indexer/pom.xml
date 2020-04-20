@@ -148,12 +148,6 @@
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
                             <finalName>pagesearch-indexer-${version}</finalName>
-                            <archive>
-                                <manifest>
-                                    <addClasspath>true</addClasspath>
-                                    <mainClass>org.arquivo.indexer.mapreduce.PageSearchDataDriver</mainClass>
-                                </manifest>
-                            </archive>
                         </configuration>
                         <phase>package</phase>
                         <goals>

@@ -23,8 +23,6 @@ public class InvertLinksMapper extends Mapper<WebArchiveKey, PageData, WebArchiv
     @Override
     protected void map(WebArchiveKey key, PageData value, Context context) throws IOException, InterruptedException {
 
-        String graphTimePolicy = context.getConfiguration().get("GraphTimeSlice", "none");
-
         Outlink[] outlinks = value.getOutLinks();
         for (int i = 0; i < value.getnOutLinks(); i++) {
             Outlink outlink = outlinks[i];
