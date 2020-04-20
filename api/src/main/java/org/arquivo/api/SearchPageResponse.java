@@ -1,10 +1,12 @@
 package org.arquivo.api;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.arquivo.services.SearchQuery;
 import org.arquivo.services.SearchResult;
 
 import java.util.ArrayList;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SearchPageResponse {
 
     private String serviceName;

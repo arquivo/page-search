@@ -16,6 +16,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import static java.lang.Math.abs;
+
 @RestController
 public class SearchPageController {
 
@@ -100,31 +102,46 @@ public class SearchPageController {
         searchPageResponse.setServiceName(serviceName);
         searchPageResponse.setLinkToService(linkToService);
 
-        String queryString = request.getQueryString();
-        setPagination(maxItems, offset, queryString, searchPageResponse);
-
-
         searchPageResponse.setRequestParameters(searchQuery);
         searchPageResponse.setResponseItems(searchResults.getResults());
         searchPageResponse.setEstimatedNumberResults(searchResults.getNumberEstimatedResults());
         searchPageResponse.setTotalItems(searchResults.getNumberResults());
 
+        boolean lastPage = searchResults.isLastPageResults();
+        boolean firstPage = offset == 0;
+
+        String queryString = request.getQueryString();
+        setPagination(maxItems, offset, queryString, searchPageResponse, firstPage, lastPage);
+
         return searchPageResponse;
     }
 
-    private void setPagination(int maxItems, int offset, String queryString, SearchPageResponse searchPageResponse) {
+    private void setPagination(int maxItems, int offset, String queryString, SearchPageResponse searchPageResponse,
+                               boolean firstPage, boolean lastPage) {
 
-        if (queryString.contains("offset=")) {
-            String queryStringNextPage = queryString.replace("offset=" + offset, "offset=" + (offset + maxItems));
-            searchPageResponse.setNextPage(linkToService + "/textsearch?" + queryStringNextPage);
+        int diffOffsetMaxItems = offset - maxItems;
+        int previousOffset = (offset != 0 && diffOffsetMaxItems >= 0) ? (diffOffsetMaxItems) : 0;
+        int nextOffset = offset + maxItems;
 
+        if (!lastPage) {
+            if (queryString.contains("offset=")){
+                String queryStringNextPage = queryString.replace("offset=" + offset, "offset=" + nextOffset);
+                searchPageResponse.setNextPage(linkToService + "/textsearch?" + queryStringNextPage);
+            }
+            else {
+                String queryStringNextPage = queryString.concat("&offset=" + nextOffset);
+                searchPageResponse.setNextPage(linkToService + "/textsearch?" + queryStringNextPage);
+            }
+        }
 
-            String queryStringPreviousPage = queryString.replace("offset=" + offset, "offset="
-                    + ((offset != 0) ? (offset - maxItems) : 0));
-            searchPageResponse.setPreviousPage(linkToService + "/textsearch?" + queryStringPreviousPage);
-        } else {
-            searchPageResponse.setNextPage(linkToService + "/textsearch?" + queryString + "&offset=" + maxItems);
-            searchPageResponse.setPreviousPage(linkToService + "/textsearch?" + queryString + "&offset=0");
+        if (!firstPage){
+            if (queryString.contains("offset=")){
+                String queryStringPreviousPage = queryString.replace("offset=" + offset, "offset=" + previousOffset);
+                searchPageResponse.setPreviousPage(linkToService + "/textsearch?" + queryStringPreviousPage);
+            }
+            else {
+                searchPageResponse.setPreviousPage(linkToService + "/textsearch?" + queryString + "&offset=" + previousOffset);
+            }
         }
     }
 

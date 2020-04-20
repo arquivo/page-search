@@ -6,6 +6,16 @@ public class SearchResults {
 
     private long numberEstimatedResults;
     private long numberResults;
+    private boolean lastPageResults = false;
+
+    public boolean isLastPageResults() {
+        return lastPageResults;
+    }
+
+    public void setLastPageResults(boolean lastPageResults) {
+        this.lastPageResults = lastPageResults;
+    }
+
     private ArrayList<SearchResult> results;
 
     public ArrayList<SearchResult> getResults() {
