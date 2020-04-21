@@ -4,5 +4,7 @@ This project aims to replace the legacy search system. The legacy search system,
 
 ## page-search-api
 
+![](docs/img/PageSearchArchitecture.png)
+
 
 ## page-search-indexer
