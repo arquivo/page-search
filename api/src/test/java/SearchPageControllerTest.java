@@ -64,13 +64,12 @@ public class SearchPageControllerTest {
         MockHttpServletResponse response = result.getResponse();
         JSONObject jsonResponse = new JSONObject(response.getContentAsString());
         assertThat(jsonResponse.getInt("totalItems")).isEqualTo(2);
-        assertThat(jsonResponse.getString("previousPage")).isEqualTo("http://localhost:8080/textsearch?q=sapo&offset=0");
-        assertThat(jsonResponse.getString("nextPage")).isEqualTo("http://localhost:8080/textsearch?q=sapo&offset=50");
+        assertThat(jsonResponse.getString("next_page")).isEqualTo("http://localhost:8080/textsearch?q=sapo&offset=50");
 
-        JSONArray jsonArray = jsonResponse.getJSONArray("responseItems");
+        JSONArray jsonArray = jsonResponse.getJSONArray("response_items");
         assertThat(jsonArray.length()).isEqualTo(2);
         assertThat(jsonArray.getJSONObject(0).getString("title")).isEqualTo("test result 1");
-        assertThat(jsonResponse.getInt("estimatedNumberResults")).isEqualTo(10);
+        assertThat(jsonResponse.getInt("estimated_nr_results")).isEqualTo(10);
         assertThat(jsonResponse.getString("serviceName")).isNotBlank();
         assertThat(jsonResponse.getString("linkToService")).isNotBlank();
     }

@@ -26,7 +26,6 @@ public class NutchWaxSearchService implements SearchService {
     private static final Log LOG = LogFactory.getLog(NutchWaxSearchService.class);
 
     private final int searcherMaxHits;
-    private int numberResultsRanked;
     private Configuration conf;
     private NutchwaxBean bean;
 
@@ -53,7 +52,6 @@ public class NutchWaxSearchService implements SearchService {
     public NutchWaxSearchService() throws IOException {
         this.conf = NutchwaxConfiguration.getConfiguration();
         conf.addFinalResource("wax-default.xml");
-        this.numberResultsRanked = Integer.parseInt(this.conf.get(Global.MAX_FULLTEXT_MATCHES_RANKED));
         this.bean = new NutchwaxBean(conf);
         this.searcherMaxHits = Integer.parseInt(this.conf.get(Global.MAX_FULLTEXT_MATCHES_RETURNED));
     }
@@ -76,11 +74,12 @@ public class NutchWaxSearchService implements SearchService {
         if (limit < 0) {
             limit = 0;
         }
-        if (limit > numberResultsRanked) {
-            limit = numberResultsRanked;
-        }
 
         int numberOfHits = searchQuery.getOffset() + limit;
+
+        if (searchQuery.getOffset() >= searcherMaxHits){
+            searchQuery.setOffset(searcherMaxHits);
+        }
 
         int hitsPerDup = searchQuery.getLimitPerSite();
 
@@ -152,18 +151,19 @@ public class NutchWaxSearchService implements SearchService {
                     hitsPerDup, "site", null, false,
                     PwaFunctionsWritable.parse(conf.get(Global.RANKING_FUNCTIONS)), 1);
 
-            hits.setTotalIsExact(true);
-
+            // lastPage Condition
+            results.setLastPageResults(hits.getLength() <= searchQuery.getOffset() + limit);
             results.setNumberEstimatedResults(hits.getTotal());
 
             // build SearchResults
             if (hits.getLength() >= 1) {
-                Hit[] show = hits.getHits(searchQuery.getOffset(), limit);
+                int end = Math.min(hits.getLength() - searchQuery.getOffset(), limit);
+                Hit[] show = hits.getHits(searchQuery.getOffset(), end);
                 HitDetails[] details = bean.getDetails(show);
                 Summary[] summaries = bean.getSummary(details, query);
                 results.setNumberResults(hits.getLength());
 
-                for (int i = 0; i < limit; i++) {
+                for (int i = 0; i < end; i++) {
                     SearchResultImpl searchResult = new SearchResultImpl();
                     populateSearchResult(searchResult, details[i], summaries[i]);
                     populateEndpointsLinks(searchResult);
@@ -183,7 +183,7 @@ public class NutchWaxSearchService implements SearchService {
     private void populateSearchResult(SearchResultImpl searchResult, HitDetails detail, Summary summary) {
         searchResult.setTitle(detail.getValue("title"));
         searchResult.setOriginalURL(detail.getValue("url"));
-        searchResult.setTimeStamp(Long.parseLong(this.parseTimeStamp(detail.getValue("tstamp").substring(0, 14))));
+        searchResult.setTstamp(Long.parseLong(this.parseTimeStamp(detail.getValue("tstamp").substring(0, 14))));
         searchResult.setContentLength(Long.parseLong(detail.getValue("contentLength")));
         searchResult.setDigest(detail.getValue("digest"));
         searchResult.setMimeType(detail.getValue("primaryType").concat("/").concat(detail.getValue("subType")));
@@ -200,18 +200,18 @@ public class NutchWaxSearchService implements SearchService {
 
     private void populateEndpointsLinks(SearchResultImpl searchResult) {
         searchResult.setLinkToArchive(waybackServiceEndpoint +
-                "/" + searchResult.getTimeStamp() +
+                "/" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
 
         searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
                 "?url=" + searchResult.getLinkToArchive());
 
         searchResult.setLinkToNoFrame(waybackNoFrameServiceEndpoint +
-                "/" + searchResult.getTimeStamp() +
+                "/" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
 
         searchResult.setLinkToExtractedText(extractedTextServiceEndpoint +
-                "?m=" + searchResult.getTimeStamp() +
+                "?m=" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
     }
 

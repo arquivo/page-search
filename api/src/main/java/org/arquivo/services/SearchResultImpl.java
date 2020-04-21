@@ -17,7 +17,7 @@ public class SearchResultImpl implements SearchResult {
     private String title;
     private String originalURL;
     private String linkToArchive;
-    private long timeStamp;
+    private String tstamp;
     private long contentLength;
     private String digest;
     private String mimeType;
@@ -60,13 +60,15 @@ public class SearchResultImpl implements SearchResult {
         this.linkToArchive = linkToArchive;
     }
 
-    public long getTimeStamp() {
-        return timeStamp;
+    public String getTstamp() {
+        return tstamp;
     }
 
-    public void setTimeStamp(long timeStamp) {
-        this.timeStamp = timeStamp;
+    public void setTstamp(long tstamp) {
+        this.tstamp = String.valueOf(tstamp);
     }
+
+    public void setTimeStamp(String timeStamp) { this.tstamp = timeStamp; }
 
     public long getContentLength() {
         return contentLength;

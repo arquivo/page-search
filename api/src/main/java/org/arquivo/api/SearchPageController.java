@@ -75,6 +75,7 @@ public class SearchPageController {
     }
 
     // TODO default values to configuration file
+    @CrossOrigin
     @RequestMapping(value = "/textsearch", method = {RequestMethod.GET})
     public @ResponseBody
     SearchPageResponse pageSearch(@RequestParam(value = "q") String query,

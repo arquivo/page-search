@@ -58,18 +58,18 @@ public class SolrSearchService implements SearchService {
 
     private void populateEndpointsLinks(SearchResultImpl searchResult) {
         searchResult.setLinkToArchive(waybackServiceEndpoint +
-                "/" + searchResult.getTimeStamp() +
+                "/" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
 
         searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
                 "?url=" + searchResult.getLinkToArchive());
 
         searchResult.setLinkToNoFrame(waybackNoFrameServiceEndpoint +
-                "/" + searchResult.getTimeStamp() +
+                "/" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
 
         searchResult.setLinkToExtractedText(extractedTextServiceEndpoint +
-                "?m=" + searchResult.getTimeStamp() +
+                "?m=" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
     }
 
@@ -163,7 +163,7 @@ public class SolrSearchService implements SearchService {
             searchResult.setTitle((String) doc.getFieldValue("title"));
             searchResult.setOriginalURL((String) doc.getFieldValue("url"));
             searchResult.setMimeType((String) doc.getFieldValue("type"));
-            searchResult.setTimeStamp((Long) doc.getFieldValue("tstamp"));
+            searchResult.setTstamp((Long) doc.getFieldValue("tstamp"));
             searchResult.setOffset((Long) doc.getFieldValue("warc_offset"));
             searchResult.setFileName((String) doc.getFieldValue("warc_name"));
             searchResult.setCollection((String) doc.getFieldValue("collection"));

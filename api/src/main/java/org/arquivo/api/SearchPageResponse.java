@@ -1,6 +1,7 @@
 package org.arquivo.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.arquivo.services.SearchQuery;
 import org.arquivo.services.SearchResult;
 
@@ -11,12 +12,21 @@ public class SearchPageResponse {
 
     private String serviceName;
     private String linkToService;
+
+    @JsonProperty("next_page")
     private String nextPage;
+
+    @JsonProperty("previous_page")
     private String previousPage;
     private long totalItems;
+
+    @JsonProperty("estimated_nr_results")
     private long estimatedNumberResults;
+
+    @JsonProperty("request_parameters")
     private SearchQuery requestParameters;
 
+    @JsonProperty("response_items")
     private ArrayList<SearchResult> responseItems;
 
     public String getServiceName() {

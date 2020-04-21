@@ -97,7 +97,7 @@
     </repositories>
 
     <properties>
-        <start-class>org.arquivo.api.SearchPageApplicatio</start-class>
+        <start-class>org.arquivo.api.SearchPageApplication</start-class>
     </properties>
 
     <build>

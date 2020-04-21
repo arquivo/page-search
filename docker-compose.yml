@@ -15,7 +15,9 @@ services:
     build: ./api
     container_name: api
     ports:
-      - "8080:8080"
+      - "8081:8081"
+    volumes:
+      - ./target/api-1.0.1-SNAPSHOT.jar:./app/api.jar
 
 #  webapp:
 

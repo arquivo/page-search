@@ -68,7 +68,7 @@ public class WebArchiveKey implements WritableComparable<WebArchiveKey> {
             case "year":
                 graphTimeSlice = 4;
                 break;
-            case "montly":
+            case "monthly":
                 graphTimeSlice = 6;
                 break;
             case "daily":
