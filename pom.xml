@@ -35,9 +35,9 @@
    </issueManagement>
 
    <scm>
-      <connection>scm:git:git@github.com:arquivo/pagesearch.git</connection>
-      <developerConnection>scm:git:git@github.com:arquivo/pagesearch.git</developerConnection>
-      <url>git@github.com:arquivo/pagesearch.git</url>
+      <connection>scm:git:git@github.com:arquivo/page-search.git</connection>
+      <developerConnection>scm:git:git@github.com:arquivo/page-search.git</developerConnection>
+      <url>git@github.com:arquivo/page-search.git</url>
       <tag>@{project.version}</tag>
    </scm>
 
