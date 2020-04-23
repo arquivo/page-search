@@ -1,5 +1,6 @@
 package pt.arquivo.api;
 
+import pt.arquivo.services.cdx.CDXSearchService;
 import pt.arquivo.services.solr.SolrSearchService;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.nutchwax.NutchWaxSearchService;
@@ -11,6 +12,11 @@ import java.io.IOException;
 
 @SpringBootApplication
 public class SearchPageApplication {
+
+    @Bean
+    CDXSearchService generateCDXSearchService() throws IOException{
+        return new CDXSearchService();
+    }
 
     @Bean
     SearchService generateService() throws IOException {

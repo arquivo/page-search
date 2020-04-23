@@ -144,27 +144,26 @@ public class SearchQueryImpl implements SearchQuery {
         this.fields = fields;
     }
 
-//    @Override
-//    public String toString() {
-//        StringBuilder strFieldsBuilder = new StringBuilder();
-//        if (fields != null) {
-//            for (String field : fields) {
-//                strFieldsBuilder.append(field);
-//                strFieldsBuilder.append(",");
-//            }
-//        }
-//
-//        StringBuilder stringBuilderSite = new StringBuilder();
-//        for (int i = 0; i < site.length; i++) {
-//                stringBuilderSite.append(site[i]);
-//                if (i != site.length - 1){
-//                    stringBuilderSite.append(",");
-//                }
-//        }
-//
-//        String strFields = strFieldsBuilder.toString().substring(0, strFieldsBuilder.length() - 1);
-//        return "TextSearchRequestParameters [queryTerms=" + queryTerms + ", offset=" + offset + ", maxitems=" + maxItems
-//                + ", limitPerSite=" + limitPerSite + ", from=" + from + ", to=" + to + ", type="
-//                + type + ", site=" + stringBuilderSite.toString() + ", collection=" + collection + ", fields=" + strFields + ", prettyPrint=" + prettyPrint + "]";
-//    }
+    public String toString(){
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("q: ").append(this.queryTerms);
+        stringBuilder.append(" offset: ").append(this.offset);
+        stringBuilder.append(" maxItems: ").append(this.maxItems);
+        stringBuilder.append(" itemsPerSite: ").append(this.limitPerSite);
+        stringBuilder.append(" from: ").append(this.from);
+        stringBuilder.append(" to: ").append(this.to);
+        stringBuilder.append(" type: ").append(this.type);
+        if (this.site != null){
+            for (int i = 0; i < this.site.length; i++){
+                stringBuilder.append(" site: ").append(this.site[i]);
+            }
+        }
+        else {
+            stringBuilder.append(" site: ").append(this.site);
+        }
+        stringBuilder.append(" collection: ").append(this.collection);
+        stringBuilder.append(" prettyPrint: ").append(this.prettyPrint);
+        return stringBuilder.toString();
+    }
+
 }

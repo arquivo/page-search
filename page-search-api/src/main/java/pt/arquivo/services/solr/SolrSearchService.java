@@ -182,6 +182,11 @@ public class SolrSearchService implements SearchService {
         return searchResults;
     }
 
+    @Override
+    public SearchResults query(SearchQuery searchQuery, boolean urlSearch){
+        return query(searchQuery);
+    }
+
     // TODO Which SearchQuery to use? apparently we can still use the same as NutchWaxSearchQuery
     @Override
     public SearchResults query(SearchQuery searchQuery) {

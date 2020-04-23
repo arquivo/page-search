@@ -5,10 +5,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import pt.arquivo.services.SearchResult;
-import pt.arquivo.services.SearchResults;
-import pt.arquivo.services.SearchResultImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import pt.arquivo.services.*;
 import org.springframework.beans.factory.annotation.Value;
+import pt.arquivo.services.nutchwax.NutchWaxSearchService;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
@@ -31,7 +32,10 @@ public class CDXSearchService {
     private final String keyDigest = "digest";
     private final String keyMimeType = "mime";
 
-    @Value("${searchpages.api.globaltimeout.ms }")
+    @Autowired
+    private SearchService searchService;
+
+    @Value("${searchpages.api.globaltimeout.ms}")
     private int timeoutreadConn;
 
     @Value("${wayback.service.cdx.timeout}")
@@ -40,11 +44,24 @@ public class CDXSearchService {
     @Value("${wayback.service.cdx.endpoint}")
     private String waybackCdxEndpoint;
 
+    @Value("${screenshot.service.endpoint}")
+    private String screenshotServiceEndpoint;
+
+    @Value("${wayback.service.endpoint}")
+    private String waybackServiceEndpoint;
+
+    @Value("${wayback.noframe.service.endpoint}")
+    private String waybackNoFrameServiceEndpoint;
+
+    @Value("${searchpages.extractedtext.service.link}")
+    private String extractedTextServiceEndpoint;
+
     public SearchResults getResults(String url, String from, String to, int limitP, int start) {
         Gson gson = new Gson();
-        SearchResults searchResults = new SearchResults();
+        SearchResults searchResultsResponse = new SearchResults();
 
-        ArrayList<SearchResult> results = new ArrayList<>();
+        ArrayList<ItemCDX> cdxResults = new ArrayList<>();
+        ArrayList<SearchResult> searchResults = new ArrayList<>();
 
         String urlCDX = generateCdxQuery(url, from, to);
         int counter = 0;
@@ -67,12 +84,40 @@ public class CDXSearchService {
                     continue;
                 }
 
-                SearchResult searchResult = gson.fromJson(jsonValues.get(i), SearchResultImpl.class);
-                results.add(searchResult);
+                cdxResults.add(gson.fromJson(jsonValues.get(i), ItemCDX.class));
             }
-            searchResults.setResults(results);
 
-            return searchResults;
+            // searchResults.setResults(results);
+            // check if we can get more information through the TextSearch API
+            for (ItemCDX result : cdxResults){
+                SearchResultImpl searchResult = new SearchResultImpl();
+               // text search api
+                SearchQuery urlSearchQuery = new SearchQueryImpl(result.getUrl());
+                urlSearchQuery.setLimit(1);
+                urlSearchQuery.setFrom(result.getTimestamp());
+                urlSearchQuery.setTo(result.getTimestamp());
+
+                SearchResults textSearchResults = searchService.query(urlSearchQuery, true);
+                if (textSearchResults.getNumberResults() > 0){
+                    LOG.debug("CDX record matched with full-text index.." +  result.getUrl());
+                    SearchResultImpl searchResultText = (SearchResultImpl) textSearchResults.getResults().get(0);
+                    searchResult.setTitle(searchResultText.getTitle());
+                    searchResult.setCollection(searchResultText.getCollection());
+                    searchResult.setEncoding(searchResultText.getEncoding());
+                    populateEndpointsLinks(searchResult, true);
+                }
+                else {
+                    searchResult.setTitle(result.getUrl());
+                    populateEndpointsLinks(searchResult, false);
+                }
+                searchResult.setFileName(result.getFilename());
+                searchResult.setOffset(Long.parseLong(result.getOffset()));
+                // TODO SANITY CHECK HERE with the digest
+                searchResult.setDigest(result.getDigest());
+                searchResult.setMimeType(result.getMime());
+                searchResults.add(searchResult);
+            }
+            return searchResultsResponse;
 
         } catch (Exception e) {
             LOG.debug("[getResults] URL[" + urlCDX + "] e ", e);
@@ -81,9 +126,17 @@ public class CDXSearchService {
     }
 
     private String generateCdxQuery(String url, String from, String to) {
+        if (from == null) {
+            from = "";
+        }
+        if (to == null){
+            to = "";
+        }
+
         LOG.info("[CDXParser][getLink] url[" + url + "] from[" + from + "] to[" + to + "]");
         String urlEncoded = "";
         try {
+            // FIX THIS encode or escape? xD
             urlEncoded = URLEncoder.encode(url, "UTF-8");
         } catch (UnsupportedEncodingException un) {
             LOG.error(un);
@@ -135,10 +188,10 @@ public class CDXSearchService {
             } else {
                 con = url.openConnection();
             }
-            con.setConnectTimeout(timeoutConn);//3 sec
+            con.setConnectTimeout(timeoutConn);
 
             // set this to a globaltimeout equal to all services
-            con.setReadTimeout(timeoutreadConn);//5 sec
+            con.setReadTimeout(timeoutreadConn);
 
             is = con.getInputStream();
             BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
@@ -176,5 +229,24 @@ public class CDXSearchService {
             json.add(o);
         }
         return json;
+    }
+
+    private void populateEndpointsLinks(SearchResultImpl searchResult, boolean textMatch) {
+        searchResult.setLinkToArchive(waybackServiceEndpoint +
+                "/" + searchResult.getTstamp() +
+                "/" + searchResult.getOriginalURL());
+
+        searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
+                "?url=" + searchResult.getLinkToArchive());
+
+        searchResult.setLinkToNoFrame(waybackNoFrameServiceEndpoint +
+                "/" + searchResult.getTstamp() +
+                "/" + searchResult.getOriginalURL());
+
+        if (textMatch){
+            searchResult.setLinkToExtractedText(extractedTextServiceEndpoint +
+                    "?m=" + searchResult.getTstamp() +
+                    "/" + searchResult.getOriginalURL());
+        }
     }
 }
