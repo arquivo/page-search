@@ -99,7 +99,7 @@
     -->
 
     <properties>
-        <start-class>pt.arquivo.api.SearchPageApplication</start-class>
+        <start-class>pt.arquivo.api.PageSearchApplication</start-class>
     </properties>
 
     <build>
@@ -109,7 +109,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.2.4.RELEASE</version>
                 <configuration>
-                    <mainClass>pt.arquivo.api.SearchPageApplication</mainClass>
+                    <mainClass>pt.arquivo.api.PageSearchApplication</mainClass>
                     <layout>ZIP</layout>
                 </configuration>
             </plugin>

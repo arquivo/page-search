@@ -25,10 +25,10 @@ import java.util.ArrayList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-@SpringBootTest(classes = SearchPageApplication.class)
+@SpringBootTest(classes = PageSearchApplication.class)
 @AutoConfigureMockMvc
 @RunWith(SpringRunner.class)
-public class SearchPageControllerTest {
+public class PageSearchControllerTest {
 
     @MockBean
     private SearchService searchService;

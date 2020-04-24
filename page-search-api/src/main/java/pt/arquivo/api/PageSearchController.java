@@ -11,12 +11,11 @@ import pt.arquivo.utils.Utils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 @RestController
-public class SearchPageController {
+public class PageSearchController {
 
-    private static final Log LOG = LogFactory.getLog(SearchPageController.class);
+    private static final Log LOG = LogFactory.getLog(PageSearchController.class);
 
     @Value("${searchpages.api.servicename}")
     private String serviceName;
@@ -30,48 +29,46 @@ public class SearchPageController {
     @Autowired
     private SearchService searchService;
 
-    public @ResponseBody
-    SearchPageResponse getMetadata() {
-        return null;
-    }
 
+
+    // TODO add PathParam
     @RequestMapping(value = {"/urlsearch"}, method = {RequestMethod.GET})
     public @ResponseBody
-    SearchPageResponse searchUrl(@RequestParam(value = "url") String url,
+    ApiResponse searchUrl(@RequestParam(value = "url") String url,
                                  @RequestParam(value = "from", required = false) String from,
                                  @RequestParam(value = "to", required = false) String to,
                                  @RequestParam(value = "maxItems", required = false) int limit,
                                  @RequestParam(value = "offset", required = false) int start,
                                     HttpServletRequest request) {
 
-        SearchPageResponse searchPageResponse = new SearchPageResponse();
+        PageSearchResponse pageSearchResponse = new PageSearchResponse();
         SearchResults searchResults = cdxSearchService.getResults(url, from, to, limit, start);
-        searchPageResponse.setResponseItems(searchResults.getResults());
+        pageSearchResponse.setResponseItems(searchResults.getResults());
 
-        searchPageResponse.setServiceName(serviceName);
-        searchPageResponse.setLinkToService(linkToService);
+        pageSearchResponse.setServiceName(serviceName);
+        pageSearchResponse.setLinkToService(linkToService);
 
-        setPagination(limit, start, request.getQueryString(), searchPageResponse, true, true);
+        setPagination(limit, start, request.getQueryString(), pageSearchResponse, true, true);
 
-        return searchPageResponse;
+        return pageSearchResponse;
     }
 
     @RequestMapping(value = "/extractedtext", method = {RequestMethod.GET})
-    public String extractedText(@RequestParam(value = "m") String metadata) {
-        LOG.info("Getting extracted: " + metadata);
+    public String extractedText(@RequestParam(value = "m") String id) {
+        LOG.info("Getting extracted: " + id);
         String extractedText = "";
 
-        String versionId = metadata.split(" ")[0];
-        int idx = versionId.indexOf("/");
+        int idx = id.indexOf("/");
         if (idx > 0) {
-            String[] versionIdSplited = {versionId.substring(0, idx), versionId.substring(idx + 1)};
+            String[] versionIdSplited = {id.substring(0, idx), id.substring(idx + 1)};
             if (metadataValidator(versionIdSplited)) {
 
-                String extractUrl = versionIdSplited[1];
+                String timeStamp = versionIdSplited[0];
+                String url = versionIdSplited[1];
 
-                SearchQuery searchQuery = new SearchQueryImpl(extractUrl);
-                searchQuery.setFrom(versionIdSplited[0]);
-                searchQuery.setTo(versionIdSplited[0]);
+                SearchQuery searchQuery = new SearchQueryImpl(url);
+                searchQuery.setFrom(timeStamp);
+                searchQuery.setTo(timeStamp);
                 searchQuery.setLimit(1);
 
                 SearchResults searchResults = searchService.query(searchQuery, true);
@@ -83,12 +80,44 @@ public class SearchPageController {
         return extractedText;
     }
 
+    @CrossOrigin
+    @RequestMapping(value = {"/metadata"}, method = {RequestMethod.GET})
+    ApiResponse getMetadata(@RequestParam(value = "metadata") String id){
+        LOG.info("Getting metadata for: " + id);
+        ArrayList<SearchResult> searchResultsArray = new ArrayList<>();
+
+        int idx = id.indexOf("/");
+        if (idx > 0){
+            String[] versionIdSplited = {id.substring(0, idx), id.substring(idx + 1)};
+            if (metadataValidator(versionIdSplited)){
+                String timeStamp = versionIdSplited[0];
+                String url = versionIdSplited[1];
+
+                SearchQuery searchQuery = new SearchQueryImpl(url);
+                searchQuery.setFrom(timeStamp);
+                searchQuery.setTo(timeStamp);
+                searchQuery.setLimit(1);
+
+                SearchResults searchResults = searchService.query(searchQuery, true);
+                searchResultsArray = searchResults.getResults();
+            }
+        }
+
+        MetadataResponse metadataResponse = new MetadataResponse();
+        metadataResponse.setLinkToService(linkToService);
+        metadataResponse.setServiceName(serviceName);
+        metadataResponse.setResponseItems(searchResultsArray);
+
+        return metadataResponse;
+    }
+
     // TODO default values to configuration file
     @CrossOrigin
     @RequestMapping(value = "/textsearch", method = {RequestMethod.GET})
     public @ResponseBody
-    SearchPageResponse pageSearch(@RequestParam(value = "q", required = false) String query,
+    ApiResponse pageSearch(@RequestParam(value = "q", required = false) String query,
                                   @RequestParam(value = "versionHistory", required = false) String url,
+                                  @RequestParam(value = "metadata", required = false) String id,
                                   @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
                                   @RequestParam(value = "maxItems", required = false, defaultValue = "50") int maxItems,
                                   @RequestParam(value = "siteSearch", required = false) String[] siteSearch,
@@ -105,7 +134,10 @@ public class SearchPageController {
         // TODO need to do this verification since versionHistory is merged on the term search.... what a nice idea... remove it on the next API version, when versionHistory is removed from here
         if (url != null) {
             return searchUrl(url, from, to, maxItems, offset, request);
-        } else if (query == null) {
+        } else if (id != null) {
+            return getMetadata(id);
+        }
+        else if (query == null) {
             // TODO break API with illegal call
         }
 
@@ -115,26 +147,26 @@ public class SearchPageController {
         SearchResults searchResults;
         searchResults = searchService.query(searchQuery);
 
-        SearchPageResponse searchPageResponse = new SearchPageResponse();
+        PageSearchResponse pageSearchResponse = new PageSearchResponse();
 
-        searchPageResponse.setServiceName(serviceName);
-        searchPageResponse.setLinkToService(linkToService);
+        pageSearchResponse.setServiceName(serviceName);
+        pageSearchResponse.setLinkToService(linkToService);
 
-        searchPageResponse.setRequestParameters(searchQuery);
-        searchPageResponse.setResponseItems(searchResults.getResults());
-        searchPageResponse.setEstimatedNumberResults(searchResults.getNumberEstimatedResults());
-        searchPageResponse.setTotalItems(searchResults.getNumberResults());
+        pageSearchResponse.setRequestParameters(searchQuery);
+        pageSearchResponse.setResponseItems(searchResults.getResults());
+        pageSearchResponse.setEstimatedNumberResults(searchResults.getNumberEstimatedResults());
+        pageSearchResponse.setTotalItems(searchResults.getNumberResults());
 
         boolean lastPage = searchResults.isLastPageResults();
         boolean firstPage = offset <= 0;
 
         String queryString = request.getQueryString();
-        setPagination(maxItems, offset, queryString, searchPageResponse, firstPage, lastPage);
+        setPagination(maxItems, offset, queryString, pageSearchResponse, firstPage, lastPage);
 
-        return searchPageResponse;
+        return pageSearchResponse;
     }
 
-    private void setPagination(int maxItems, int offset, String queryString, SearchPageResponse searchPageResponse,
+    private void setPagination(int maxItems, int offset, String queryString, PageSearchResponse pageSearchResponse,
                                boolean firstPage, boolean lastPage) {
 
         int diffOffsetMaxItems = offset - maxItems;
@@ -144,25 +176,25 @@ public class SearchPageController {
         if (!lastPage) {
             if (queryString.contains("offset=")) {
                 String queryStringNextPage = queryString.replace("offset=" + offset, "offset=" + nextOffset);
-                searchPageResponse.setNextPage(linkToService + "/textsearch?" + queryStringNextPage);
+                pageSearchResponse.setNextPage(linkToService + "/textsearch?" + queryStringNextPage);
             } else {
                 String queryStringNextPage = queryString.concat("&offset=" + nextOffset);
-                searchPageResponse.setNextPage(linkToService + "/textsearch?" + queryStringNextPage);
+                pageSearchResponse.setNextPage(linkToService + "/textsearch?" + queryStringNextPage);
             }
         }
 
         if (!firstPage) {
             if (queryString.contains("offset=")) {
                 String queryStringPreviousPage = queryString.replace("offset=" + offset, "offset=" + previousOffset);
-                searchPageResponse.setPreviousPage(linkToService + "/textsearch?" + queryStringPreviousPage);
+                pageSearchResponse.setPreviousPage(linkToService + "/textsearch?" + queryStringPreviousPage);
             } else {
-                searchPageResponse.setPreviousPage(linkToService + "/textsearch?" + queryString + "&offset=" + previousOffset);
+                pageSearchResponse.setPreviousPage(linkToService + "/textsearch?" + queryString + "&offset=" + previousOffset);
             }
         }
     }
 
     private static boolean metadataValidator(String[] versionIdsplited) {
-        LOG.info("metadata versionId[0][" + versionIdsplited[0] + "] versionId[1][" + versionIdsplited[1] + "]");
+        LOG.debug("metadata versionId[0][" + versionIdsplited[0] + "] versionId[1][" + versionIdsplited[1] + "]");
         if (Utils.urlValidator(versionIdsplited[1]) && versionIdsplited[0].matches("[0-9]+"))
             return true;
         else

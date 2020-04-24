@@ -54,6 +54,9 @@ public class NutchWaxSearchService implements SearchService {
     @Value("${searchpages.extractedtext.service.link}")
     private String extractedTextServiceEndpoint;
 
+    @Value("${searchpages.textsearch.service.link}")
+    private String textSearchServiceEndpoint;
+
     public NutchWaxSearchService() throws IOException {
         this.conf = NutchwaxConfiguration.getConfiguration();
         conf.addFinalResource("wax-default.xml");
@@ -66,8 +69,8 @@ public class NutchWaxSearchService implements SearchService {
     }
 
     @Override
-    public SearchResults query(SearchQuery searchQuery, boolean searchUrl){
-        if (searchUrl){
+    public SearchResults query(SearchQuery searchQuery, boolean searchUrl) {
+        if (searchUrl) {
             String queryTerms = searchQuery.getQueryTerms();
             try {
                 searchQuery.setQueryTerms(encodeVersionHistory(queryTerms));
@@ -237,6 +240,9 @@ public class NutchWaxSearchService implements SearchService {
         searchResult.setLinkToExtractedText(extractedTextServiceEndpoint +
                 "?m=" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
+
+        searchResult.setLinkToMetadata(textSearchServiceEndpoint.concat("?metadata=")
+                .concat(searchResult.getTstamp()).concat("/").concat(searchResult.getOriginalURL()));
     }
 
     private String parseTimeStamp(String tstamp) {
@@ -272,12 +278,8 @@ public class NutchWaxSearchService implements SearchService {
     public static String encodeVersionHistory(String versionHistory) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("MD5");
         StringBuffer sb = new StringBuffer(versionHistory.length());
-        // LOGGER.info( "[encodeVersionHistory] versionHistory " + versionHistory );
         String urls[] = EntryPageExpansion.expandhttpAndhttps(versionHistory);
-        // LOGGER.info( "[encodeVersionHistory] urls.length[ "+urls.length+" ]" );
-        // sb.append(versionHistory);
         for (int i = 0; i < urls.length; i++) {
-            //LOGGER.info( "[encodeVersionHistory] url[ "+urls[ i ]+" ] to encoded" );
             String encoded = Base32.encode(md.digest(urls[i].getBytes()));
             if (encoded != null && !encoded.equals(""))
                 sb.append(" exacturl:").append(encoded);
