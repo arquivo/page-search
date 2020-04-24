@@ -58,6 +58,7 @@ public class SearchPageController {
 
     @RequestMapping(value = "/extractedtext", method = {RequestMethod.GET})
     public String extractedText(@RequestParam(value = "m") String metadata) {
+        LOG.info("Getting extracted: " + metadata);
         String extractedText = "";
 
         String versionId = metadata.split(" ")[0];
@@ -66,16 +67,14 @@ public class SearchPageController {
             String[] versionIdSplited = {versionId.substring(0, idx), versionId.substring(idx + 1)};
             if (metadataValidator(versionIdSplited)) {
 
-                // TODO should use the waybackQuery = true
                 String extractUrl = versionIdSplited[1];
 
-                String dateLucene = "date:".concat(versionIdSplited[0].concat(" "));
-                String qLucene = dateLucene.concat(extractUrl);
-
-                SearchQuery searchQuery = new SearchQueryImpl(qLucene);
+                SearchQuery searchQuery = new SearchQueryImpl(extractUrl);
+                searchQuery.setFrom(versionIdSplited[0]);
+                searchQuery.setTo(versionIdSplited[0]);
                 searchQuery.setLimit(1);
 
-                SearchResults searchResults = searchService.query(searchQuery);
+                SearchResults searchResults = searchService.query(searchQuery, true);
 
                 ArrayList<SearchResult> searchResultsArray = searchResults.getResults();
                 extractedText = searchResultsArray.get(0).getExtractedText();
