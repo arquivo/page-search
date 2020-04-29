@@ -64,6 +64,12 @@ public class NutchWaxSearchService implements SearchService {
         this.searcherMaxHits = Integer.parseInt(this.conf.get(Global.MAX_FULLTEXT_MATCHES_RETURNED));
     }
 
+    // TODO review this
+    public void setBeans(NutchwaxBean bean){
+        this.bean = bean;
+    }
+
+
     private boolean isTimeBoundedQuery(SearchQuery searchQuery) {
         return (searchQuery.getTo() != null || searchQuery.getFrom() != null);
     }
@@ -81,37 +87,22 @@ public class NutchWaxSearchService implements SearchService {
         }
         SearchResults searchResults = new SearchResults();
         searchResults.setNumberResults(0);
-        searchResults.setNumberEstimatedResults(0);
+        searchResults.setEstimatedNumberResults(0);
         return searchResults;
     }
 
-    @Override
-    public SearchResults query(SearchQuery searchQuery) {
-        SearchResults results = new SearchResults();
-        ArrayList<SearchResult> searchResults = new ArrayList<>();
-
+    private String buildNutchwaxQueryString(SearchQuery searchQuery){
         StringBuilder queryString = new StringBuilder();
 
         String queryTerms = searchQuery.getQueryTerms();
-        boolean urlSearchQuery = Utils.urlValidator(queryTerms.split(" ")[0]);
         queryString.append(queryTerms);
-
-        int limit = searchQuery.getLimit();
-        if (limit < 0) {
-            limit = 0;
-        }
-
-        int numberOfHits = searchQuery.getOffset() + limit;
 
         if (searchQuery.getOffset() >= searcherMaxHits) {
             searchQuery.setOffset(searcherMaxHits);
         }
 
-        int hitsPerDup = searchQuery.getLimitPerSite();
-
         String[] siteParameter = searchQuery.getSite();
         if (siteParameter != null) {
-            hitsPerDup = 0;
             for (int i = 0; i < siteParameter.length; i++) {
                 LOG.debug("siteP = " + siteParameter[i]);
                 if (siteParameter[i].equals(""))
@@ -170,21 +161,43 @@ public class NutchWaxSearchService implements SearchService {
             }
             queryString.append(" date:".concat(searchQuery.getFrom()).concat("-").concat(searchQuery.getTo()));
         }
+        return queryString.toString();
+    }
+
+    public static boolean isLastPage(int numberOfResults, SearchQuery searchQuery){
+        return numberOfResults <= searchQuery.getOffset() + searchQuery.getLimit();
+    }
+
+
+    @Override
+    public SearchResults query(SearchQuery searchQuery) {
+        SearchResults results = new SearchResults();
+        ArrayList<SearchResult> searchResults = new ArrayList<>();
+
+        boolean urlSearchQuery = Utils.urlValidator(searchQuery.getQueryTerms().split(" ")[0]);
+
+        int hitsPerDup = searchQuery.getLimitPerSite();
+        if (searchQuery.getSite() != null){
+            hitsPerDup = 0;
+        }
+
+        int numberOfHits = searchQuery.getOffset() + searchQuery.getLimit();
+
+        String nutchwaxQueryString = buildNutchwaxQueryString(searchQuery);
 
         try {
-            Query query = Query.parse(queryString.toString(), conf);
+            Query query = Query.parse(nutchwaxQueryString, conf);
             LOG.info("Executing query: " + query);
             Hits hits = bean.search(query, numberOfHits, searcherMaxHits,
                     hitsPerDup, "site", null, false,
                     PwaFunctionsWritable.parse(conf.get(Global.RANKING_FUNCTIONS)), 1, urlSearchQuery);
 
-            // lastPage Condition
-            results.setLastPageResults(hits.getLength() <= searchQuery.getOffset() + limit);
-            results.setNumberEstimatedResults(hits.getTotal());
+            results.setLastPageResults(isLastPage(hits.getLength(), searchQuery));
+            results.setEstimatedNumberResults(hits.getTotal());
 
             // build SearchResults
             if (hits.getLength() >= 1) {
-                int end = Math.min(hits.getLength() - searchQuery.getOffset(), limit);
+                int end = Math.min(hits.getLength() - searchQuery.getOffset(), searchQuery.getLimit());
                 Hit[] show = hits.getHits(searchQuery.getOffset(), end);
                 HitDetails[] details = bean.getDetails(show);
                 Summary[] summaries = bean.getSummary(details, query);
@@ -255,7 +268,7 @@ public class NutchWaxSearchService implements SearchService {
         }
     }
 
-    private String buildSnippet(Summary summary) {
+    private static String buildSnippet(Summary summary) {
         if (summary != null) {
             StringBuffer sum = new StringBuffer();
             Summary.Fragment[] fragments = summary.getFragments();
@@ -275,7 +288,7 @@ public class NutchWaxSearchService implements SearchService {
         return "";
     }
 
-    public static String encodeVersionHistory(String versionHistory) throws NoSuchAlgorithmException {
+    private static String encodeVersionHistory(String versionHistory) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("MD5");
         StringBuffer sb = new StringBuffer(versionHistory.length());
         String urls[] = EntryPageExpansion.expandhttpAndhttps(versionHistory);

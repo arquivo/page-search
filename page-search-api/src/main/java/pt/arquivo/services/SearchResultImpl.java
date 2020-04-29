@@ -1,15 +1,16 @@
 package pt.arquivo.services;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.nutch.searcher.HitDetails;
 import org.apache.nutch.searcher.NutchBean;
 
-import java.beans.Transient;
 import java.io.IOException;
 
-@JsonSerialize(using = SearchResultSerializer.class)
+// @JsonSerialize(using = SearchResultSerializer.class)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SearchResultImpl implements SearchResult {
 
     private static final Log LOG = LogFactory.getLog(SearchResultImpl.class);
@@ -31,9 +32,15 @@ public class SearchResultImpl implements SearchResult {
     private String fileName;
     private String collection;
     private long offset;
+    private int statusCode;
 
+    @JsonIgnore
     private String[] fields;
+
+    @JsonIgnore
     private NutchBean bean;
+
+    @JsonIgnore
     private HitDetails details;
 
     public String getTitle() {
@@ -68,7 +75,9 @@ public class SearchResultImpl implements SearchResult {
         this.tstamp = String.valueOf(tstamp);
     }
 
-    public void setTimeStamp(String timeStamp) { this.tstamp = timeStamp; }
+    public void setTimeStamp(String timeStamp) {
+        this.tstamp = timeStamp;
+    }
 
     public long getContentLength() {
         return contentLength;
@@ -174,7 +183,15 @@ public class SearchResultImpl implements SearchResult {
         this.collection = collection;
     }
 
-    @Transient
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public void setStatusCode(int statusCode) {
+        this.statusCode = statusCode;
+    }
+
+    @JsonIgnore
     @Override
     public String getExtractedText() {
         try {

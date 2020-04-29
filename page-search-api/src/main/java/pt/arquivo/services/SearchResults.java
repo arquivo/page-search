@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class SearchResults {
 
-    private long numberEstimatedResults;
+    private long estimatedNumberResults;
     private long numberResults;
     private boolean lastPageResults = false;
 
@@ -26,12 +26,12 @@ public class SearchResults {
         this.results = results;
     }
 
-    public long getNumberEstimatedResults() {
-        return numberEstimatedResults;
+    public long getEstimatedNumberResults() {
+        return estimatedNumberResults;
     }
 
-    public void setNumberEstimatedResults(long numberEstimatedResults) {
-        this.numberEstimatedResults = numberEstimatedResults;
+    public void setEstimatedNumberResults(long estimatedNumberResults) {
+        this.estimatedNumberResults = estimatedNumberResults;
     }
 
     public long getNumberResults() {

@@ -59,7 +59,7 @@ public class PageSearchControllerTest {
 
         SearchResults mockSearchResults = new SearchResults();
         mockSearchResults.setNumberResults(2);
-        mockSearchResults.setNumberEstimatedResults(10);
+        mockSearchResults.setEstimatedNumberResults(10);
         mockSearchResults.setResults(searchResults);
 
         Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
@@ -71,7 +71,6 @@ public class PageSearchControllerTest {
 
         MockHttpServletResponse response = result.getResponse();
         JSONObject jsonResponse = new JSONObject(response.getContentAsString());
-        assertThat(jsonResponse.getInt("totalItems")).isEqualTo(2);
         assertThat(jsonResponse.getString("next_page")).isEqualTo("http://localhost:8080/textsearch?q=sapo&offset=50");
 
         JSONArray jsonArray = jsonResponse.getJSONArray("response_items");

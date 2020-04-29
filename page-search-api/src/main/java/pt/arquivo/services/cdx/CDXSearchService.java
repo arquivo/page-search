@@ -6,10 +6,8 @@ import com.google.gson.JsonParser;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import pt.arquivo.services.*;
 import org.springframework.beans.factory.annotation.Value;
-import pt.arquivo.services.nutchwax.NutchWaxSearchService;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
@@ -78,7 +76,7 @@ public class CDXSearchService {
             if (limit > 0)
                 limit = limit + start;
 
-            for (int i = 0; i < jsonValues.size(); i++) { //convert cdx result into object
+            for (int i = 0; i < limit; i++) { //convert cdx result into object
                 if (counter < start) {
                     counter++;
                     continue;
@@ -98,6 +96,16 @@ public class CDXSearchService {
                 urlSearchQuery.setTo(result.getTimestamp());
 
                 SearchResults textSearchResults = searchService.query(urlSearchQuery, true);
+
+                searchResult.setFileName(result.getFilename());
+                searchResult.setOffset(Long.parseLong(result.getOffset()));
+                // TODO SANITY CHECK HERE with the digest
+                searchResult.setDigest(result.getDigest());
+                searchResult.setMimeType(result.getMime());
+                searchResult.setTimeStamp(result.getTimestamp());
+                searchResult.setOriginalURL(result.getUrl());
+                searchResult.setStatusCode(Integer.parseInt(result.getStatus()));
+
                 if (textSearchResults.getNumberResults() > 0){
                     LOG.debug("CDX record matched with full-text index.." +  result.getUrl());
                     SearchResultImpl searchResultText = (SearchResultImpl) textSearchResults.getResults().get(0);
@@ -110,13 +118,10 @@ public class CDXSearchService {
                     searchResult.setTitle(result.getUrl());
                     populateEndpointsLinks(searchResult, false);
                 }
-                searchResult.setFileName(result.getFilename());
-                searchResult.setOffset(Long.parseLong(result.getOffset()));
-                // TODO SANITY CHECK HERE with the digest
-                searchResult.setDigest(result.getDigest());
-                searchResult.setMimeType(result.getMime());
                 searchResults.add(searchResult);
             }
+            searchResultsResponse.setResults(searchResults);
+            searchResultsResponse.setEstimatedNumberResults(jsonValues.size());
             return searchResultsResponse;
 
         } catch (Exception e) {

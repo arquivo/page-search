@@ -47,6 +47,9 @@ public class SearchQueryImplTest {
     public void setLimit() {
         searchQuery.setLimit(50);
         assertEquals(searchQuery.getLimit(), 50);
+
+        searchQuery.setLimit(-100);
+        assertEquals(searchQuery.getLimit(), 0);
     }
 
     @Test
@@ -78,11 +81,11 @@ public class SearchQueryImplTest {
 
     @Test
     public void setTo() {
-        searchQuery.setTo("202001010101");
-        assertEquals(searchQuery.getTo(),"202001010101");
+        searchQuery.setTo("2020010101010000");
+        assertEquals(searchQuery.getTo(),"20200101010100");
 
         // should strip out extra characters
-        searchQuery.setTo("20200101010101");
+        searchQuery.setTo("202001010101010000000");
         assertEquals(searchQuery.getTo(), "20200101010101");
     }
 
@@ -141,7 +144,6 @@ public class SearchQueryImplTest {
     public void setFields() {
         searchQuery.setFields(new String[] {"encoding", "type"});
     }
-
 //    @Test public void testToString() {
 //        assertEquals( "TextSearchRequestParameters [queryTerms=sapo ya, offset=0, maxitems=10, " +
 //                "limitPerSite=2, from=" + "20190101010101" + ", to=202001010101" + ", type=text/html, site=http://sapo.pt," +

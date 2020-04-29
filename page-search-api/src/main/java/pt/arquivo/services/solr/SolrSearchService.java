@@ -176,7 +176,7 @@ public class SolrSearchService implements SearchService {
             searchResultArrayList.add(searchResult);
         }
         searchResults.setResults(searchResultArrayList);
-        searchResults.setNumberEstimatedResults(queryResponse.getResults().getNumFound());
+        searchResults.setEstimatedNumberResults(queryResponse.getResults().getNumFound());
         searchResults.setNumberResults(queryResponse.getResults().size());
 
         return searchResults;
@@ -206,7 +206,7 @@ public class SolrSearchService implements SearchService {
             e.printStackTrace();
         }
         SearchResults searchResults = new SearchResults();
-        searchResults.setNumberEstimatedResults(0);
+        searchResults.setEstimatedNumberResults(0);
         searchResults.setNumberResults(0);
         return searchResults;
     }

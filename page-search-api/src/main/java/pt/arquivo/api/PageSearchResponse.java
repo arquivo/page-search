@@ -1,8 +1,8 @@
 package pt.arquivo.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.Api;
 import pt.arquivo.services.SearchQuery;
 import pt.arquivo.services.SearchResult;
 
@@ -19,6 +19,8 @@ public class PageSearchResponse implements ApiResponse {
 
     @JsonProperty("previous_page")
     private String previousPage;
+    
+    @JsonIgnore
     private long totalItems;
 
     @JsonProperty("estimated_nr_results")
@@ -92,5 +94,31 @@ public class PageSearchResponse implements ApiResponse {
 
     public void setResponseItems(ArrayList<SearchResult> responseItems) {
         this.responseItems = responseItems;
+    }
+
+    public void setPagination(int maxItems, int offset, String queryString, boolean firstPage, boolean lastPage) {
+
+        int diffOffsetMaxItems = offset - maxItems;
+        int previousOffset = (offset != 0 && diffOffsetMaxItems >= 0) ? (diffOffsetMaxItems) : 0;
+        int nextOffset = offset + maxItems;
+
+        if (!lastPage) {
+            if (queryString.contains("offset=")) {
+                String queryStringNextPage = queryString.replace("offset=" + offset, "offset=" + nextOffset);
+                this.setNextPage(linkToService + "/textsearch?" + queryStringNextPage);
+            } else {
+                String queryStringNextPage = queryString.concat("&offset=" + nextOffset);
+                this.setNextPage(linkToService + "/textsearch?" + queryStringNextPage);
+            }
+        }
+
+        if (!firstPage) {
+            if (queryString.contains("offset=")) {
+                String queryStringPreviousPage = queryString.replace("offset=" + offset, "offset=" + previousOffset);
+                this.setPreviousPage(linkToService + "/textsearch?" + queryStringPreviousPage);
+            } else {
+                this.setPreviousPage(linkToService + "/textsearch?" + queryString + "&offset=" + previousOffset);
+            }
+        }
     }
 }

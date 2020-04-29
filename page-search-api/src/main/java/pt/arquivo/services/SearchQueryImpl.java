@@ -41,7 +41,7 @@ public class SearchQueryImpl implements SearchQuery {
 
         this.queryTerms = queryTerms;
         this.offset = offset;
-        this.maxItems = maxItems;
+        setLimit(maxItems);
         this.limitPerSite = limitPerSite;
         this.from = from;
         this.to = to;
@@ -75,8 +75,10 @@ public class SearchQueryImpl implements SearchQuery {
 
     @Override
     public void setLimit(int maxItems) {
+        if (maxItems < 0){
+            this.maxItems = 0;
+        }
         this.maxItems = maxItems;
-
     }
 
     public int getLimitPerSite() {
@@ -100,7 +102,7 @@ public class SearchQueryImpl implements SearchQuery {
     }
 
     public void setTo(String to) {
-        this.to = to;
+        this.to = to.substring(0, 14);
     }
 
     public String getType() {
