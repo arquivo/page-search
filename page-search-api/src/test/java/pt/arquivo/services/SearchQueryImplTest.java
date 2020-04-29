@@ -35,37 +35,37 @@ public class SearchQueryImplTest {
     @Test
     public void setStart() {
         searchQuery.setOffset(10);
-        assertEquals(searchQuery.getOffset(), 10);
+        assertEquals(10, searchQuery.getOffset());
     }
 
     @Test
     public void getLimit() {
-       assertEquals(searchQuery.getLimit(), 10);
+       assertEquals(10, searchQuery.getLimit());
     }
 
     @Test
     public void setLimit() {
         searchQuery.setLimit(50);
-        assertEquals(searchQuery.getLimit(), 50);
+        assertEquals(50, searchQuery.getLimit() );
 
         searchQuery.setLimit(-100);
-        assertEquals(searchQuery.getLimit(), 0);
+        assertEquals(0 , searchQuery.getLimit());
     }
 
     @Test
     public void getLimitPerSite() {
-        assertEquals(searchQuery.getLimitPerSite(), 2);
+        assertEquals(2, searchQuery.getLimitPerSite());
     }
 
     @Test
     public void setLimitPerSite() {
         searchQuery.setLimitPerSite(4);
-        assertEquals(searchQuery.getLimitPerSite(), 4);
+        assertEquals(4, searchQuery.getLimitPerSite());
     }
 
     @Test
     public void getFrom() {
-        assertEquals(searchQuery.getFrom(), "20190101010101");
+        assertEquals("20190101010101", searchQuery.getFrom());
     }
 
     @Test
@@ -76,68 +76,68 @@ public class SearchQueryImplTest {
 
     @Test
     public void getTo() {
-        assertEquals(searchQuery.getTo(), "202001010101");
+        assertEquals("202001010101", searchQuery.getTo());
     }
 
     @Test
     public void setTo() {
         searchQuery.setTo("2020010101010000");
-        assertEquals(searchQuery.getTo(),"20200101010100");
+        assertEquals("20200101010100", searchQuery.getTo());
 
         // should strip out extra characters
         searchQuery.setTo("202001010101010000000");
-        assertEquals(searchQuery.getTo(), "20200101010101");
+        assertEquals("20200101010101", searchQuery.getTo());
     }
 
     @Test
     public void getType() {
-        assertEquals(searchQuery.getType(), "text/html");
+        assertEquals("text/html", searchQuery.getType());
     }
 
     @Test
     public void setType() {
         searchQuery.setType("application/pdf");
-        assertEquals(searchQuery.getType(), ("application/pdf"));
+        assertEquals(("application/pdf"), searchQuery.getType());
     }
 
     @Test
     public void getSite() {
-        assertEquals(searchQuery.getSite()[0], "http://sapo.pt");
+        assertEquals("http://sapo.pt", searchQuery.getSite()[0]);
     }
 
     @Test
     public void setSite() {
         searchQuery.setSite(new String[] {"http://arquivo.pt"} );
-        assertEquals(searchQuery.getSite()[0], "http://arquivo.pt");
+        assertEquals("http://arquivo.pt", searchQuery.getSite()[0]);
     }
 
     @Test
     public void getCollection() {
-        assertEquals(searchQuery.getCollection(), "FAWP");
+        assertEquals("FAWP", searchQuery.getCollection());
     }
 
     @Test
     public void setCollection() {
         searchQuery.setCollection("CUSTOM");
-        assertEquals(searchQuery.getCollection(), "CUSTOM");
+        assertEquals("CUSTOM", searchQuery.getCollection());
     }
 
     @Test
     public void getPrettyPrint() {
-        assertEquals(searchQuery.getPrettyPrint(), "false");
+        assertEquals("false", searchQuery.getPrettyPrint());
     }
 
     @Test
     public void setPrettyPrint() {
         searchQuery.setPrettyPrint("false");
-        assertEquals(searchQuery.getPrettyPrint(), "false");
+        assertEquals("false", searchQuery.getPrettyPrint());
     }
 
     @Test
     public void getFields() {
         String[] fields = searchQuery.getFields();
-        assertEquals(fields[0], "title");
-        assertEquals(fields[1], "collection");
+        assertEquals("title", fields[0]);
+        assertEquals("collection", fields[1]);
     }
 
     @Test

@@ -6,14 +6,13 @@
 <configuration>
   <property>
     <name>searcher.dir</name>
-        <value>/home/dbicho</value>
-        <!-- <value>/home/dbicho/ArquivoDocker/test</value> -->
-          </property>
+    <value>/home/dbicho</value>
+  </property>
 
   <property>
       <name>wax.host</name>
-          <value>localhost</value>
-            </property>
+      <value>localhost</value>
+    </property>
 
   <property>
       <name>wax.webhost</name>

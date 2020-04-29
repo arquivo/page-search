@@ -79,31 +79,61 @@
         </dependency>
     </dependencies>
 
-    <!--
-    <repositories>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>central</id>
-            <name>libs-releases</name>
-            <url>https://fccn.jfrog.io/fccn/libs-releases</url>
-        </repository>
-        <repository>
-            <snapshots />
-            <id>snapshots</id>
-            <name>libs-snapshot</name>
-            <url>https://fccn.jfrog.io/fccn/libs-snapshot</url>
-        </repository>
-    </repositories>
-    -->
-
     <properties>
         <start-class>pt.arquivo.api.PageSearchApplication</start-class>
     </properties>
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.22.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.33.0</version>
+                <executions>
+                    <execution>
+                        <id>start</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>start</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>stop</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <images>
+                        <image>
+                            <name>arquivo/nutchwaxquery</name>
+                            <run>
+                                <ports>
+                                    <port>21112:21112</port>
+                                </ports>
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

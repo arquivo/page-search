@@ -78,7 +78,9 @@ public class SearchQueryImpl implements SearchQuery {
         if (maxItems < 0){
             this.maxItems = 0;
         }
-        this.maxItems = maxItems;
+        else {
+            this.maxItems = maxItems;
+        }
     }
 
     public int getLimitPerSite() {

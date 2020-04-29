@@ -4,18 +4,20 @@
 <!-- Put site-specific property overrides in this file. -->
 
 <configuration>
+
   <property>
     <name>searcher.dir</name>
-        <value>/home/dbicho/test</value>
+    <value>/</value>
   </property>
 
   <property>
       <name>wax.host</name>
-          <value>localhost</value>
-            </property>
+      <value>localhost</value>
+    </property>
 
   <property>
       <name>wax.webhost</name>
       <value>localhost</value>
   </property>
+
 </configuration>
