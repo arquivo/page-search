@@ -70,12 +70,6 @@ public class NutchWaxSearchService implements SearchService {
         this.searcherMaxHits = Integer.parseInt(this.conf.get(Global.MAX_FULLTEXT_MATCHES_RETURNED));
     }
 
-    // TODO review this
-    public void setBeans(NutchwaxBean bean){
-        this.bean = bean;
-    }
-
-
     private boolean isTimeBoundedQuery(SearchQuery searchQuery) {
         return (searchQuery.getTo() != null || searchQuery.getFrom() != null);
     }
@@ -97,7 +91,7 @@ public class NutchWaxSearchService implements SearchService {
         return searchResults;
     }
 
-    private String buildNutchwaxQueryString(SearchQuery searchQuery){
+    private String buildNutchwaxQueryString(SearchQuery searchQuery) {
         StringBuilder queryString = new StringBuilder();
 
         String queryTerms = searchQuery.getQueryTerms();
@@ -149,9 +143,6 @@ public class NutchWaxSearchService implements SearchService {
             }
         }
 
-        // Handle time bounded query
-        // 'from' has a default. 'to' doesn't have a default
-        // We want to do a timebounded query if 'to' and 'from' were specified on the query
         if (isTimeBoundedQuery(searchQuery)) {
             if (searchQuery.getFrom() == null) {
                 searchQuery.setFrom(startDate);
@@ -170,7 +161,7 @@ public class NutchWaxSearchService implements SearchService {
         return queryString.toString();
     }
 
-    public static boolean isLastPage(int numberOfResults, SearchQuery searchQuery){
+    public static boolean isLastPage(int numberOfResults, SearchQuery searchQuery) {
         return numberOfResults <= searchQuery.getOffset() + searchQuery.getLimit();
     }
 
@@ -183,7 +174,7 @@ public class NutchWaxSearchService implements SearchService {
         boolean urlSearchQuery = Utils.urlValidator(searchQuery.getQueryTerms().split(" ")[0]);
 
         int hitsPerDup = searchQuery.getLimitPerSite();
-        if (searchQuery.getSite() != null){
+        if (searchQuery.getSite() != null) {
             hitsPerDup = 0;
         }
 
@@ -300,8 +291,8 @@ public class NutchWaxSearchService implements SearchService {
 
     private static String encodeVersionHistory(String versionHistory) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("MD5");
-        StringBuffer sb = new StringBuffer(versionHistory.length());
-        String urls[] = EntryPageExpansion.expandhttpAndhttps(versionHistory);
+        StringBuilder sb = new StringBuilder(versionHistory.length());
+        String[] urls = EntryPageExpansion.expandhttpAndhttps(versionHistory);
         for (int i = 0; i < urls.length; i++) {
             String encoded = Base32.encode(md.digest(urls[i].getBytes()));
             if (encoded != null && !encoded.equals(""))
