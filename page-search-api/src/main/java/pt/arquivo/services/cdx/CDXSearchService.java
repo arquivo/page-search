@@ -248,6 +248,10 @@ public class CDXSearchService {
                 "/" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
 
+        searchResult.setLinkToOriginalFile(waybackNoFrameServiceEndpoint +
+                "/" + searchResult.getTstamp() +
+                "id_/" + searchResult.getOriginalURL());
+
         if (textMatch){
             searchResult.setLinkToExtractedText(extractedTextServiceEndpoint +
                     "?m=" + searchResult.getTstamp() +

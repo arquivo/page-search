@@ -28,6 +28,7 @@ public class SearchResultImpl implements SearchResult {
     private String linkToNoFrame;
     private String linkToExtractedText;
     private String linkToMetadata;
+    private String linkToOriginalFile;
     private String snippet;
     private String fileName;
     private String collection;
@@ -189,6 +190,14 @@ public class SearchResultImpl implements SearchResult {
 
     public void setStatusCode(int statusCode) {
         this.statusCode = statusCode;
+    }
+
+    public String getLinkToOriginalFile() {
+        return linkToOriginalFile;
+    }
+
+    public void setLinkToOriginalFile(String linkToOriginalFile) {
+        this.linkToOriginalFile = linkToOriginalFile;
     }
 
     @JsonIgnore

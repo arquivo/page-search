@@ -249,12 +249,12 @@ public class NutchWaxSearchService implements SearchService {
                 "/" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
 
-        searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
-                "?url=" + searchResult.getLinkToArchive());
-
         searchResult.setLinkToNoFrame(waybackNoFrameServiceEndpoint +
                 "/" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
+
+        searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
+                "?url=" + searchResult.getLinkToNoFrame());
 
         searchResult.setLinkToExtractedText(extractedTextServiceEndpoint +
                 "?m=" + searchResult.getTstamp() +
@@ -262,6 +262,10 @@ public class NutchWaxSearchService implements SearchService {
 
         searchResult.setLinkToMetadata(textSearchServiceEndpoint.concat("?metadata=")
                 .concat(searchResult.getTstamp()).concat("/").concat(searchResult.getOriginalURL()));
+
+        searchResult.setLinkToOriginalFile(waybackNoFrameServiceEndpoint +
+                "/" + searchResult.getTstamp() +
+                "id_/" + searchResult.getOriginalURL());
     }
 
     private String parseTimeStamp(String tstamp) {
@@ -304,5 +308,25 @@ public class NutchWaxSearchService implements SearchService {
                 sb.append(" exacturl:").append(encoded);
         }
         return sb.toString();
+    }
+
+    public String getScreenshotServiceEndpoint() {
+        return screenshotServiceEndpoint;
+    }
+
+    public String getWaybackServiceEndpoint() {
+        return waybackServiceEndpoint;
+    }
+
+    public String getWaybackNoFrameServiceEndpoint() {
+        return waybackNoFrameServiceEndpoint;
+    }
+
+    public String getExtractedTextServiceEndpoint() {
+        return extractedTextServiceEndpoint;
+    }
+
+    public String getTextSearchServiceEndpoint() {
+        return textSearchServiceEndpoint;
     }
 }
