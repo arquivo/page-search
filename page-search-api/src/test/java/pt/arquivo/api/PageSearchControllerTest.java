@@ -71,7 +71,7 @@ public class PageSearchControllerTest {
 
         MockHttpServletResponse response = result.getResponse();
         JSONObject jsonResponse = new JSONObject(response.getContentAsString());
-        assertThat(jsonResponse.getString("next_page")).isEqualTo("http://localhost:8080/textsearch?q=sapo&offset=50");
+        assertThat(jsonResponse.getString("next_page")).isEqualTo("http://localhost:8081/textsearch?q=sapo&offset=50");
 
         JSONArray jsonArray = jsonResponse.getJSONArray("response_items");
         assertThat(jsonArray.length()).isEqualTo(2);

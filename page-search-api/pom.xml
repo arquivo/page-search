@@ -9,6 +9,8 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>page-search-api</artifactId>
 
+    <packaging>war</packaging>
+
     <dependencies>
         <dependency>
             <groupId>pt.arquivo</groupId>
@@ -38,14 +40,15 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-            <version>2.2.4.RELEASE</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <version>2.2.4.RELEASE</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+            <version>2.2.4.RELEASE</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -107,7 +110,6 @@
                         <id>start</id>
                         <phase>pre-integration-test</phase>
                         <goals>
-                            <goal>build</goal>
                             <goal>start</goal>
                         </goals>
                     </execution>
@@ -131,6 +133,14 @@
                             </run>
                         </image>
                     </images>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.2.3</version>
+                <configuration>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
             </plugin>
 
