@@ -29,6 +29,7 @@ public class PageSearchController {
     @Autowired
     private SearchService searchService;
 
+    @CrossOrigin
     @RequestMapping(value = {"/urlsearch/{url}"}, method = {RequestMethod.GET})
     public @ResponseBody
     ApiResponse searchUrl(@PathVariable String url,
@@ -56,6 +57,7 @@ public class PageSearchController {
         return pageSearchResponse;
     }
 
+    @CrossOrigin
     @RequestMapping(value = "/extractedtext", method = {RequestMethod.GET})
     public String extractedText(@RequestParam(value = "m") String id) {
         LOG.info("Getting extracted: " + id);
