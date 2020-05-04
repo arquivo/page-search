@@ -57,6 +57,7 @@ public class NutchWaxSearchService implements SearchService {
     @Value("${searchpages.textsearch.service.link}")
     private String textSearchServiceEndpoint;
 
+
     public NutchWaxSearchService(Configuration conf) throws IOException {
         this.conf = conf;
         this.bean = new NutchwaxBean(conf);
@@ -66,6 +67,12 @@ public class NutchWaxSearchService implements SearchService {
     public NutchWaxSearchService() throws IOException {
         this.conf = NutchwaxConfiguration.getConfiguration();
         conf.addFinalResource("wax-default.xml");
+
+        String searchFilePathEnv = System.getenv("NUTCHWAX_SEARCH_FILE");
+        if (searchFilePathEnv != null) {
+            conf.set("searcher.dir", searchFilePathEnv);
+        }
+
         this.bean = new NutchwaxBean(conf);
         this.searcherMaxHits = Integer.parseInt(this.conf.get(Global.MAX_FULLTEXT_MATCHES_RETURNED));
     }
