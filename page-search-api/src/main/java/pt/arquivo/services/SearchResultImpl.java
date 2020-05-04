@@ -1,7 +1,7 @@
 package pt.arquivo.services;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.nutch.searcher.HitDetails;
@@ -9,8 +9,7 @@ import org.apache.nutch.searcher.NutchBean;
 
 import java.io.IOException;
 
-// @JsonSerialize(using = SearchResultSerializer.class)
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonSerialize(using = SearchResultSerializer.class)
 public class SearchResultImpl implements SearchResult {
 
     private static final Log LOG = LogFactory.getLog(SearchResultImpl.class);
@@ -35,13 +34,10 @@ public class SearchResultImpl implements SearchResult {
     private long offset;
     private int statusCode;
 
-    @JsonIgnore
     private String[] fields;
 
-    @JsonIgnore
     private NutchBean bean;
 
-    @JsonIgnore
     private HitDetails details;
 
     public String getTitle() {
