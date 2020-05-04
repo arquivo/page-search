@@ -13,6 +13,9 @@ import pt.arquivo.services.SearchResultImpl;
 import pt.arquivo.services.SearchResults;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -73,7 +76,7 @@ public class NutchWaxSearchServiceTestIT {
     }
 
     @Test
-    public void testSimpleQueryFirstResult() {
+    public void testSimpleQueryFirstResult() throws UnsupportedEncodingException {
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
         SearchResults searchResults = this.nutchWaxSearchService.query(searchQuery);
         assertThat(searchResults.isLastPageResults()).isTrue();
@@ -97,10 +100,10 @@ public class NutchWaxSearchServiceTestIT {
         assertThat(firstSearchResult.getLinkToArchive()).isEqualTo(nutchWaxSearchService.getWaybackServiceEndpoint().concat("/19961013150238/http://sapo.ua.pt/"));
         assertThat(firstSearchResult.getLinkToNoFrame()).isEqualTo(nutchWaxSearchService.getWaybackNoFrameServiceEndpoint().concat("/19961013150238/http://sapo.ua.pt/"));
         assertThat(firstSearchResult.getLinkToExtractedText())
-                .isEqualTo(nutchWaxSearchService.getExtractedTextServiceEndpoint().concat("?m=19961013150238/http://sapo.ua.pt/"));
+                .isEqualTo(nutchWaxSearchService.getExtractedTextServiceEndpoint().concat("?m=19961013150238%2Fhttp%3A%2F%2Fsapo.ua.pt%2F"));
         assertThat(firstSearchResult.getLinkToMetadata()).isEqualTo(nutchWaxSearchService.getTextSearchServiceEndpoint()
-                .concat("?metadata=19961013150238/http://sapo.ua.pt/"));
-        String endpoint = nutchWaxSearchService.getScreenshotServiceEndpoint().concat("?url=").concat(nutchWaxSearchService.getWaybackNoFrameServiceEndpoint()).concat("/19961013150238/http://sapo.ua.pt/");
+                .concat("?metadata=19961013150238%2Fhttp%3A%2F%2Fsapo.ua.pt%2F"));
+        String endpoint = nutchWaxSearchService.getScreenshotServiceEndpoint().concat("?url=").concat(URLEncoder.encode(nutchWaxSearchService.getWaybackNoFrameServiceEndpoint().concat("/19961013150238/http://sapo.ua.pt/"), StandardCharsets.UTF_8.toString()));
         assertThat(firstSearchResult.getLinkToScreenshot()).isEqualTo(endpoint);
         assertThat(firstSearchResult.getLinkToOriginalFile()).isEqualTo(nutchWaxSearchService.getWaybackNoFrameServiceEndpoint().concat("/19961013150238id_/http://sapo.ua.pt/"));
     }

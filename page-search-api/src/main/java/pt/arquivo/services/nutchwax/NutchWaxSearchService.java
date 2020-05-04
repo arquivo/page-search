@@ -17,6 +17,9 @@ import pt.arquivo.services.*;
 import pt.arquivo.utils.Utils;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
@@ -242,7 +245,8 @@ public class NutchWaxSearchService implements SearchService {
         searchResult.setBean(this.bean);
     }
 
-    private void populateEndpointsLinks(SearchResultImpl searchResult) {
+
+    private void populateEndpointsLinks(SearchResultImpl searchResult) throws UnsupportedEncodingException {
         searchResult.setLinkToArchive(waybackServiceEndpoint +
                 "/" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
@@ -252,14 +256,13 @@ public class NutchWaxSearchService implements SearchService {
                 "/" + searchResult.getOriginalURL());
 
         searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
-                "?url=" + searchResult.getLinkToNoFrame());
+                "?url=" + URLEncoder.encode(searchResult.getLinkToNoFrame(), StandardCharsets.UTF_8.toString()));
 
-        searchResult.setLinkToExtractedText(extractedTextServiceEndpoint +
-                "?m=" + searchResult.getTstamp() +
-                "/" + searchResult.getOriginalURL());
+        searchResult.setLinkToExtractedText(extractedTextServiceEndpoint.concat("?m=")
+                .concat(URLEncoder.encode(searchResult.getTstamp().concat("/").concat(searchResult.getOriginalURL()), StandardCharsets.UTF_8.toString())));
 
         searchResult.setLinkToMetadata(textSearchServiceEndpoint.concat("?metadata=")
-                .concat(searchResult.getTstamp()).concat("/").concat(searchResult.getOriginalURL()));
+                .concat(URLEncoder.encode(searchResult.getTstamp().concat("/").concat(searchResult.getOriginalURL()), StandardCharsets.UTF_8.toString())));
 
         searchResult.setLinkToOriginalFile(waybackNoFrameServiceEndpoint +
                 "/" + searchResult.getTstamp() +
