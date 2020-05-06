@@ -259,10 +259,10 @@ public class NutchWaxSearchService implements SearchService {
                 "?url=" + URLEncoder.encode(searchResult.getLinkToNoFrame(), StandardCharsets.UTF_8.toString()));
 
         searchResult.setLinkToExtractedText(extractedTextServiceEndpoint.concat("?m=")
-                .concat(URLEncoder.encode(searchResult.getTstamp().concat("/").concat(searchResult.getOriginalURL()), StandardCharsets.UTF_8.toString())));
+                .concat(URLEncoder.encode(searchResult.getOriginalURL().concat("/").concat(searchResult.getTstamp()), StandardCharsets.UTF_8.toString())));
 
         searchResult.setLinkToMetadata(textSearchServiceEndpoint.concat("?metadata=")
-                .concat(URLEncoder.encode(searchResult.getTstamp().concat("/").concat(searchResult.getOriginalURL()), StandardCharsets.UTF_8.toString())));
+                .concat(URLEncoder.encode(searchResult.getOriginalURL().concat("/").concat(searchResult.getTstamp()), StandardCharsets.UTF_8.toString())));
 
         searchResult.setLinkToOriginalFile(waybackNoFrameServiceEndpoint +
                 "/" + searchResult.getTstamp() +

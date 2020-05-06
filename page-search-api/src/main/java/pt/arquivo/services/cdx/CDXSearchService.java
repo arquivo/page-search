@@ -6,8 +6,8 @@ import com.google.gson.JsonParser;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import pt.arquivo.services.*;
 import org.springframework.beans.factory.annotation.Value;
+import pt.arquivo.services.*;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
@@ -15,6 +15,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,9 +88,9 @@ public class CDXSearchService {
 
             // searchResults.setResults(results);
             // check if we can get more information through the TextSearch API
-            for (ItemCDX result : cdxResults){
+            for (ItemCDX result : cdxResults) {
                 SearchResultImpl searchResult = new SearchResultImpl();
-               // text search api
+                // text search api
                 SearchQuery urlSearchQuery = new SearchQueryImpl(result.getUrl());
                 urlSearchQuery.setLimit(1);
                 urlSearchQuery.setFrom(result.getTimestamp());
@@ -106,15 +107,14 @@ public class CDXSearchService {
                 searchResult.setOriginalURL(result.getUrl());
                 searchResult.setStatusCode(Integer.parseInt(result.getStatus()));
 
-                if (textSearchResults.getNumberResults() > 0){
-                    LOG.debug("CDX record matched with full-text index.." +  result.getUrl());
+                if (textSearchResults.getNumberResults() > 0) {
+                    LOG.debug("CDX record matched with full-text index.." + result.getUrl());
                     SearchResultImpl searchResultText = (SearchResultImpl) textSearchResults.getResults().get(0);
                     searchResult.setTitle(searchResultText.getTitle());
                     searchResult.setCollection(searchResultText.getCollection());
                     searchResult.setEncoding(searchResultText.getEncoding());
                     populateEndpointsLinks(searchResult, true);
-                }
-                else {
+                } else {
                     searchResult.setTitle(result.getUrl());
                     populateEndpointsLinks(searchResult, false);
                 }
@@ -134,7 +134,7 @@ public class CDXSearchService {
         if (from == null) {
             from = "";
         }
-        if (to == null){
+        if (to == null) {
             to = "";
         }
 
@@ -236,13 +236,15 @@ public class CDXSearchService {
         return json;
     }
 
-    private void populateEndpointsLinks(SearchResultImpl searchResult, boolean textMatch) {
+
+    private void populateEndpointsLinks(SearchResultImpl searchResult, boolean textMatch) throws UnsupportedEncodingException {
+
         searchResult.setLinkToArchive(waybackServiceEndpoint +
                 "/" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
 
         searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
-                "?url=" + searchResult.getLinkToArchive());
+                "?url=" + URLEncoder.encode(searchResult.getLinkToNoFrame(), StandardCharsets.UTF_8.toString()));
 
         searchResult.setLinkToNoFrame(waybackNoFrameServiceEndpoint +
                 "/" + searchResult.getTstamp() +
@@ -252,10 +254,9 @@ public class CDXSearchService {
                 "/" + searchResult.getTstamp() +
                 "id_/" + searchResult.getOriginalURL());
 
-        if (textMatch){
-            searchResult.setLinkToExtractedText(extractedTextServiceEndpoint +
-                    "?m=" + searchResult.getTstamp() +
-                    "/" + searchResult.getOriginalURL());
+        if (textMatch) {
+            searchResult.setLinkToExtractedText(extractedTextServiceEndpoint.concat("?m=")
+                    .concat(URLEncoder.encode(searchResult.getOriginalURL().concat("/").concat(searchResult.getTstamp()), StandardCharsets.UTF_8.toString())));
         }
     }
 }

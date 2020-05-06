@@ -64,14 +64,14 @@ public class PageSearchControllerTest {
 
         Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
 
-        String URI = "/textsearch?q=sapo";
+        String URI = "/textsearch?q=sapo&prettyPrint=true";
 
         RequestBuilder requestBuilder = MockMvcRequestBuilders.get(URI);
         MvcResult result = mockMvc.perform(requestBuilder).andReturn();
 
         MockHttpServletResponse response = result.getResponse();
         JSONObject jsonResponse = new JSONObject(response.getContentAsString());
-        assertThat(jsonResponse.getString("next_page")).isEqualTo("http://localhost:8081/textsearch?q=sapo&offset=50");
+        assertThat(jsonResponse.getString("next_page")).isEqualTo("http://localhost:8081/textsearch?q=sapo&prettyPrint=true&offset=50");
 
         JSONArray jsonArray = jsonResponse.getJSONArray("response_items");
         assertThat(jsonArray.length()).isEqualTo(2);
@@ -79,5 +79,8 @@ public class PageSearchControllerTest {
         assertThat(jsonResponse.getInt("estimated_nr_results")).isEqualTo(10);
         assertThat(jsonResponse.getString("serviceName")).isNotBlank();
         assertThat(jsonResponse.getString("linkToService")).isNotBlank();
+
+        // verify pretty print
+        response.getContentAsString().contains("{\n");
     }
 }

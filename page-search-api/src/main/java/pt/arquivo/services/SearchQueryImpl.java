@@ -9,7 +9,6 @@ public class SearchQueryImpl implements SearchQuery {
     @SerializedName("q")
     private String queryTerms;
 
-    @SerializedName("offset")
     private int offset = 0;
 
     @SerializedName("maxItems")
@@ -25,11 +24,10 @@ public class SearchQueryImpl implements SearchQuery {
     @SerializedName("siteSearch")
     private String[] site;
 
-    @SerializedName("collection")
     private String collection;
 
     private String[] fields;
-    private String prettyPrint;
+    private boolean prettyPrint;
 
     public SearchQueryImpl(String queryTerms) {
         this.queryTerms = queryTerms;
@@ -37,7 +35,7 @@ public class SearchQueryImpl implements SearchQuery {
 
     public SearchQueryImpl(String queryTerms, int offset, int maxItems, int limitPerSite,
                            String from, String to, String type, String[] site,
-                           String collection, String[] fields, String prettyPrint) {
+                           String collection, String[] fields, boolean prettyPrint) {
 
         this.queryTerms = queryTerms;
         this.offset = offset;
@@ -75,10 +73,9 @@ public class SearchQueryImpl implements SearchQuery {
 
     @Override
     public void setLimit(int maxItems) {
-        if (maxItems < 0){
+        if (maxItems < 0) {
             this.maxItems = 0;
-        }
-        else {
+        } else {
             this.maxItems = maxItems;
         }
     }
@@ -131,11 +128,11 @@ public class SearchQueryImpl implements SearchQuery {
         this.collection = collection;
     }
 
-    public String getPrettyPrint() {
+    public boolean getPrettyPrint() {
         return prettyPrint;
     }
 
-    public void setPrettyPrint(String prettyPrint) {
+    public void setPrettyPrint(boolean prettyPrint) {
         this.prettyPrint = prettyPrint;
     }
 
@@ -148,7 +145,7 @@ public class SearchQueryImpl implements SearchQuery {
         this.fields = fields;
     }
 
-    public String toString(){
+    public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("q: ").append(this.queryTerms);
         stringBuilder.append(" offset: ").append(this.offset);
@@ -157,12 +154,11 @@ public class SearchQueryImpl implements SearchQuery {
         stringBuilder.append(" from: ").append(this.from);
         stringBuilder.append(" to: ").append(this.to);
         stringBuilder.append(" type: ").append(this.type);
-        if (this.site != null){
-            for (int i = 0; i < this.site.length; i++){
+        if (this.site != null) {
+            for (int i = 0; i < this.site.length; i++) {
                 stringBuilder.append(" site: ").append(this.site[i]);
             }
-        }
-        else {
+        } else {
             stringBuilder.append(" site: ").append(this.site);
         }
         stringBuilder.append(" collection: ").append(this.collection);

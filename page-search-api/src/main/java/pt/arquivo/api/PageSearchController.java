@@ -1,5 +1,7 @@
 package pt.arquivo.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,9 @@ public class PageSearchController {
 
     @Autowired
     private SearchService searchService;
+
+    @Autowired
+    private ObjectMapper jacksonObjectMapper;
 
     @CrossOrigin
     @RequestMapping(value = {"/urlsearch/{url}"}, method = {RequestMethod.GET})
@@ -63,9 +68,10 @@ public class PageSearchController {
         LOG.info("Getting extracted: " + id);
         String extractedText = "";
 
-        int idx = id.indexOf("/");
+        int idx = id.lastIndexOf("//");
+        // int idx = id.indexOf("/");
         if (idx > 0) {
-            String[] versionIdSplited = {id.substring(0, idx), id.substring(idx + 1)};
+            String[] versionIdSplited = {id.substring(0, idx + 1), id.substring(idx + 2)};
             if (metadataValidator(versionIdSplited)) {
 
                 SearchResults searchResults = queryByUrl(versionIdSplited);
@@ -78,8 +84,8 @@ public class PageSearchController {
     }
 
     private SearchResults queryByUrl(String[] versionIdSplited) {
-        String timeStamp = versionIdSplited[0];
-        String url = versionIdSplited[1];
+        String url = versionIdSplited[0];
+        String timeStamp = versionIdSplited[1];
 
         SearchQuery searchQuery = new SearchQueryImpl(url);
         searchQuery.setFrom(timeStamp);
@@ -112,7 +118,6 @@ public class PageSearchController {
         return metadataResponse;
     }
 
-    // TODO default values to configuration file
     @CrossOrigin
     @RequestMapping(value = "/textsearch", method = {RequestMethod.GET})
     public @ResponseBody
@@ -128,7 +133,7 @@ public class PageSearchController {
                            @RequestParam(value = "type", required = false) String type,
                            @RequestParam(value = "collection", required = false) String collection,
                            @RequestParam(value = "fields", required = false) String[] fields,
-                           @RequestParam(value = "prettyPrint", required = false) String prettyPrint,
+                           @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
                            HttpServletRequest request
     ) {
 
@@ -163,13 +168,18 @@ public class PageSearchController {
         String queryString = request.getQueryString();
         pageSearchResponse.setPagination(maxItems, offset, queryString, firstPage, lastPage);
 
+        if (searchQuery.getPrettyPrint()) {
+            jacksonObjectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        } else {
+            jacksonObjectMapper.disable(SerializationFeature.INDENT_OUTPUT);
+        }
         return pageSearchResponse;
     }
 
 
     private static boolean metadataValidator(String[] versionIdsplited) {
         LOG.debug("metadata versionId[0][" + versionIdsplited[0] + "] versionId[1][" + versionIdsplited[1] + "]");
-        if (Utils.urlValidator(versionIdsplited[1]) && versionIdsplited[0].matches("[0-9]+"))
+        if (Utils.urlValidator(versionIdsplited[0]) && versionIdsplited[1].matches("[0-9]+"))
             return true;
         else
             return false;
