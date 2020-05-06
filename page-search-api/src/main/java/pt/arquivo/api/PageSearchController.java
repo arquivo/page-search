@@ -63,7 +63,7 @@ public class PageSearchController {
     }
 
     @CrossOrigin
-    @RequestMapping(value = "/extractedtext", method = {RequestMethod.GET})
+    @RequestMapping(value = "/textextracted", method = {RequestMethod.GET})
     public String extractedText(@RequestParam(value = "m") String id) {
         LOG.info("Getting extracted: " + id);
         String extractedText = "";
