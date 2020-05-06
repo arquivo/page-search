@@ -103,7 +103,7 @@ public class PageSearchController {
 
         int idx = id.indexOf("/");
         if (idx > 0) {
-            String[] versionIdSplited = {id.substring(0, idx), id.substring(idx + 1)};
+            String[] versionIdSplited = {id.substring(0, idx + 1), id.substring(idx + 2)};
             if (metadataValidator(versionIdSplited)) {
                 SearchResults searchResults = queryByUrl(versionIdSplited);
                 searchResultsArray = searchResults.getResults();
