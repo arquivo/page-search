@@ -281,7 +281,7 @@ public class NutchWaxSearchService implements SearchService {
 
     private static String buildSnippet(Summary summary) {
         if (summary != null) {
-            StringBuffer sum = new StringBuffer();
+            StringBuilder sum = new StringBuilder();
             Summary.Fragment[] fragments = summary.getFragments();
             for (int j = 0; j < fragments.length; j++) {
                 if (fragments[j].isHighlight()) {

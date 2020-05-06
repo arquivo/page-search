@@ -100,9 +100,9 @@ public class NutchWaxSearchServiceTestIT {
         assertThat(firstSearchResult.getLinkToArchive()).isEqualTo(nutchWaxSearchService.getWaybackServiceEndpoint().concat("/19961013150238/http://sapo.ua.pt/"));
         assertThat(firstSearchResult.getLinkToNoFrame()).isEqualTo(nutchWaxSearchService.getWaybackNoFrameServiceEndpoint().concat("/19961013150238/http://sapo.ua.pt/"));
         assertThat(firstSearchResult.getLinkToExtractedText())
-                .isEqualTo(nutchWaxSearchService.getExtractedTextServiceEndpoint().concat("?m=19961013150238%2Fhttp%3A%2F%2Fsapo.ua.pt%2F"));
+                .isEqualTo(nutchWaxSearchService.getExtractedTextServiceEndpoint().concat("?m=http%3A%2F%2Fsapo.ua.pt%2F%2F19961013150238"));
         assertThat(firstSearchResult.getLinkToMetadata()).isEqualTo(nutchWaxSearchService.getTextSearchServiceEndpoint()
-                .concat("?metadata=19961013150238%2Fhttp%3A%2F%2Fsapo.ua.pt%2F"));
+                .concat("?metadata=http%3A%2F%2Fsapo.ua.pt%2F%2F19961013150238"));
         String endpoint = nutchWaxSearchService.getScreenshotServiceEndpoint().concat("?url=").concat(URLEncoder.encode(nutchWaxSearchService.getWaybackNoFrameServiceEndpoint().concat("/19961013150238/http://sapo.ua.pt/"), StandardCharsets.UTF_8.toString()));
         assertThat(firstSearchResult.getLinkToScreenshot()).isEqualTo(endpoint);
         assertThat(firstSearchResult.getLinkToOriginalFile()).isEqualTo(nutchWaxSearchService.getWaybackNoFrameServiceEndpoint().concat("/19961013150238id_/http://sapo.ua.pt/"));

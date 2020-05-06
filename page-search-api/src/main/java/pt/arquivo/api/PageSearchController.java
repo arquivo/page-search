@@ -35,7 +35,7 @@ public class PageSearchController {
     private ObjectMapper jacksonObjectMapper;
 
     @CrossOrigin
-    @RequestMapping(value = {"/urlsearch/{url}"}, method = {RequestMethod.GET})
+    @GetMapping(value = {"/urlsearch/{url}"})
     public @ResponseBody
     ApiResponse searchUrl(@PathVariable String url,
                           @RequestParam(value = "from", required = false) String from,
@@ -63,7 +63,7 @@ public class PageSearchController {
     }
 
     @CrossOrigin
-    @RequestMapping(value = "/textextracted", method = {RequestMethod.GET})
+    @GetMapping(value = "/textextracted")
     public String extractedText(@RequestParam(value = "m") String id) {
         LOG.info("Getting extracted: " + id);
         String extractedText = "";
@@ -96,8 +96,8 @@ public class PageSearchController {
     }
 
     @CrossOrigin
-    @RequestMapping(value = {"/metadata"}, method = {RequestMethod.GET})
-    ApiResponse getMetadata(@RequestParam(value = "metadata") String id) {
+    @GetMapping(value = {"/metadata"})
+    public ApiResponse getMetadata(@RequestParam(value = "metadata") String id) {
         LOG.info("Getting metadata for: " + id);
         ArrayList<SearchResult> searchResultsArray = new ArrayList<>();
 
@@ -119,7 +119,7 @@ public class PageSearchController {
     }
 
     @CrossOrigin
-    @RequestMapping(value = "/textsearch", method = {RequestMethod.GET})
+    @GetMapping(value = "/textsearch")
     public @ResponseBody
     ApiResponse pageSearch(@RequestParam(value = "q", required = false) String query,
                            @RequestParam(value = "versionHistory", required = false) String url,
