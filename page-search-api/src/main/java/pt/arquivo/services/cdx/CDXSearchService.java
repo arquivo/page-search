@@ -27,9 +27,6 @@ public class CDXSearchService {
     private final String equalOP = "=";
     private final String andOP = "&";
     private final String outputCDX = "json";
-    private final String keyUrl = "url";
-    private final String keyDigest = "digest";
-    private final String keyMimeType = "mime";
 
     @Autowired
     private SearchService searchService;
@@ -71,13 +68,18 @@ public class CDXSearchService {
         try {
             List<JsonObject> jsonValues = readJsonFromUrl(urlCDX);
             if (jsonValues == null) {
-                LOG.info("Couldn't get results from the CDX API.");
-                return null;
+                LOG.error("Error while trying to get results from the CDX API.");
+                searchResultsResponse.setNumberResults(0);
+                searchResultsResponse.setEstimatedNumberResults(0);
+                return searchResultsResponse;
             }
 
             int limit = limitP + start;
-            for (int i = start; i < limit; i++){
-                cdxResults.add(gson.fromJson(jsonValues.get(i), ItemCDX.class));
+
+            if (jsonValues.size() > 0 ) {
+                for (int i = start; i < limit; i++) {
+                    cdxResults.add(gson.fromJson(jsonValues.get(i), ItemCDX.class));
+                }
             }
 
             // searchResults.setResults(results);
@@ -119,8 +121,9 @@ public class CDXSearchService {
             return searchResultsResponse;
 
         } catch (Exception e) {
-            LOG.debug("[getResults] URL[" + urlCDX + "] e ", e);
-            return null;
+            LOG.error("[getResults] URL[" + urlCDX + "] e ", e);
+            searchResultsResponse.setEstimatedNumberResults(0);
+            return searchResultsResponse;
         }
     }
 
