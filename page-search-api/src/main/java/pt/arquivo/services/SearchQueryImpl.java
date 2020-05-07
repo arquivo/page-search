@@ -1,27 +1,27 @@
 package pt.arquivo.services;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SearchQueryImpl implements SearchQuery {
 
-    @SerializedName("q")
+    @JsonProperty("q")
     private String queryTerms;
 
     private int offset = 0;
 
-    @SerializedName("maxItems")
+    @JsonProperty("maxItems")
     private int maxItems = 50;
 
-    @SerializedName("itemsPerSite")
+    @JsonProperty("itemsPerSite")
     private int limitPerSite = 2;
 
     private String from;
     private String to;
     private String type;
 
-    @SerializedName("siteSearch")
+    @JsonProperty("siteSearch")
     private String[] site;
 
     private String collection;

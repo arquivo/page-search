@@ -235,23 +235,21 @@ public class CDXSearchService {
 
     private void populateEndpointsLinks(SearchResultImpl searchResult, boolean textMatch) throws UnsupportedEncodingException {
 
-        searchResult.setLinkToArchive(waybackServiceEndpoint +
-                "/" + searchResult.getTstamp() +
-                "/" + searchResult.getOriginalURL());
+        searchResult.setLinkToArchive(waybackServiceEndpoint.concat("/")
+                .concat(searchResult.getTstamp().concat("/").concat(searchResult.getOriginalURL())));
 
-        searchResult.setLinkToNoFrame(waybackNoFrameServiceEndpoint +
-                "/" + searchResult.getTstamp() +
-                "/" + searchResult.getOriginalURL());
+        searchResult.setLinkToNoFrame(waybackNoFrameServiceEndpoint.concat("/")
+                .concat(searchResult.getTstamp()).concat("/").concat(searchResult.getOriginalURL()));
 
-        searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
-                "?url=" + URLEncoder.encode(searchResult.getLinkToNoFrame(), StandardCharsets.UTF_8.toString()));
+        searchResult.setLinkToScreenshot(screenshotServiceEndpoint.concat("?url=")
+                .concat(URLEncoder.encode(searchResult.getLinkToNoFrame(), StandardCharsets.UTF_8.toString())));
 
-        searchResult.setLinkToOriginalFile(waybackNoFrameServiceEndpoint +
-                "/" + searchResult.getTstamp() +
-                "id_/" + searchResult.getOriginalURL());
+        searchResult.setLinkToOriginalFile(waybackNoFrameServiceEndpoint.concat("/")
+                .concat(searchResult.getTstamp()).concat("id_/").concat(searchResult.getOriginalURL()));
 
         searchResult.setLinkToMetadata(textSearchServiceEndpoint.concat("?metadata=")
-                .concat(URLEncoder.encode(searchResult.getOriginalURL().concat("/").concat(searchResult.getTstamp()), StandardCharsets.UTF_8.toString())));
+                .concat(URLEncoder.encode(searchResult.getOriginalURL().concat("/")
+                        .concat(searchResult.getTstamp()), StandardCharsets.UTF_8.toString())));
 
         if (textMatch) {
             searchResult.setLinkToExtractedText(extractedTextServiceEndpoint.concat("?m=")
