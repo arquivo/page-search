@@ -74,9 +74,8 @@ public class CDXSearchService {
                 return searchResultsResponse;
             }
 
-            int limit = limitP + start;
-
-            if (jsonValues.size() > 0 ) {
+            int limit = Math.min(jsonValues.size(), limitP + start);
+            if ( limit > 0 ) {
                 for (int i = start; i < limit; i++) {
                     cdxResults.add(gson.fromJson(jsonValues.get(i), ItemCDX.class));
                 }
