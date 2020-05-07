@@ -69,7 +69,6 @@ public class PageSearchController {
         String extractedText = "";
 
         int idx = id.lastIndexOf("//");
-        // int idx = id.indexOf("/");
         if (idx > 0) {
             String[] versionIdSplited = {id.substring(0, idx + 1), id.substring(idx + 2)};
             if (metadataValidator(versionIdSplited)) {
@@ -101,7 +100,7 @@ public class PageSearchController {
         LOG.info("Getting metadata for: " + id);
         ArrayList<SearchResult> searchResultsArray = new ArrayList<>();
 
-        int idx = id.indexOf("/");
+        int idx = id.lastIndexOf("//");
         if (idx > 0) {
             String[] versionIdSplited = {id.substring(0, idx + 1), id.substring(idx + 2)};
             if (metadataValidator(versionIdSplited)) {
