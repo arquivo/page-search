@@ -55,6 +55,9 @@ public class CDXSearchService {
     @Value("${searchpages.extractedtext.service.link}")
     private String extractedTextServiceEndpoint;
 
+    @Value("${searchpages.textsearch.service.link}")
+    private String textSearchServiceEndpoint;
+
     public SearchResults getResults(String url, String from, String to, int limitP, int start) {
         Gson gson = new Gson();
         SearchResults searchResultsResponse = new SearchResults();
@@ -63,26 +66,17 @@ public class CDXSearchService {
         ArrayList<SearchResult> searchResults = new ArrayList<>();
 
         String urlCDX = generateCdxQuery(url, from, to);
-        int counter = 0;
-        int limit = 0;
-        if (limitP > 0) {
-            limit = limitP;
-        }
-
         LOG.info("[getResults] CDX-API URL[" + urlCDX + "]");
+
         try {
             List<JsonObject> jsonValues = readJsonFromUrl(urlCDX);
-            if (jsonValues == null)
+            if (jsonValues == null) {
+                LOG.info("Couldn't get results from the CDX API.");
                 return null;
-            if (limit > 0)
-                limit = limit + start;
+            }
 
-            for (int i = 0; i < limit; i++) { //convert cdx result into object
-                if (counter < start) {
-                    counter++;
-                    continue;
-                }
-
+            int limit = limitP + start;
+            for (int i = start; i < limit; i++){
                 cdxResults.add(gson.fromJson(jsonValues.get(i), ItemCDX.class));
             }
 
@@ -243,16 +237,19 @@ public class CDXSearchService {
                 "/" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
 
-        searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
-                "?url=" + URLEncoder.encode(searchResult.getLinkToNoFrame(), StandardCharsets.UTF_8.toString()));
-
         searchResult.setLinkToNoFrame(waybackNoFrameServiceEndpoint +
                 "/" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
 
+        searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
+                "?url=" + URLEncoder.encode(searchResult.getLinkToNoFrame(), StandardCharsets.UTF_8.toString()));
+
         searchResult.setLinkToOriginalFile(waybackNoFrameServiceEndpoint +
                 "/" + searchResult.getTstamp() +
                 "id_/" + searchResult.getOriginalURL());
+
+        searchResult.setLinkToMetadata(textSearchServiceEndpoint.concat("?metadata=")
+                .concat(URLEncoder.encode(searchResult.getOriginalURL().concat("/").concat(searchResult.getTstamp()), StandardCharsets.UTF_8.toString())));
 
         if (textMatch) {
             searchResult.setLinkToExtractedText(extractedTextServiceEndpoint.concat("?m=")

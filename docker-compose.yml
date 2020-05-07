@@ -12,12 +12,9 @@ services:
       # - ./custom.sh:/docker-entrypoint-initdb.d/custom.sh
 
   api:
-    build: ./api
-    container_name: api
+    build: ./page-search-api
+    container_name: pagesearch
     ports:
       - "8081:8081"
-    volumes:
-      - ./target/api-1.0.1-SNAPSHOT.jar:./app/api.jar
 
-#  webapp:
 

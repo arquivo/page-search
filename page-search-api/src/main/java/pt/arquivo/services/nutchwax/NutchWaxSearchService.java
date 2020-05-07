@@ -60,7 +60,6 @@ public class NutchWaxSearchService implements SearchService {
     @Value("${searchpages.textsearch.service.link}")
     private String textSearchServiceEndpoint;
 
-
     public NutchWaxSearchService(Configuration conf) throws IOException {
         this.conf = conf;
         this.bean = new NutchwaxBean(conf);

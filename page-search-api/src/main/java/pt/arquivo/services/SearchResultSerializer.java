@@ -21,7 +21,8 @@ public class SearchResultSerializer extends JsonSerializer {
                 if (serializeField(field.getName(), searchResult.getFields())){
                     try {
                         field.setAccessible(true);
-                        jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
+                        if (field.get(searchResult) != null)
+                            jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
                     } catch (IllegalAccessException e) {
                         LOG.error("Error trying to access field", e);
                     }
@@ -32,13 +33,16 @@ public class SearchResultSerializer extends JsonSerializer {
             for (Field field : searchResult.getClass().getDeclaredFields()){
                 field.setAccessible(true);
                 try {
-                    if (field.getName().equals("statusCode")){
-                        if ((Integer) field.get(searchResult) != 0)
-                           jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
-                    }
-                    else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
-                            && !field.getName().equals("details") && !field.getName().equals("fields")){
-                        jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
+                    Object value = field.get(searchResult);
+                    if (value != null){
+                        if (field.getName().equals("statusCode")){
+                            if ((Integer) field.get(searchResult) != 0)
+                               jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
+                        }
+                        else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
+                                && !field.getName().equals("details") && !field.getName().equals("fields")){
+                            jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
+                        }
                     }
                 } catch (IllegalAccessException e) {
                     LOG.error("Error trying to access field", e);
@@ -51,7 +55,8 @@ public class SearchResultSerializer extends JsonSerializer {
     private boolean serializeField(String fieldName, String[] fields) {
         if (fields != null){
             for (String field : fields) {
-                if (fieldName.equalsIgnoreCase(field)) return true;
+                if (fieldName.equalsIgnoreCase(field))
+                    return true;
             }
             return false;
         }
