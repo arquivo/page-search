@@ -37,7 +37,7 @@ public class PageSearchController {
     @CrossOrigin
     @GetMapping(value = {"/urlsearch/{url}"})
     public @ResponseBody
-    ApiResponse searchUrl(@PathVariable String url,
+    ApiResponse searchCdxURL(@PathVariable String url,
                           @RequestParam(value = "from", required = false) String from,
                           @RequestParam(value = "to", required = false) String to,
                           @RequestParam(value = "maxItems", defaultValue = "50", required = false) int limit,
@@ -97,22 +97,28 @@ public class PageSearchController {
     @CrossOrigin
     @GetMapping(value = {"/metadata"})
     public ApiResponse getMetadata(@RequestParam(value = "metadata") String id) {
-        LOG.info("Getting metadata for: " + id);
-        ArrayList<SearchResult> searchResultsArray = new ArrayList<>();
+        MetadataResponse metadataResponse = new MetadataResponse();
 
+        LOG.info("Getting metadata for: " + id);
         int idx = id.lastIndexOf("//");
         if (idx > 0) {
             String[] versionIdSplited = {id.substring(0, idx + 1), id.substring(idx + 2)};
             if (metadataValidator(versionIdSplited)) {
                 SearchResults searchResults = queryByUrl(versionIdSplited);
-                searchResultsArray = searchResults.getResults();
+                SearchResultImpl textSearchResult = (SearchResultImpl) searchResults.getResults().get(0);
+                if (textSearchResult != null){
+                    SearchResults cdxSearchResults = this.cdxSearchService.getResults(versionIdSplited[0],
+                            versionIdSplited[1], versionIdSplited[1], 1, 0);
+                    if (cdxSearchResults.getResults() != null && cdxSearchResults.getResults().size() > 0){
+                        SearchResultImpl result = (SearchResultImpl) cdxSearchResults.getResults().get(0);
+                        textSearchResult.setStatusCode(result.getStatusCode());
+                    }
+                }
+                metadataResponse.setLinkToService(linkToService);
+                metadataResponse.setServiceName(serviceName);
+                metadataResponse.setResponseItems(searchResults.getResults());
             }
         }
-
-        MetadataResponse metadataResponse = new MetadataResponse();
-        metadataResponse.setLinkToService(linkToService);
-        metadataResponse.setServiceName(serviceName);
-        metadataResponse.setResponseItems(searchResultsArray);
 
         return metadataResponse;
     }
@@ -138,7 +144,7 @@ public class PageSearchController {
 
         // TODO need to do this verification since versionHistory is merged on the term search.... what a nice idea... remove it on the next API version, when versionHistory is removed from here
         if (url != null) {
-            return searchUrl(url, from, to, maxItems, offset, request);
+            return searchCdxURL(url, from, to, maxItems, offset, request);
         } else if (id != null) {
             return getMetadata(id);
         } else if (query == null) {
