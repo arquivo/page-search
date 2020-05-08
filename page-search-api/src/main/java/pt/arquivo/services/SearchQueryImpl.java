@@ -1,5 +1,6 @@
 package pt.arquivo.services;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -19,12 +20,12 @@ public class SearchQueryImpl implements SearchQuery {
 
     private String from;
     private String to;
-    private String type;
+    private String[] type;
 
     @JsonProperty("siteSearch")
     private String[] site;
 
-    private String collection;
+    private String[] collection;
 
     private String[] fields;
     private boolean prettyPrint;
@@ -34,12 +35,12 @@ public class SearchQueryImpl implements SearchQuery {
     }
 
     public SearchQueryImpl(String queryTerms, int offset, int maxItems, int limitPerSite,
-                           String from, String to, String type, String[] site,
-                           String collection, String[] fields, boolean prettyPrint) {
+                           String from, String to, String[] type, String[] site,
+                           String[] collection, String[] fields, boolean prettyPrint) {
 
         this.queryTerms = queryTerms;
         this.offset = offset;
-        setLimit(maxItems);
+        setMaxItems(maxItems);
         this.limitPerSite = limitPerSite;
         this.from = from;
         this.to = to;
@@ -67,12 +68,11 @@ public class SearchQueryImpl implements SearchQuery {
         this.offset = offset;
     }
 
-    public int getLimit() {
+    public int getMaxItems() {
         return maxItems;
     }
 
-    @Override
-    public void setLimit(int maxItems) {
+    public void setMaxItems(int maxItems) {
         if (maxItems < 0) {
             this.maxItems = 0;
         } else {
@@ -104,11 +104,11 @@ public class SearchQueryImpl implements SearchQuery {
         this.to = to.substring(0, 14);
     }
 
-    public String getType() {
+    public String[] getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(String[] type) {
         this.type = type;
     }
 
@@ -120,11 +120,11 @@ public class SearchQueryImpl implements SearchQuery {
         this.site = site;
     }
 
-    public String getCollection() {
+    public String[] getCollection() {
         return collection;
     }
 
-    public void setCollection(String collection) {
+    public void setCollection(String[] collection) {
         this.collection = collection;
     }
 
@@ -143,6 +143,24 @@ public class SearchQueryImpl implements SearchQuery {
 
     public void setFields(String[] fields) {
         this.fields = fields;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isSearchBySite() {
+        return this.site != null && this.site.length > 0;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isSearchByType() {
+        return this.type != null && this.type.length > 0;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isSearchByCollection() {
+        return this.collection != null && this.collection.length > 0;
     }
 
     public String toString() {

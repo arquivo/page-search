@@ -89,7 +89,7 @@ public class PageSearchController {
         SearchQuery searchQuery = new SearchQueryImpl(url);
         searchQuery.setFrom(timeStamp);
         searchQuery.setTo(timeStamp);
-        searchQuery.setLimit(1);
+        searchQuery.setMaxItems(1);
 
         return searchService.query(searchQuery, true);
     }
@@ -129,8 +129,8 @@ public class PageSearchController {
                            @RequestParam(value = "limitPerSite", required = false, defaultValue = "2") int limitPerSite,
                            @RequestParam(value = "from", required = false) String from,
                            @RequestParam(value = "to", required = false) String to,
-                           @RequestParam(value = "type", required = false) String type,
-                           @RequestParam(value = "collection", required = false) String collection,
+                           @RequestParam(value = "type", required = false) String[] type,
+                           @RequestParam(value = "collection", required = false) String[] collection,
                            @RequestParam(value = "fields", required = false) String[] fields,
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
                            HttpServletRequest request

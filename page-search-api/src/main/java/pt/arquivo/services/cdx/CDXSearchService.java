@@ -87,7 +87,7 @@ public class CDXSearchService {
                 SearchResultImpl searchResult = new SearchResultImpl();
                 // text search api
                 SearchQuery urlSearchQuery = new SearchQueryImpl(result.getUrl());
-                urlSearchQuery.setLimit(1);
+                urlSearchQuery.setMaxItems(1);
                 urlSearchQuery.setFrom(result.getTimestamp());
                 urlSearchQuery.setTo(result.getTimestamp());
 

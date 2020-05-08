@@ -112,7 +112,7 @@ public class NutchWaxSearchServiceTestIT {
     public void testResultsBoundedQuery(){
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
         searchQuery.setOffset(5);
-        searchQuery.setLimit(5);
+        searchQuery.setMaxItems(5);
         SearchResults searchResults = this.nutchWaxSearchService.query(searchQuery);
 
         assertThat(searchResults.isLastPageResults()).isFalse();
@@ -136,7 +136,7 @@ public class NutchWaxSearchServiceTestIT {
     @Test
     public void testCollectionBoundedQuery(){
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
-        searchQuery.setCollection("outraqlq");
+        searchQuery.setCollection(new String[] {"collectionX"});
 
         SearchResults searchResults = this.nutchWaxSearchService.query(searchQuery);
         assertThat(searchResults.getResults().size()).isEqualTo(0);

@@ -90,7 +90,7 @@ public class SolrSearchService implements SearchService {
         Map<String, String> queryParamMap = new HashMap<String, String>();
         queryParamMap.put("q", searchQuery.getQueryTerms());
         queryParamMap.put("start", String.valueOf(searchQuery.getOffset()));
-        queryParamMap.put("rows", String.valueOf(searchQuery.getLimit()));
+        queryParamMap.put("rows", String.valueOf(searchQuery.getMaxItems()));
 
         // enable highlighting
         queryParamMap.put("hl", "on");

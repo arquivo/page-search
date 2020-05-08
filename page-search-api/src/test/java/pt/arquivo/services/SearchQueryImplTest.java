@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SearchQueryImplTest {
 
@@ -12,8 +13,8 @@ public class SearchQueryImplTest {
     @Before
     public void setupSearchQuery() {
         searchQuery = new SearchQueryImpl("sapo ya", 0,
-                10, 2, "20190101010101", "202001010101", "text/html",
-                new String[]{"http://sapo.pt"}, "FAWP", new String[]{"title", "collection"}, false);
+                10, 2, "20190101010101", "202001010101", new String[]{"text/html"},
+                new String[]{"http://sapo.pt"}, new String[]{"FAWP"}, new String[]{"title", "collection"}, false);
     }
 
     @Test
@@ -40,16 +41,16 @@ public class SearchQueryImplTest {
 
     @Test
     public void getLimit() {
-        assertEquals(10, searchQuery.getLimit());
+        assertEquals(10, searchQuery.getMaxItems());
     }
 
     @Test
     public void setLimit() {
-        searchQuery.setLimit(50);
-        assertEquals(50, searchQuery.getLimit());
+        searchQuery.setMaxItems(50);
+        assertEquals(50, searchQuery.getMaxItems());
 
-        searchQuery.setLimit(-100);
-        assertEquals(0, searchQuery.getLimit());
+        searchQuery.setMaxItems(-100);
+        assertEquals(0, searchQuery.getMaxItems());
     }
 
     @Test
@@ -91,13 +92,14 @@ public class SearchQueryImplTest {
 
     @Test
     public void getType() {
-        assertEquals("text/html", searchQuery.getType());
+        assertEquals("text/html", searchQuery.getType()[0]);
     }
 
     @Test
     public void setType() {
-        searchQuery.setType("application/pdf");
-        assertEquals(("application/pdf"), searchQuery.getType());
+        searchQuery.setType(new String[]{"application/pdf"});
+        assertEquals(("application/pdf"), searchQuery.getType()[0]);
+        assertTrue(searchQuery.isSearchByType());
     }
 
     @Test
@@ -109,17 +111,19 @@ public class SearchQueryImplTest {
     public void setSite() {
         searchQuery.setSite(new String[]{"http://arquivo.pt"});
         assertEquals("http://arquivo.pt", searchQuery.getSite()[0]);
+        assertTrue(searchQuery.isSearchBySite());
     }
 
     @Test
     public void getCollection() {
-        assertEquals("FAWP", searchQuery.getCollection());
+        assertEquals("FAWP", searchQuery.getCollection()[0]);
     }
 
     @Test
     public void setCollection() {
-        searchQuery.setCollection("CUSTOM");
-        assertEquals("CUSTOM", searchQuery.getCollection());
+        searchQuery.setCollection(new String[]{"CUSTOM"});
+        assertEquals("CUSTOM", searchQuery.getCollection()[0]);
+        assertTrue(searchQuery.isSearchByCollection());
     }
 
     @Test

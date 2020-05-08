@@ -110,45 +110,29 @@ public class NutchWaxSearchService implements SearchService {
             searchQuery.setOffset(searcherMaxHits);
         }
 
-        String[] siteParameter = searchQuery.getSite();
-        if (siteParameter != null) {
-            for (int i = 0; i < siteParameter.length; i++) {
-                LOG.debug("siteP = " + siteParameter[i]);
-                if (siteParameter[i].equals(""))
-                    continue;
-
-                String site = "";
-                site = " site:".concat(siteParameter[i]);
+        if (searchQuery.isSearchBySite()) {
+            for (int i = 0; i < searchQuery.getSite().length; i++) {
+                LOG.debug("siteP = " + searchQuery.getSite()[i]);
+                String site = " site:".concat(searchQuery.getSite()[i]);
                 site = site.replaceAll("site:http://", "site:");
                 site = site.replaceAll("site:https://", "site:");
                 queryString.append(site);
             }
         }
 
-        // TODO handle this as a String array
-        //Full-text search on specified type documents
-        String typeParameter = searchQuery.getType();
-        if (typeParameter == null)
-            typeParameter = "";
-        if (!typeParameter.equals("")) {
-            String type = " type:".concat(typeParameter);
-            queryString.append(type);
+        if (searchQuery.isSearchByType()){
+            for (int i = 0; i < searchQuery.getType().length; i++) {
+                LOG.debug("type = " + searchQuery.getType()[i]);
+                String type = " type:".concat(searchQuery.getType()[i]);
+                queryString.append(type);
+            }
         }
 
-        // TODO handle this as a String array
-        //Full-text search on specified collections
-        String collectionParameter = searchQuery.getCollection();
-        if (collectionParameter != null && !collectionParameter.equals("")) {
-            String[] collectionParameters = collectionParameter.split(",");
-            if (collectionParameters != null) {
-                for (String collection : collectionParameters) {
-                    if (collection.equals(""))
-                        continue;
-                    String collections = "";
-                    collections = " collection:".concat(collection);
-                    LOG.debug("Collections Append: " + collections);
-                    queryString.append(collections);
-                }
+        if (searchQuery.isSearchByCollection()) {
+            for (int i = 0; i < searchQuery.getCollection().length; i++){
+                LOG.debug("collection = " + searchQuery.getCollection()[i]);
+                String collection = " collection:".concat(searchQuery.getCollection()[i]);
+                queryString.append(collection);
             }
         }
 
@@ -171,7 +155,7 @@ public class NutchWaxSearchService implements SearchService {
     }
 
     public static boolean isLastPage(int numberOfResults, SearchQuery searchQuery) {
-        return numberOfResults <= searchQuery.getOffset() + searchQuery.getLimit();
+        return numberOfResults <= searchQuery.getOffset() + searchQuery.getMaxItems();
     }
 
 
@@ -183,11 +167,12 @@ public class NutchWaxSearchService implements SearchService {
         boolean urlSearchQuery = Utils.urlValidator(searchQuery.getQueryTerms().split(" ")[0]);
 
         int hitsPerDup = searchQuery.getLimitPerSite();
-        if (searchQuery.getSite() != null) {
+
+        if (searchQuery.isSearchBySite()) {
             hitsPerDup = 0;
         }
 
-        int numberOfHits = searchQuery.getOffset() + searchQuery.getLimit();
+        int numberOfHits = searchQuery.getOffset() + searchQuery.getMaxItems();
 
         String nutchwaxQueryString = buildNutchwaxQueryString(searchQuery);
 
@@ -203,7 +188,7 @@ public class NutchWaxSearchService implements SearchService {
 
             // build SearchResults
             if (hits.getLength() >= 1) {
-                int end = Math.min(hits.getLength() - searchQuery.getOffset(), searchQuery.getLimit());
+                int end = Math.min(hits.getLength() - searchQuery.getOffset(), searchQuery.getMaxItems());
                 Hit[] show = hits.getHits(searchQuery.getOffset(), end);
                 HitDetails[] details = bean.getDetails(show);
                 Summary[] summaries = bean.getSummary(details, query);
