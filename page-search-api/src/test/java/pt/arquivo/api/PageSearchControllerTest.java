@@ -37,14 +37,6 @@ public class PageSearchControllerTest {
     private MockMvc mockMvc;
 
     @Test
-    public void searchUrl() {
-    }
-
-    @Test
-    public void extractedText() {
-    }
-
-    @Test
     public void pageSearch() throws Exception {
 
         SearchResultImpl mockSearchResult1 = new SearchResultImpl();

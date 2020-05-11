@@ -100,18 +100,23 @@ public class PageSearchController {
         MetadataResponse metadataResponse = new MetadataResponse();
 
         LOG.info("Getting metadata for: " + id);
+        // TODO Refactor
         int idx = id.lastIndexOf("//");
         if (idx > 0) {
             String[] versionIdSplited = {id.substring(0, idx + 1), id.substring(idx + 2)};
             if (metadataValidator(versionIdSplited)) {
                 SearchResults searchResults = queryByUrl(versionIdSplited);
                 SearchResultImpl textSearchResult = (SearchResultImpl) searchResults.getResults().get(0);
-                if (textSearchResult != null){
+                if (textSearchResult != null) {
                     SearchResults cdxSearchResults = this.cdxSearchService.getResults(versionIdSplited[0],
                             versionIdSplited[1], versionIdSplited[1], 1, 0);
-                    if (cdxSearchResults.getResults() != null && cdxSearchResults.getResults().size() > 0){
-                        SearchResultImpl result = (SearchResultImpl) cdxSearchResults.getResults().get(0);
-                        textSearchResult.setStatusCode(result.getStatusCode());
+
+                    if (cdxSearchResults.getResults().size() > 0){
+                        SearchResultImpl cdxResult = (SearchResultImpl) cdxSearchResults.getResults().get(0);
+                        textSearchResult.setStatusCode(cdxResult.getStatusCode());
+
+                        if (cdxResult.getCollection() != null && !cdxResult.getCollection().isEmpty())
+                            textSearchResult.setCollection(cdxResult.getCollection());
                     }
                 }
                 metadataResponse.setLinkToService(linkToService);

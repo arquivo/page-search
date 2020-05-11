@@ -36,38 +36,8 @@ public class NutchWaxSearchServiceTestIT {
         }
     }
 
-
     @Autowired
     private NutchWaxSearchService nutchWaxSearchService;
-
-    // @Test public void testUrlQuery(){
-    //     SearchQueryImpl searchQuery = new SearchQueryImpl("versionHistory=expresso.pt&maxItems=5");
-    //     searchQuery.setQ
-    //     SearchResults searchResults = this.nutchWaxSearchService.query(searchQuery,true);
-    //     // assertThat(searchResults.isLastPageResults()).isFalse();
-    //     assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(199);
-
-    //     ArrayList<SearchResult> arraySearchResult = searchResults.getResults();
-    //     SearchResultImpl firstSearchResult = (SearchResultImpl) arraySearchResult.get(0);
-
-    //     assertThat(firstSearchResult.getStatusCode()).isEqualTo(200);
-    //     // check only if the fields exist
-    //     assertThat(firstSearchResult.getTitle()).isNotNull();
-    //     assertThat(firstSearchResult.getOriginalURL()).isNotNull();
-    //     assertThat(firstSearchResult.getLinkToArchive()).isNotNull();
-    //     assertThat(firstSearchResult.getTstamp()).isNotNull();
-    //     assertThat(firstSearchResult.getContentLength()).isNotNull();
-    //     assertThat(firstSearchResult.getDigest()).isNotNull();
-    //     assertThat(firstSearchResult.getLinkToScreenshot()).isNotNull();
-    //     assertThat(firstSearchResult.getDate()).isNotNull();
-    //     assertThat(firstSearchResult.getEncoding()).isBlank();
-    //     assertThat(firstSearchResult.getLinkToNoFrame()).isNotNull();
-    //     // TODO this will stop to be blank, waiting for cdx indexes update
-    //     assertThat(firstSearchResult.getCollection()).isBlank();
-    //     assertThat(firstSearchResult.getLinkToExtractedText()).isNotNull();
-    //     assertThat(firstSearchResult.getLinkToMetadata()).isNotNull();
-    //     assertThat(firstSearchResult.getLinkToOriginalFile()).isNotNull();
-    // }
 
     @Test
     public void testMetadataRequest() {
@@ -109,7 +79,7 @@ public class NutchWaxSearchServiceTestIT {
     }
 
     @Test
-    public void testResultsBoundedQuery(){
+    public void testResultsBoundedQuery() {
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
         searchQuery.setOffset(5);
         searchQuery.setMaxItems(5);
@@ -124,7 +94,7 @@ public class NutchWaxSearchServiceTestIT {
 
 
     @Test
-    public void testTimeBoundedQuery(){
+    public void testTimeBoundedQuery() {
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
         searchQuery.setFrom("19961013150238");
         searchQuery.setTo("19961013150305");
@@ -134,29 +104,20 @@ public class NutchWaxSearchServiceTestIT {
     }
 
     @Test
-    public void testCollectionBoundedQuery(){
+    public void testCollectionBoundedQuery() {
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
-        searchQuery.setCollection(new String[] {"collectionX"});
+        searchQuery.setCollection(new String[]{"collectionX"});
 
         SearchResults searchResults = this.nutchWaxSearchService.query(searchQuery);
         assertThat(searchResults.getResults().size()).isEqualTo(0);
     }
 
-    @Test public void testSiteBoundedQuery(){
+    @Test
+    public void testSiteBoundedQuery() {
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
-        searchQuery.setSite(new String[] {"http://sapo.ua.pt/"});
+        searchQuery.setSite(new String[]{"http://sapo.ua.pt/"});
 
         SearchResults searchResults = this.nutchWaxSearchService.query(searchQuery);
         assertThat(searchResults.getResults().size()).isEqualTo(50);
     }
-
-    /* What we want to test?
-     * 1. simple text query - OK
-     * 3. versionHistory - cdxService / PageSearchController
-     * 4. metadata - PageSearchController
-     * 5. timestamp validations - OK
-     * 6. site search query - OK
-     * 7. collection search query - OK
-     * 8. last result page - OK
-     * */
 }
