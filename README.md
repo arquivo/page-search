@@ -60,6 +60,8 @@ Available jobs:
 
 Example of expected worklfow:
 ```
-yarn jar pagesearch-indexer-1.0.0-SNAPSHOT.jar 
+yarn jar pagesearch-index-job-0.0.1-jar-with-dependencies.jar HdfsPageSearchDataDriver -D collection="TESTE" input.txt output
+yarn jar pagesearch-index-job-0.0.1-jar-with-dependencies.jar InvertLinksDriver -D mapred.reduce.tasks=<nr_reduces> output
+yarn jar pagesearch-index-job-0.0.1-jar-with-dependencies.jar SolrPageDocDriver -D mapred.reduce.tasks=<nr_reduces> output
 ```
 
