@@ -47,6 +47,7 @@ Command example:
 ```
 java -jar warc-parser-1.0.0-SNAPSHOT-jar-with-dependencies.jar /data/warcs
 ```
+Specify a custom config file with -Dconfig.file=path/to/config-file
 
 **Note**: The warc-parser doesn't extract inlinks/outlinks information.
 
