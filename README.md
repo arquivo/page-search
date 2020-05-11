@@ -14,9 +14,52 @@ docker run -d pagesearch-solr
 
 ## page-search-indexer
 
-### warc-parser (do not generate inlinks/outlinks)
+### warc-parser
 
-warc-parser-1.0.0-SNAPSHOT-jar-with-dependencies.jar
+Write a reference.conf with the parsing configurations. The default configurations of the parser are:
+```
+{
+    "warc" : {
+        "solr":{
+            "server": "http://localhost:8983/solr/searchpages"
+        },
+        "index":{
+            "extract":{
+                # Restrict record types:
+                "record_type_include" : [
+                    response, revisit
+                ],
+                "record_response_include" : [
+                    "2"
+                ],
+                "record_primary_mimetype_include" : [
+                    text, application
+                ],
+                "record_mimetype_exclude" : [
+                    xml, css, javascript, x-javascript, json
+                ]
+            }
+        }
+    }
+}
+```
+Command example:
+```
+java -jar warc-parser-1.0.0-SNAPSHOT-jar-with-dependencies.jar /data/warcs
+```
 
-### indexing with hadoop
+**Note**: The warc-parser doesn't extract inlinks/outlinks information.
+
+### Indexing with Hadoop
+
+Available jobs:
+* HdfsPageSearchDataDriver
+* PageSearchDataDriver
+* InvertLinksDriver
+* SolrPageDocDriver
+
+Example of expected worklfow:
+```
+yarn jar pagesearch-indexer-1.0.0-SNAPSHOT.jar 
+```
 
