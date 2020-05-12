@@ -120,7 +120,7 @@ public class NutchWaxSearchService implements SearchService {
             }
         }
 
-        if (searchQuery.isSearchByType()){
+        if (searchQuery.isSearchByType()) {
             for (int i = 0; i < searchQuery.getType().length; i++) {
                 LOG.debug("type = " + searchQuery.getType()[i]);
                 String type = " type:".concat(searchQuery.getType()[i]);
@@ -129,7 +129,7 @@ public class NutchWaxSearchService implements SearchService {
         }
 
         if (searchQuery.isSearchByCollection()) {
-            for (int i = 0; i < searchQuery.getCollection().length; i++){
+            for (int i = 0; i < searchQuery.getCollection().length; i++) {
                 LOG.debug("collection = " + searchQuery.getCollection()[i]);
                 String collection = " collection:".concat(searchQuery.getCollection()[i]);
                 queryString.append(collection);
@@ -169,7 +169,9 @@ public class NutchWaxSearchService implements SearchService {
         int hitsPerDup = searchQuery.getLimitPerSite();
 
         if (searchQuery.isSearchBySite()) {
-            hitsPerDup = 0;
+            searchQuery.setDedupField("url");
+            searchQuery.setLimitPerSite(0);
+            hitsPerDup = 2;
         }
 
         int numberOfHits = searchQuery.getOffset() + searchQuery.getMaxItems();
@@ -180,7 +182,7 @@ public class NutchWaxSearchService implements SearchService {
             Query query = Query.parse(nutchwaxQueryString, conf);
             LOG.info("Executing query: " + query);
             Hits hits = bean.search(query, numberOfHits, searcherMaxHits,
-                    hitsPerDup, "site", null, false,
+                    hitsPerDup, searchQuery.getDedupField(), null, false,
                     PwaFunctionsWritable.parse(conf.get(Global.RANKING_FUNCTIONS)), 1, urlSearchQuery);
 
             results.setLastPageResults(isLastPage(hits.getLength(), searchQuery));

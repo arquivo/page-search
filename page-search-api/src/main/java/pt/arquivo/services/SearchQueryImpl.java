@@ -28,7 +28,11 @@ public class SearchQueryImpl implements SearchQuery {
     private String[] collection;
 
     private String[] fields;
+
+    @JsonIgnore
     private boolean prettyPrint;
+
+    private String dedupField = "site";
 
     public SearchQueryImpl(String queryTerms) {
         this.queryTerms = queryTerms;
@@ -143,6 +147,16 @@ public class SearchQueryImpl implements SearchQuery {
 
     public void setFields(String[] fields) {
         this.fields = fields;
+    }
+
+    @Override
+    public String getDedupField() {
+        return dedupField;
+    }
+
+    @Override
+    public void setDedupField(String dedupField) {
+        this.dedupField = dedupField;
     }
 
     @Override

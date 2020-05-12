@@ -39,6 +39,10 @@ public interface SearchQuery {
 
     String[] getFields();
 
+    String getDedupField();
+
+    void setDedupField(String dedupField);
+
     void setFields(String[] fields);
 
     boolean isSearchBySite();
