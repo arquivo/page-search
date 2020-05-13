@@ -33,6 +33,7 @@ public class SearchResultImpl implements SearchResult {
     private String collection;
     private long offset;
     private int statusCode;
+    private int id;
 
     private String[] fields;
 
@@ -205,6 +206,14 @@ public class SearchResultImpl implements SearchResult {
             LOG.error("Error while extracting text: ", e);
         }
         return "";
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public HitDetails getDetails() {

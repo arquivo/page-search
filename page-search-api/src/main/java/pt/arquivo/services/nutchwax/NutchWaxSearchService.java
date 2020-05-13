@@ -60,6 +60,9 @@ public class NutchWaxSearchService implements SearchService {
     @Value("${searchpages.textsearch.service.link}")
     private String textSearchServiceEndpoint;
 
+    @Value("${searchpages.api.show.ids}")
+    private boolean showIds;
+
     public NutchWaxSearchService(Configuration conf) throws IOException {
         this.conf = conf;
         this.bean = new NutchwaxBean(conf);
@@ -184,7 +187,6 @@ public class NutchWaxSearchService implements SearchService {
             Hits hits = bean.search(query, numberOfHits, searcherMaxHits,
                     hitsPerDup, searchQuery.getDedupField(), null, false,
                     PwaFunctionsWritable.parse(conf.get(Global.RANKING_FUNCTIONS)), 1, urlSearchQuery);
-
             results.setLastPageResults(isLastPage(hits.getLength(), searchQuery));
             results.setEstimatedNumberResults(hits.getTotal());
 
@@ -202,6 +204,11 @@ public class NutchWaxSearchService implements SearchService {
                     populateEndpointsLinks(searchResult);
 
                     searchResult.setFields(searchQuery.getFields());
+
+                    if (showIds){
+                        searchResult.setId(show[i].getIndexDocNo());
+                    }
+
                     searchResults.add(searchResult);
                 }
             }
