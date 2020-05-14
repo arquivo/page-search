@@ -104,12 +104,15 @@ public class CDXSearchService {
                 searchResult.setTimeStamp(result.getTimestamp());
                 searchResult.setOriginalURL(result.getUrl());
                 searchResult.setStatusCode(Integer.parseInt(result.getStatus()));
+                searchResult.setCollection(result.getCollection());
 
                 if (textSearchResults.getNumberResults() > 0) {
                     LOG.debug("CDX record matched with full-text index.." + result.getUrl());
                     SearchResultImpl searchResultText = (SearchResultImpl) textSearchResults.getResults().get(0);
                     searchResult.setTitle(searchResultText.getTitle());
-                    searchResult.setCollection(searchResultText.getCollection());
+                    if (result.getCollection() == null || result.getCollection().isEmpty()){
+                        searchResult.setCollection(searchResultText.getCollection());
+                    }
                     searchResult.setEncoding(searchResultText.getEncoding());
 
                     if (showIds){
