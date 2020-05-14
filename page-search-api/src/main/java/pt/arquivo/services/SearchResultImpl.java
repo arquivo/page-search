@@ -32,8 +32,8 @@ public class SearchResultImpl implements SearchResult {
     private String fileName;
     private String collection;
     private long offset;
-    private int statusCode;
-    private int id;
+    private Integer statusCode;
+    private Integer id;
 
     private String[] fields;
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -11,6 +12,9 @@ import java.lang.reflect.Field;
 public class SearchResultSerializer extends JsonSerializer {
 
     private static final Log LOG = LogFactory.getLog(SearchResultSerializer.class);
+
+    @Value("${searchpages.api.show.ids}")
+    private boolean showIds;
 
     @Override
     public void serialize(Object o, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
@@ -35,9 +39,10 @@ public class SearchResultSerializer extends JsonSerializer {
                 try {
                     Object value = field.get(searchResult);
                     if (value != null){
-                        if (field.getName().equals("statusCode")){
-                            if ((Integer) field.get(searchResult) != 0)
-                               jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
+                        if (field.getName().equals("id")){
+                            if (showIds){
+                                jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
+                            }
                         }
                         else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
                                 && !field.getName().equals("details") && !field.getName().equals("fields")){

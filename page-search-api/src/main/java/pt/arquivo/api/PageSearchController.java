@@ -38,11 +38,11 @@ public class PageSearchController {
     @GetMapping(value = {"/urlsearch/{url}"})
     public @ResponseBody
     ApiResponse searchCdxURL(@PathVariable String url,
-                          @RequestParam(value = "from", required = false) String from,
-                          @RequestParam(value = "to", required = false) String to,
-                          @RequestParam(value = "maxItems", defaultValue = "50", required = false) int limit,
-                          @RequestParam(value = "offset", defaultValue = "0", required = false) int offset,
-                          HttpServletRequest request) {
+                             @RequestParam(value = "from", required = false) String from,
+                             @RequestParam(value = "to", required = false) String to,
+                             @RequestParam(value = "maxItems", defaultValue = "50", required = false) int limit,
+                             @RequestParam(value = "offset", defaultValue = "0", required = false) int offset,
+                             HttpServletRequest request) {
 
         SearchResults searchResults = cdxSearchService.getResults(url, from, to, limit, offset);
 
@@ -105,13 +105,17 @@ public class PageSearchController {
         if (idx > 0) {
             String[] versionIdSplited = {id.substring(0, idx), id.substring(idx + 1)};
             if (metadataValidator(versionIdSplited)) {
-                SearchResults searchResults = queryByUrl(versionIdSplited);
-                SearchResultImpl textSearchResult = (SearchResultImpl) searchResults.getResults().get(0);
-                if (textSearchResult != null) {
-                    SearchResults cdxSearchResults = this.cdxSearchService.getResults(versionIdSplited[0],
-                            versionIdSplited[1], versionIdSplited[1], 1, 0);
+                SearchResults metadataSearchResults;
+                SearchResults textSearchResults = queryByUrl(versionIdSplited);
+                SearchResults cdxSearchResults = this.cdxSearchService.getResults(versionIdSplited[0],
+                        versionIdSplited[1], versionIdSplited[1], 1, 0);
 
-                    if (cdxSearchResults.getResults().size() > 0){
+                if (textSearchResults.getNumberResults() == 0) {
+                    metadataSearchResults = cdxSearchResults;
+                } else {
+                    metadataSearchResults = textSearchResults;
+                    if (cdxSearchResults.getResults().size() > 0) {
+                        SearchResultImpl textSearchResult = (SearchResultImpl) textSearchResults.getResults().get(0);
                         SearchResultImpl cdxResult = (SearchResultImpl) cdxSearchResults.getResults().get(0);
                         textSearchResult.setStatusCode(cdxResult.getStatusCode());
 
@@ -121,7 +125,7 @@ public class PageSearchController {
                 }
                 metadataResponse.setLinkToService(linkToService);
                 metadataResponse.setServiceName(serviceName);
-                metadataResponse.setResponseItems(searchResults.getResults());
+                metadataResponse.setResponseItems(metadataSearchResults.getResults());
             }
         }
 

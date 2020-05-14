@@ -55,6 +55,9 @@ public class CDXSearchService {
     @Value("${searchpages.textsearch.service.link}")
     private String textSearchServiceEndpoint;
 
+    @Value("${searchpages.api.show.ids}")
+    private boolean showIds;
+
     public SearchResults getResults(String url, String from, String to, int limitP, int start) {
         Gson gson = new Gson();
         SearchResults searchResultsResponse = new SearchResults();
@@ -108,6 +111,11 @@ public class CDXSearchService {
                     searchResult.setTitle(searchResultText.getTitle());
                     searchResult.setCollection(searchResultText.getCollection());
                     searchResult.setEncoding(searchResultText.getEncoding());
+
+                    if (showIds){
+                        searchResult.setId(searchResultText.getId());
+                    }
+
                     populateEndpointsLinks(searchResult, true);
                 } else {
                     searchResult.setTitle(result.getUrl());

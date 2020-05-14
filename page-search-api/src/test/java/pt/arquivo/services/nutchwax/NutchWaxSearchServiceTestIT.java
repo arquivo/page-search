@@ -6,6 +6,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.test.context.junit4.SpringRunner;
 import pt.arquivo.services.SearchQueryImpl;
 import pt.arquivo.services.SearchResult;
@@ -25,7 +27,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class NutchWaxSearchServiceTestIT {
 
     @Configuration
+    @PropertySource("classpath:application.properties")
     static class ContextConfiguration {
+        @Bean
+        public static PropertySourcesPlaceholderConfigurer propertyConfigInDev() {
+            return new PropertySourcesPlaceholderConfigurer();
+        }
+
         @Bean
         public NutchWaxSearchService initNutchWaxService() throws IOException {
             org.apache.hadoop.conf.Configuration configuration = NutchwaxConfiguration.getConfiguration();
