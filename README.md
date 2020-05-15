@@ -11,6 +11,9 @@ docker run -d pagesearch-solr
 
 ![](docs/img/PageSearchArchitecture.png)
 
+### Api Documentation
+
+https://preprod.arquivo.pt/pagesearch/swagger-ui.html#/
 
 ## page-search-indexer
 
