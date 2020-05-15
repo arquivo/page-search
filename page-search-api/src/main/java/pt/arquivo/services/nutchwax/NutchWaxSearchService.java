@@ -106,6 +106,22 @@ public class NutchWaxSearchService implements SearchService {
     private String buildNutchwaxQueryString(SearchQuery searchQuery) {
         StringBuilder queryString = new StringBuilder();
 
+        if (isTimeBoundedQuery(searchQuery)) {
+            if (searchQuery.getFrom() == null) {
+                searchQuery.setFrom(startDate);
+            } else if (searchQuery.getFrom().length() != 14) {
+                searchQuery.setFrom(StringUtils.rightPad(searchQuery.getFrom(), 14, "0"));
+            }
+
+            if (searchQuery.getTo() == null) {
+                Date endDate = new Date();
+                searchQuery.setTo(dateFormat.format(endDate));
+            } else if (searchQuery.getTo().length() != 14) {
+                searchQuery.setTo(StringUtils.rightPad(searchQuery.getTo(), 14, "0"));
+            }
+            queryString.append(" date:".concat(searchQuery.getFrom()).concat("-").concat(searchQuery.getTo()));
+        }
+
         String queryTerms = searchQuery.getQueryTerms();
         queryString.append(queryTerms);
 
@@ -139,21 +155,6 @@ public class NutchWaxSearchService implements SearchService {
             }
         }
 
-        if (isTimeBoundedQuery(searchQuery)) {
-            if (searchQuery.getFrom() == null) {
-                searchQuery.setFrom(startDate);
-            } else if (searchQuery.getFrom().length() != 14) {
-                searchQuery.setFrom(StringUtils.rightPad(searchQuery.getFrom(), 14, "0"));
-            }
-
-            if (searchQuery.getTo() == null) {
-                Date endDate = new Date();
-                searchQuery.setTo(dateFormat.format(endDate));
-            } else if (searchQuery.getTo().length() != 14) {
-                searchQuery.setTo(StringUtils.rightPad(searchQuery.getTo(), 14, "0"));
-            }
-            queryString.append(" date:".concat(searchQuery.getFrom()).concat("-").concat(searchQuery.getTo()));
-        }
         return queryString.toString();
     }
 
@@ -167,7 +168,7 @@ public class NutchWaxSearchService implements SearchService {
         SearchResults results = new SearchResults();
         ArrayList<SearchResult> searchResults = new ArrayList<>();
 
-        boolean urlSearchQuery = Utils.urlValidator(searchQuery.getQueryTerms().split(" ")[0]);
+        boolean urlSearchQuery = Utils.urlValidator(searchQuery.getQueryTerms().split(" ")[0]) || searchQuery.getQueryTerms().contains("exacturl:");
 
         int hitsPerDup = searchQuery.getLimitPerSite();
 

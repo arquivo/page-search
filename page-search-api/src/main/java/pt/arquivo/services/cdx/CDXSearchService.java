@@ -98,6 +98,7 @@ public class CDXSearchService {
 
                 searchResult.setFileName(result.getFilename());
                 searchResult.setOffset(Long.parseLong(result.getOffset()));
+                searchResult.setContentLength(Long.parseLong(result.getLength()));
                 // TODO SANITY CHECK HERE with the digest
                 searchResult.setDigest(result.getDigest());
                 searchResult.setMimeType(result.getMime());
