@@ -37,10 +37,9 @@ public class SearchResultImplTest {
 
         HashMap<String, Object> hashMap = toJson(searchResult);
 
-        // check if the fields are OK (without nulls and not wanted fields)
         // gson is casting to double
         assertThat(hashMap.get("contentLength")).isEqualTo(0.0);
-        assertThat(hashMap.get("statusCode")).isNull();
+        assertThat(hashMap.get("statusCode")).isEqualTo(0.0);
 
         String[] fields = {"title"};
         searchResult.setFields(fields);

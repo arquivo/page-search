@@ -119,11 +119,11 @@ public class NutchWaxSearchService implements SearchService {
             } else if (searchQuery.getTo().length() != 14) {
                 searchQuery.setTo(StringUtils.rightPad(searchQuery.getTo(), 14, "0"));
             }
-            queryString.append(" date:".concat(searchQuery.getFrom()).concat("-").concat(searchQuery.getTo()));
+            queryString.append("date:".concat(searchQuery.getFrom()).concat("-").concat(searchQuery.getTo()));
         }
 
         String queryTerms = searchQuery.getQueryTerms();
-        queryString.append(queryTerms);
+        queryString.append(" ".concat(queryTerms));
 
         if (searchQuery.getOffset() >= searcherMaxHits) {
             searchQuery.setOffset(searcherMaxHits);
