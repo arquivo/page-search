@@ -13,9 +13,9 @@ public interface SearchQuery {
 
     void setMaxItems(int maxItems);
 
-    int getLimitPerSite();
+    int getDedupValue();
 
-    void setLimitPerSite(int limitPerSite);
+    void setDedupValue(int dedupValue);
 
     String[] getSite();
 

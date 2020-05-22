@@ -12,9 +12,17 @@ public class SearchQueryImplTest {
 
     @Before
     public void setupSearchQuery() {
-        searchQuery = new SearchQueryImpl("sapo ya", 0,
-                10, 2, "20190101010101", "202001010101", new String[]{"text/html"},
-                new String[]{"http://sapo.pt"}, new String[]{"FAWP"}, new String[]{"title", "collection"}, false);
+        searchQuery = new SearchQueryImpl("sapo ya");
+        searchQuery.setOffset(0);
+        searchQuery.setMaxItems(10);
+        searchQuery.setDedupValue(2);
+        searchQuery.setFrom("20190101010101");
+        searchQuery.setTo("202001010101");
+        searchQuery.setType(new String[]{"text/html"});
+        searchQuery.setSite(new String[]{"http://sapo.pt"});
+        searchQuery.setCollection(new String[]{"FAWP"});
+        searchQuery.setFields(new String[]{"title", "collection"});
+        searchQuery.setPrettyPrint(false);
     }
 
     @Test
@@ -54,14 +62,14 @@ public class SearchQueryImplTest {
     }
 
     @Test
-    public void getLimitPerSite() {
-        assertEquals(2, searchQuery.getLimitPerSite());
+    public void getDedupValue() {
+        assertEquals(2, searchQuery.getDedupValue());
     }
 
     @Test
-    public void setLimitPerSite() {
-        searchQuery.setLimitPerSite(4);
-        assertEquals(4, searchQuery.getLimitPerSite());
+    public void setDedupValue() {
+        searchQuery.setDedupValue(4);
+        assertEquals(4, searchQuery.getDedupValue());
     }
 
     @Test
@@ -77,7 +85,7 @@ public class SearchQueryImplTest {
 
     @Test
     public void getTo() {
-        assertEquals("202001010101", searchQuery.getTo());
+        assertEquals("20200101010100", searchQuery.getTo());
     }
 
     @Test

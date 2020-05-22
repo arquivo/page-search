@@ -1,6 +1,5 @@
 package pt.arquivo.services.nutchwax;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.lucene.search.PwaFunctionsWritable;
 import org.apache.nutch.global.Global;
@@ -109,15 +108,11 @@ public class NutchWaxSearchService implements SearchService {
         if (isTimeBoundedQuery(searchQuery)) {
             if (searchQuery.getFrom() == null) {
                 searchQuery.setFrom(startDate);
-            } else if (searchQuery.getFrom().length() != 14) {
-                searchQuery.setFrom(StringUtils.rightPad(searchQuery.getFrom(), 14, "0"));
             }
 
             if (searchQuery.getTo() == null) {
                 Date endDate = new Date();
                 searchQuery.setTo(dateFormat.format(endDate));
-            } else if (searchQuery.getTo().length() != 14) {
-                searchQuery.setTo(StringUtils.rightPad(searchQuery.getTo(), 14, "0"));
             }
             queryString.append("date:".concat(searchQuery.getFrom()).concat("-").concat(searchQuery.getTo()));
         }
@@ -170,12 +165,8 @@ public class NutchWaxSearchService implements SearchService {
 
         boolean urlSearchQuery = Utils.urlValidator(searchQuery.getQueryTerms().split(" ")[0]) || searchQuery.getQueryTerms().contains("exacturl:");
 
-        int hitsPerDup = searchQuery.getLimitPerSite();
-
         if (searchQuery.isSearchBySite()) {
             searchQuery.setDedupField("url");
-            searchQuery.setLimitPerSite(0);
-            hitsPerDup = 2;
         }
 
         int numberOfHits = searchQuery.getOffset() + searchQuery.getMaxItems();
@@ -186,10 +177,10 @@ public class NutchWaxSearchService implements SearchService {
             Query query = Query.parse(nutchwaxQueryString, conf);
             LOG.info(String.format("Executing query - queryString: %s numberOfHits: %s, " +
                             "searcherMaxHits: %s, hitsPerDup: %s, urlSearchQuery: %s", query, numberOfHits,
-                    searcherMaxHits, hitsPerDup, urlSearchQuery));
+                    searcherMaxHits, searchQuery.getDedupValue(), urlSearchQuery));
 
             Hits hits = bean.search(query, numberOfHits, searcherMaxHits,
-                    hitsPerDup, searchQuery.getDedupField(), null, false,
+                    searchQuery.getDedupValue(), searchQuery.getDedupField(), null, false,
                     PwaFunctionsWritable.parse(conf.get(Global.RANKING_FUNCTIONS)), 1, urlSearchQuery);
             results.setLastPageResults(isLastPage(hits.getLength(), searchQuery));
             results.setEstimatedNumberResults(hits.getTotal());

@@ -3,6 +3,7 @@ package pt.arquivo.services;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang.StringUtils;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SearchQueryImpl implements SearchQuery {
@@ -15,8 +16,11 @@ public class SearchQueryImpl implements SearchQuery {
     @JsonProperty("maxItems")
     private int maxItems = 50;
 
-    @JsonProperty("itemsPerSite")
-    private int limitPerSite = 2;
+    // TODO decreprated field
+    @JsonIgnore
+    private Integer limitPerSite;
+
+    private int dedupValue = 2;
 
     private String from;
     private String to;
@@ -36,24 +40,6 @@ public class SearchQueryImpl implements SearchQuery {
 
     public SearchQueryImpl(String queryTerms) {
         this.queryTerms = queryTerms;
-    }
-
-    public SearchQueryImpl(String queryTerms, int offset, int maxItems, int limitPerSite,
-                           String from, String to, String[] type, String[] site,
-                           String[] collection, String[] fields, boolean prettyPrint) {
-
-        this.queryTerms = queryTerms;
-        this.offset = offset;
-        setMaxItems(maxItems);
-        this.limitPerSite = limitPerSite;
-        this.from = from;
-        this.to = to;
-        this.type = type;
-        this.site = site;
-        this.collection = collection;
-        this.prettyPrint = prettyPrint;
-
-        this.setFields(fields);
     }
 
     public String getQueryTerms() {
@@ -84,20 +70,26 @@ public class SearchQueryImpl implements SearchQuery {
         }
     }
 
-    public int getLimitPerSite() {
+    public Integer getLimitPerSite() {
         return limitPerSite;
     }
 
-    public void setLimitPerSite(int limitPerSite) {
+    public void setLimitPerSite(Integer limitPerSite) {
         this.limitPerSite = limitPerSite;
+        this.dedupValue = limitPerSite;
     }
 
     public String getFrom() {
         return from;
     }
 
+    // TODO validate if its valida date (just numbers and at least a year)
     public void setFrom(String from) {
-        this.from = from.substring(0, 14);
+        if (from.length() > 14) {
+            this.from = from.substring(0, 14);
+        } else {
+            this.from = StringUtils.rightPad(from, 14, "0");
+        }
     }
 
     public String getTo() {
@@ -105,7 +97,11 @@ public class SearchQueryImpl implements SearchQuery {
     }
 
     public void setTo(String to) {
-        this.to = to.substring(0, 14);
+        if (to.length() > 14) {
+            this.to = to.substring(0, 14);
+        } else {
+            this.to = StringUtils.rightPad(to, 14, "0");
+        }
     }
 
     public String[] getType() {
@@ -158,6 +154,19 @@ public class SearchQueryImpl implements SearchQuery {
     public void setDedupField(String dedupField) {
         this.dedupField = dedupField;
     }
+
+    public int getDedupValue() {
+        return dedupValue;
+    }
+
+    public void setDedupValue(int dedupValue) {
+        this.dedupValue = dedupValue;
+    }
+
+    public boolean isPrettyPrint() {
+        return prettyPrint;
+    }
+
 
     @Override
     @JsonIgnore

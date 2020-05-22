@@ -142,7 +142,9 @@ public class PageSearchController {
                            @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
                            @RequestParam(value = "maxItems", required = false, defaultValue = "50") int maxItems,
                            @RequestParam(value = "siteSearch", required = false) String[] siteSearch,
-                           @RequestParam(value = "limitPerSite", required = false, defaultValue = "2") int limitPerSite,
+                           @RequestParam(value = "dedupField", required = false, defaultValue = "site") String dedupField,
+                           @RequestParam(value = "limitPerSite", required = false) Integer limitPerSite,
+                           @RequestParam(value = "dedupValue", required = false, defaultValue = "2") int dedupValue,
                            @RequestParam(value = "from", required = false) String from,
                            @RequestParam(value = "to", required = false) String to,
                            @RequestParam(value = "type", required = false) String[] type,
@@ -151,7 +153,7 @@ public class PageSearchController {
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
                            HttpServletRequest request
     ) {
-        // TODO need to do this verification since versionHistory is merged on the term search.... what a nice idea... remove it on the next API version, when versionHistory is removed from here
+        // TODO need to do this verification since versionHistory is merged on the term search. Remove it on the next API version, when versionHistory is removed from here
         if (url != null) {
             return searchCdxURL(url, from, to, maxItems, offset, request);
         } else if (id != null) {
@@ -160,8 +162,26 @@ public class PageSearchController {
             // TODO break API with illegal call
         }
 
-        SearchQueryImpl searchQuery = new SearchQueryImpl(query, offset, maxItems, limitPerSite, from, to, type,
-                siteSearch, collection, fields, prettyPrint);
+        SearchQueryImpl searchQuery = new SearchQueryImpl(query);
+        searchQuery.setOffset(offset);
+        searchQuery.setMaxItems(maxItems);
+        searchQuery.setDedupField(dedupField);
+        searchQuery.setDedupValue(dedupValue);
+        // TODO to decreprate parameter
+        if (limitPerSite != null){
+            searchQuery.setLimitPerSite(limitPerSite);
+        }
+        if (from != null){
+            searchQuery.setFrom(from);
+        }
+        if (to != null){
+            searchQuery.setTo(to);
+        }
+        searchQuery.setType(type);
+        searchQuery.setSite(siteSearch);
+        searchQuery.setCollection(collection);
+        searchQuery.setFields(fields);
+        searchQuery.setPrettyPrint(prettyPrint);
 
         SearchResults searchResults;
         searchResults = searchService.query(searchQuery);
