@@ -1,9 +1,10 @@
 package pt.arquivo.services;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
@@ -11,7 +12,7 @@ import java.lang.reflect.Field;
 
 public class SearchResultSerializer extends JsonSerializer {
 
-    private static final Log LOG = LogFactory.getLog(SearchResultSerializer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SearchResultSerializer.class);
 
     @Value("${searchpages.api.show.ids}")
     private boolean showIds;
@@ -21,8 +22,8 @@ public class SearchResultSerializer extends JsonSerializer {
         SearchResultImpl searchResult = (SearchResultImpl) o;
         jsonGenerator.writeStartObject();
         if (searchResult.getFields() != null) {
-            for (Field field : searchResult.getClass().getDeclaredFields()){
-                if (serializeField(field.getName(), searchResult.getFields())){
+            for (Field field : searchResult.getClass().getDeclaredFields()) {
+                if (serializeField(field.getName(), searchResult.getFields())) {
                     try {
                         field.setAccessible(true);
                         if (field.get(searchResult) != null)
@@ -32,20 +33,18 @@ public class SearchResultSerializer extends JsonSerializer {
                     }
                 }
             }
-        }
-        else {
-            for (Field field : searchResult.getClass().getDeclaredFields()){
+        } else {
+            for (Field field : searchResult.getClass().getDeclaredFields()) {
                 field.setAccessible(true);
                 try {
                     Object value = field.get(searchResult);
-                    if (value != null){
-                        if (field.getName().equals("id")){
-                            if (showIds){
+                    if (value != null) {
+                        if (field.getName().equals("id")) {
+                            if (showIds) {
                                 jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
                             }
-                        }
-                        else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
-                                && !field.getName().equals("details") && !field.getName().equals("fields")){
+                        } else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
+                                && !field.getName().equals("details") && !field.getName().equals("fields")) {
                             jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
                         }
                     }
@@ -58,14 +57,13 @@ public class SearchResultSerializer extends JsonSerializer {
     }
 
     private boolean serializeField(String fieldName, String[] fields) {
-        if (fields != null){
+        if (fields != null) {
             for (String field : fields) {
                 if (fieldName.equalsIgnoreCase(field))
                     return true;
             }
             return false;
-        }
-        else {
+        } else {
             return true;
         }
     }

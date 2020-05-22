@@ -2,8 +2,8 @@ package pt.arquivo.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +17,7 @@ import java.util.ArrayList;
 @RestController
 public class PageSearchController {
 
-    private static final Log LOG = LogFactory.getLog(PageSearchController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PageSearchController.class);
 
     @Value("${searchpages.api.servicename}")
     private String serviceName;

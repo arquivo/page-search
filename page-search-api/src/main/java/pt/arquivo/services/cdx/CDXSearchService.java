@@ -3,8 +3,8 @@ package pt.arquivo.services.cdx;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import pt.arquivo.services.*;
@@ -22,7 +22,7 @@ import java.util.List;
 
 public class CDXSearchService {
 
-    private static final Log LOG = LogFactory.getLog(CDXSearchService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CDXSearchService.class);
 
     private final String equalOP = "=";
     private final String andOP = "&";
@@ -78,7 +78,7 @@ public class CDXSearchService {
             }
 
             int limit = Math.min(jsonValues.size(), limitP + start);
-            if ( limit > 0 ) {
+            if (limit > 0) {
                 for (int i = start; i < limit; i++) {
                     cdxResults.add(gson.fromJson(jsonValues.get(i), ItemCDX.class));
                 }
@@ -111,12 +111,12 @@ public class CDXSearchService {
                     LOG.debug("CDX record matched with full-text index.." + result.getUrl());
                     SearchResultImpl searchResultText = (SearchResultImpl) textSearchResults.getResults().get(0);
                     searchResult.setTitle(searchResultText.getTitle());
-                    if (result.getCollection() == null || result.getCollection().isEmpty()){
+                    if (result.getCollection() == null || result.getCollection().isEmpty()) {
                         searchResult.setCollection(searchResultText.getCollection());
                     }
                     searchResult.setEncoding(searchResultText.getEncoding());
 
-                    if (showIds){
+                    if (showIds) {
                         searchResult.setId(searchResultText.getId());
                     }
 
@@ -152,7 +152,7 @@ public class CDXSearchService {
             // FIX THIS encode or escape? xD
             urlEncoded = URLEncoder.encode(url, "UTF-8");
         } catch (UnsupportedEncodingException un) {
-            LOG.error(un);
+            LOG.error("Error while encoding: ", un);
             urlEncoded = url;
         }
         LOG.info("[cdxparser] " + this.waybackCdxEndpoint);

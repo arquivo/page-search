@@ -1,8 +1,6 @@
 package pt.arquivo.services.nutchwax;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.lucene.search.PwaFunctionsWritable;
 import org.apache.nutch.global.Global;
@@ -12,6 +10,8 @@ import org.archive.access.nutch.NutchwaxBean;
 import org.archive.access.nutch.NutchwaxConfiguration;
 import org.archive.access.nutch.jobs.EntryPageExpansion;
 import org.archive.util.Base32;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import pt.arquivo.services.*;
 import pt.arquivo.utils.Utils;
@@ -31,7 +31,7 @@ import java.util.Date;
 
 public class NutchWaxSearchService implements SearchService {
 
-    private static final Log LOG = LogFactory.getLog(NutchWaxSearchService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NutchWaxSearchService.class);
 
     private final int searcherMaxHits;
     private Configuration conf;
@@ -94,7 +94,7 @@ public class NutchWaxSearchService implements SearchService {
                 searchQuery.setQueryTerms(encodeVersionHistory(queryTerms));
                 return query(searchQuery);
             } catch (NoSuchAlgorithmException e) {
-                LOG.fatal(e);
+                LOG.error("EncodeVersionHistory thowed a up a error", e);
             }
         }
         SearchResults searchResults = new SearchResults();
@@ -206,7 +206,7 @@ public class NutchWaxSearchService implements SearchService {
 
                     searchResult.setFields(searchQuery.getFields());
 
-                    if (showIds){
+                    if (showIds) {
                         searchResult.setId(show[i].getIndexDocNo());
                     }
 

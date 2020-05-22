@@ -181,11 +181,11 @@ public class SearchResultImpl implements SearchResult {
         this.collection = collection;
     }
 
-    public int getStatusCode() {
+    public Integer getStatusCode() {
         return statusCode;
     }
 
-    public void setStatusCode(int statusCode) {
+    public void setStatusCode(Integer statusCode) {
         this.statusCode = statusCode;
     }
 
@@ -208,11 +208,11 @@ public class SearchResultImpl implements SearchResult {
         return "";
     }
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 

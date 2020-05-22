@@ -9,6 +9,8 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.params.MapSolrParams;
 import org.apache.solr.common.params.SolrParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pt.arquivo.services.*;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -22,7 +24,7 @@ import java.util.Map;
 
 public class SolrSearchService implements SearchService {
 
-    private static final Log LOG = LogFactory.getLog(SolrSearchService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SolrSearchService.class);
     // TODO should upgrade this for the SolrCloudClient
     private HttpSolrClient solrClient;
 
