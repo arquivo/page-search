@@ -43,7 +43,7 @@ public class PageSearchController {
                              @RequestParam(value = "maxItems", defaultValue = "50", required = false) int limit,
                              @RequestParam(value = "offset", defaultValue = "0", required = false) int offset,
                              HttpServletRequest request) {
-
+        LOG.info(String.format("Request to urlsearch (versionHistory) for url=%s", url));
         SearchResults searchResults = cdxSearchService.getResults(url, from, to, limit, offset);
 
         PageSearchResponse pageSearchResponse = new PageSearchResponse();
@@ -65,7 +65,7 @@ public class PageSearchController {
     @CrossOrigin
     @GetMapping(value = "/textextracted")
     public String extractedText(@RequestParam(value = "m") String id) {
-        LOG.info("Getting extracted: " + id);
+        LOG.info(String.format("Request to /textextracted for ID=%s", id));
         String extractedText = "";
 
         int idx = id.lastIndexOf("/");
@@ -83,6 +83,7 @@ public class PageSearchController {
     }
 
     private SearchResults queryByUrl(String[] versionIdSplited) {
+        LOG.debug("Querying By Url with versionIdSplited as ", versionIdSplited);
         String url = versionIdSplited[0];
         String timeStamp = versionIdSplited[1];
 
@@ -97,9 +98,9 @@ public class PageSearchController {
     @CrossOrigin
     @GetMapping(value = {"/metadata"})
     public ApiResponse getMetadata(@RequestParam(value = "metadata") String id) {
-        MetadataResponse metadataResponse = new MetadataResponse();
+        LOG.info(String.format("Request to /metadata for ID=%s", id));
 
-        LOG.info("Getting metadata for: " + id);
+        MetadataResponse metadataResponse = new MetadataResponse();
         // TODO Refactor
         int idx = id.lastIndexOf("/");
         if (idx > 0) {
@@ -150,7 +151,6 @@ public class PageSearchController {
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
                            HttpServletRequest request
     ) {
-
         // TODO need to do this verification since versionHistory is merged on the term search.... what a nice idea... remove it on the next API version, when versionHistory is removed from here
         if (url != null) {
             return searchCdxURL(url, from, to, maxItems, offset, request);
@@ -183,6 +183,7 @@ public class PageSearchController {
         pageSearchResponse.setPagination(maxItems, offset, queryString, firstPage, lastPage);
 
         if (searchQuery.getPrettyPrint()) {
+            LOG.debug("prettyPrint request");
             jacksonObjectMapper.enable(SerializationFeature.INDENT_OUTPUT);
         } else {
             jacksonObjectMapper.disable(SerializationFeature.INDENT_OUTPUT);

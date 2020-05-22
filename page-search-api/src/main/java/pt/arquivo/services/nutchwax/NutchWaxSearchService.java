@@ -94,7 +94,7 @@ public class NutchWaxSearchService implements SearchService {
                 searchQuery.setQueryTerms(encodeVersionHistory(queryTerms));
                 return query(searchQuery);
             } catch (NoSuchAlgorithmException e) {
-                LOG.error("EncodeVersionHistory thowed a up a error", e);
+                LOG.error("EncodeVersionHistory thrown a up a error", e);
             }
         }
         SearchResults searchResults = new SearchResults();
@@ -184,7 +184,10 @@ public class NutchWaxSearchService implements SearchService {
 
         try {
             Query query = Query.parse(nutchwaxQueryString, conf);
-            LOG.info("Executing query: " + query);
+            LOG.info(String.format("Executing query - queryString: %s numberOfHits: %s, " +
+                            "searcherMaxHits: %s, hitsPerDup: %s, urlSearchQuery: %s", query, numberOfHits,
+                    searcherMaxHits, hitsPerDup, urlSearchQuery));
+
             Hits hits = bean.search(query, numberOfHits, searcherMaxHits,
                     hitsPerDup, searchQuery.getDedupField(), null, false,
                     PwaFunctionsWritable.parse(conf.get(Global.RANKING_FUNCTIONS)), 1, urlSearchQuery);

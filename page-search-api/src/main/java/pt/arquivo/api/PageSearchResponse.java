@@ -3,6 +3,8 @@ package pt.arquivo.api;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pt.arquivo.services.SearchQuery;
 import pt.arquivo.services.SearchResult;
 
@@ -10,6 +12,8 @@ import java.util.ArrayList;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PageSearchResponse implements ApiResponse {
+
+    private static Logger LOG = LoggerFactory.getLogger(PageSearchResponse.class);
 
     private String serviceName;
     private String linkToService;
@@ -19,7 +23,7 @@ public class PageSearchResponse implements ApiResponse {
 
     @JsonProperty("previous_page")
     private String previousPage;
-    
+
     @JsonIgnore
     private long totalItems;
 
@@ -97,6 +101,7 @@ public class PageSearchResponse implements ApiResponse {
     }
 
     public void setPagination(int maxItems, int offset, String queryString, boolean firstPage, boolean lastPage) {
+        LOG.debug("setPagination parameters: maxItems %s, offset %s, queryString %s , firstPage %s, lastPage %s");
 
         int diffOffsetMaxItems = offset - maxItems;
         int previousOffset = (offset != 0 && diffOffsetMaxItems >= 0) ? (diffOffsetMaxItems) : 0;
