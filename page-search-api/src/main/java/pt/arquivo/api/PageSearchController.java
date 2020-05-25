@@ -143,7 +143,7 @@ public class PageSearchController {
                            @RequestParam(value = "maxItems", required = false, defaultValue = "50") int maxItems,
                            @RequestParam(value = "siteSearch", required = false) String[] siteSearch,
                            @RequestParam(value = "dedupField", required = false) String dedupField,
-                           @RequestParam(value = "limitPerSite", required = false) Integer limitPerSite,
+                           @RequestParam(value = "itemsPerSite", required = false) Integer itemsPerSite,
                            @RequestParam(value = "dedupValue", required = false, defaultValue = "2") int dedupValue,
                            @RequestParam(value = "from", required = false) String from,
                            @RequestParam(value = "to", required = false) String to,
@@ -168,8 +168,8 @@ public class PageSearchController {
         searchQuery.setDedupField(dedupField);
         searchQuery.setDedupValue(dedupValue);
         // TODO to decreprate parameter
-        if (limitPerSite != null){
-            searchQuery.setLimitPerSite(limitPerSite);
+        if (itemsPerSite != null){
+            searchQuery.setLimitPerSite(itemsPerSite);
         }
         if (from != null){
             searchQuery.setFrom(from);
