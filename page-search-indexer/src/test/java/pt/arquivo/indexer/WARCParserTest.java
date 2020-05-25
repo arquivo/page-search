@@ -6,6 +6,7 @@ import org.apache.tika.exception.TikaException;
 import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
+import org.junit.Ignore;
 import pt.arquivo.indexer.data.PageData;
 import pt.arquivo.indexer.parsers.WARCParser;
 import org.junit.Before;
@@ -31,7 +32,7 @@ public class WARCParserTest {
         this.warcParser = new WARCParser(conf);
     }
 
-
+    @Ignore
     @Test
     public void extract() throws IOException, NoSuchAlgorithmException, TikaException, SAXException {
         ClassLoader classLoader = getClass().getClassLoader();
