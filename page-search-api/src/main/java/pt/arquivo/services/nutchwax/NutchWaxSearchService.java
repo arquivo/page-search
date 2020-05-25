@@ -165,8 +165,10 @@ public class NutchWaxSearchService implements SearchService {
 
         boolean urlSearchQuery = Utils.urlValidator(searchQuery.getQueryTerms().split(" ")[0]) || searchQuery.getQueryTerms().contains("exacturl:");
 
-        if (searchQuery.isSearchBySite()) {
+        if (searchQuery.isSearchBySite() && searchQuery.getDedupField() == null) {
             searchQuery.setDedupField("url");
+        } else if (searchQuery.getDedupField() == null) {
+            searchQuery.setDedupField("site");
         }
 
         int numberOfHits = searchQuery.getOffset() + searchQuery.getMaxItems();

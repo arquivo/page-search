@@ -142,7 +142,7 @@ public class PageSearchController {
                            @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
                            @RequestParam(value = "maxItems", required = false, defaultValue = "50") int maxItems,
                            @RequestParam(value = "siteSearch", required = false) String[] siteSearch,
-                           @RequestParam(value = "dedupField", required = false, defaultValue = "site") String dedupField,
+                           @RequestParam(value = "dedupField", required = false) String dedupField,
                            @RequestParam(value = "limitPerSite", required = false) Integer limitPerSite,
                            @RequestParam(value = "dedupValue", required = false, defaultValue = "2") int dedupValue,
                            @RequestParam(value = "from", required = false) String from,

@@ -137,6 +137,6 @@ public class NutchWaxSearchServiceTestIT {
         searchQuery.setSite(new String[]{"http://sapo.ua.pt/"});
 
         SearchResults searchResults = this.nutchWaxSearchService.query(searchQuery);
-        assertThat(searchResults.getResults().size()).isEqualTo(3);
+        assertThat(searchResults.getResults().size()).isEqualTo(2);
     }
 }
