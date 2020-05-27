@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
+import pt.arquivo.api.exceptions.ApiRequestException;
 import pt.arquivo.services.*;
 import pt.arquivo.services.cdx.CDXSearchService;
 import pt.arquivo.utils.Utils;
@@ -159,7 +160,8 @@ public class PageSearchController {
         } else if (id != null) {
             return getMetadata(id);
         } else if (query == null) {
-            // TODO break API with illegal call
+            LOG.error("Invalid API Call " + request.getQueryString());
+            throw new ApiRequestException("Invalid API Call");
         }
 
         SearchQueryImpl searchQuery = new SearchQueryImpl(query);
@@ -167,14 +169,14 @@ public class PageSearchController {
         searchQuery.setMaxItems(maxItems);
         searchQuery.setDedupField(dedupField);
         searchQuery.setDedupValue(dedupValue);
-        // TODO to decreprate parameter
-        if (itemsPerSite != null){
+        // TODO to decrepate parameter
+        if (itemsPerSite != null) {
             searchQuery.setLimitPerSite(itemsPerSite);
         }
-        if (from != null){
+        if (from != null) {
             searchQuery.setFrom(from);
         }
-        if (to != null){
+        if (to != null) {
             searchQuery.setTo(to);
         }
         searchQuery.setType(type);

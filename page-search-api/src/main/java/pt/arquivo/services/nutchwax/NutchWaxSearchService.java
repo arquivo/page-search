@@ -266,6 +266,9 @@ public class NutchWaxSearchService implements SearchService {
         } catch (ParseException e) {
             LOG.error("Exception parsing a timestamp", e);
             return "";
+        } catch (Exception e) {
+            LOG.error("Unexpected exception", e);
+            return "";
         }
     }
 
