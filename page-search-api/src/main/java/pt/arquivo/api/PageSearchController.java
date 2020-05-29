@@ -160,8 +160,8 @@ public class PageSearchController {
         } else if (id != null) {
             return getMetadata(id);
         } else if (query == null) {
-            LOG.error("Invalid API Call " + request.getQueryString());
-            throw new ApiRequestException("Invalid API Call");
+            LOG.error("Invalid API Request " + request.getQueryString());
+            throw new ApiRequestException("Invalid API Request");
         }
 
         SearchQueryImpl searchQuery = new SearchQueryImpl(query);

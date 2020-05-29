@@ -22,14 +22,15 @@ import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.archive.io.arc.ARCRecord;
 import org.archive.io.warc.WARCRecord;
-import pt.arquivo.indexer.data.Outlink;
-import pt.arquivo.indexer.data.PageData;
-import pt.arquivo.indexer.utils.HTTPHeader;
+import org.archive.url.SURT;
 import org.brotli.dec.BrotliInputStream;
 import org.netpreserve.urlcanon.Canonicalizer;
 import org.netpreserve.urlcanon.ParsedUrl;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import pt.arquivo.indexer.data.Outlink;
+import pt.arquivo.indexer.data.PageData;
+import pt.arquivo.indexer.utils.HTTPHeader;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.io.IOException;
@@ -111,6 +112,8 @@ public class WARCParser {
 
         String id = timeStamp + "/" + url_md5hex;
 
+        String surt_url = SURT.toSURT(parsedUrl.toString());
+        doc.setSurt_url(surt_url);
         doc.setUrl(parsedUrl.toString());
         doc.setHost(parsedUrl.getHost());
 
@@ -294,8 +297,7 @@ public class WARCParser {
         }
         if (links.size() <= outlinksLimit) {
             doc.setnOutLinks(links.size());
-        }
-        else {
+        } else {
             doc.setnOutLinks(outlinksLimit);
         }
         doc.setOutLinks(outlinks);

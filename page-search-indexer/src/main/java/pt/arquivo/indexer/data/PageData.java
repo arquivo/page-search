@@ -24,6 +24,7 @@ public class PageData implements Writable {
     String host = "";
     String site = "";
     String url = "";
+    String surt_url = "";
 
     int nInLinks = 0;
     int nOutLinks = 0;
@@ -207,6 +208,14 @@ public class PageData implements Writable {
 
     public void setInLinks(Inlinks inLinks) {
         this.inLinks = inLinks;
+    }
+
+    public String getSurt_url() {
+        return surt_url;
+    }
+
+    public void setSurt_url(String surt_url) {
+        this.surt_url = surt_url;
     }
 
     @Override
