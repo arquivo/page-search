@@ -3,7 +3,9 @@ package pt.arquivo.indexer.mapreduce;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -32,7 +34,8 @@ public class HdfsPageSearchDataDriver extends Configured implements Tool {
 
         // TODO change ArchiveFileInputFormat to verify if file ends with arc or warc.gz
         job.setInputFormatClass(ArchiveFileInputFormat.class);
-        ArchiveFileInputFormat.addInputPath(job, new Path(args[0]));
+        ArchiveFileInputFormat.setInputPaths(job, new Path(args[0]));
+        ArchiveFileInputFormat.setInputDirRecursive(job, true);
 
         job.setOutputFormatClass(SequenceFileOutputFormat.class);
         SequenceFileOutputFormat.setOutputPath(job, new Path(args[1], HdfsPageSearchDataDriver.DIR_NAME));
