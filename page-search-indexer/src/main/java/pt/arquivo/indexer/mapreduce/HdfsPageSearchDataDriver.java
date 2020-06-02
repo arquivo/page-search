@@ -6,6 +6,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
+import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
@@ -36,8 +37,9 @@ public class HdfsPageSearchDataDriver extends Configured implements Tool {
         job.setInputFormatClass(ArchiveFileInputFormat.class);
 
         // Find ArcFiles to Process
-        FileSystem fs = FileSystem.getLocal(conf);
-        RemoteIterator<LocatedFileStatus> fileIterator = fs.listFiles(new Path(args[0]), true);
+        FileSystem dfs = DistributedFileSystem.get(conf);
+
+        RemoteIterator<LocatedFileStatus> fileIterator = dfs.listFiles(new Path(args[0]), true);
         WarcPathFilter warcPathFilter = new WarcPathFilter();
 
         while (fileIterator.hasNext()) {
