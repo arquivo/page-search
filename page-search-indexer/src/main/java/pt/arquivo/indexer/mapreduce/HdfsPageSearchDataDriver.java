@@ -2,10 +2,11 @@ package pt.arquivo.indexer.mapreduce;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -32,10 +33,19 @@ public class HdfsPageSearchDataDriver extends Configured implements Tool {
         Job job = Job.getInstance(conf);
         job.setJarByClass(getClass());
 
-        // TODO change ArchiveFileInputFormat to verify if file ends with arc or warc.gz
         job.setInputFormatClass(ArchiveFileInputFormat.class);
-        ArchiveFileInputFormat.setInputPaths(job, new Path(args[0]));
-        ArchiveFileInputFormat.setInputDirRecursive(job, true);
+
+        // Find ArcFiles to Process
+        FileSystem fs = FileSystem.getLocal(conf);
+        RemoteIterator<LocatedFileStatus> fileIterator = fs.listFiles(new Path(args[0]), true);
+        WarcPathFilter warcPathFilter = new WarcPathFilter();
+
+        while (fileIterator.hasNext()) {
+            LocatedFileStatus fileStatus = fileIterator.next();
+            if (fileStatus.isFile() && warcPathFilter.accept(fileStatus.getPath())) {
+                ArchiveFileInputFormat.addInputPath(job, fileStatus.getPath());
+            }
+        }
 
         job.setOutputFormatClass(SequenceFileOutputFormat.class);
         SequenceFileOutputFormat.setOutputPath(job, new Path(args[1], HdfsPageSearchDataDriver.DIR_NAME));
