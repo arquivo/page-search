@@ -5,7 +5,9 @@ import com.typesafe.config.ConfigFactory;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.log4j.Logger;
+import org.archive.format.warc.WARCConstants;
 import org.archive.io.ArchiveRecord;
+import org.archive.io.arc.ARCRecord;
 import pt.arquivo.indexer.data.PageData;
 import pt.arquivo.indexer.data.WebArchiveKey;
 import pt.arquivo.indexer.data.WritableArchiveRecord;
@@ -43,11 +45,19 @@ public class HdfsPageSearchDataMapper extends Mapper<LongWritable, WritableArchi
         ArchiveRecord rec = value.getRecord();
         context.getCounter(PagesCounters.RECORDS_COUNT).increment(1);
         try {
-            // TODO get warcName
             PageData doc = warcParser.extract("", rec);
             if (doc != null) {
                 logger.info("Processing Record with URL: ".concat(doc.getUrl()));
                 doc.setCollection(context.getConfiguration().get("collection", ""));
+
+                if (rec instanceof ARCRecord) {
+                    doc.setWarcName(((ARCRecord) rec).getMetaData().getArc());
+                } else {
+                    doc.setWarcName((String) rec.getHeader().getHeaderValue(WARCConstants.HEADER_KEY_FILENAME));
+                }
+
+                doc.setWarcOffset(rec.getHeader().getOffset());
+
                 listDocs.add(doc);
                 context.getCounter(PagesCounters.RECORDS_ACCEPTED_COUNT).increment(1);
             } else {

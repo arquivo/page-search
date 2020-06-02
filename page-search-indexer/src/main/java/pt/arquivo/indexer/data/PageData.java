@@ -1,5 +1,6 @@
 package pt.arquivo.indexer.data;
 
+import com.google.gson.annotations.SerializedName;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
@@ -26,19 +27,26 @@ public class PageData implements Writable {
     String url = "";
     String surt_url = "";
 
+    @SerializedName("inlinks")
     int nInLinks = 0;
+    @SerializedName("outlinks")
     int nOutLinks = 0;
 
     transient Outlink[] outLinks = new Outlink[0];
     transient Inlinks inLinks = new Inlinks();
 
     String type = "";
+    @SerializedName("primary_type")
     String primaryType = "";
+    @SerializedName("sub_type")
     String subType = "";
+    @SerializedName("tika_content_type")
     String tikaContentType = "";
     String encoding = "";
 
+    @SerializedName("warc_name")
     String warcName = "";
+    @SerializedName("warc_offset")
     long warcOffset = 0;
 
     public String getId() {
@@ -233,7 +241,7 @@ public class PageData implements Writable {
         Text.writeString(out, url);
         Text.writeString(out, String.valueOf(nInLinks));
         Text.writeString(out, String.valueOf(nOutLinks));
-        for (int i = 0; i < nOutLinks ; i++) {
+        for (int i = 0; i < nOutLinks; i++) {
             outLinks[i].write(out);
         }
         inLinks.write(out);
@@ -244,6 +252,7 @@ public class PageData implements Writable {
         Text.writeString(out, encoding);
         Text.writeString(out, warcName);
         Text.writeString(out, String.valueOf(warcOffset));
+        Text.writeString(out, String.valueOf(surt_url));
     }
 
     @Override
@@ -280,5 +289,6 @@ public class PageData implements Writable {
         this.encoding = Text.readString(in);
         this.warcName = Text.readString(in);
         this.warcOffset = Integer.parseInt(Text.readString(in));
+        this.surt_url = Text.readString(in);
     }
 }

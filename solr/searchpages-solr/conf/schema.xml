@@ -27,8 +27,8 @@
     <field name="encoding" type="string" stored="true"/>
     <field name="tika_content_type" type="string" stored="true" />
 	<field name="type" type="string" indexed="true" stored="false"/>
-	<field name="primaryType" type="string" indexed="true"/>
-	<field name="subType" type="string" indexed="true"/>
+	<field name="primary_type" type="string" indexed="true"/>
+	<field name="sub_type" type="string" indexed="true"/>
 
 	<field name="url" type="string" indexed="true" stored="true"/>
     <field name="surt_url" type="string" indexed="true" stored="true"/>
