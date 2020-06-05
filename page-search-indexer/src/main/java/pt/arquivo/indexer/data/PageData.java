@@ -17,6 +17,7 @@ public class PageData implements Writable {
     String collection = "";
 
     String content = "";
+    @SerializedName("content_length")
     int contentLength = 0;
     String digest = "";
 
