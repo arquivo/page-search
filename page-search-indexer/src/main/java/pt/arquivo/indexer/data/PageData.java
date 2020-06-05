@@ -239,6 +239,7 @@ public class PageData implements Writable {
         Text.writeString(out, host);
         Text.writeString(out, site);
         Text.writeString(out, url);
+        Text.writeString(out, collection);
         Text.writeString(out, String.valueOf(nInLinks));
         Text.writeString(out, String.valueOf(nOutLinks));
         for (int i = 0; i < nOutLinks; i++) {
@@ -267,6 +268,7 @@ public class PageData implements Writable {
         this.host = Text.readString(in);
         this.site = Text.readString(in);
         this.url = Text.readString(in);
+        this.collection = Text.readString(in);
         this.nInLinks = Integer.parseInt(Text.readString(in));
         this.nOutLinks = Integer.parseInt(Text.readString(in));
 
