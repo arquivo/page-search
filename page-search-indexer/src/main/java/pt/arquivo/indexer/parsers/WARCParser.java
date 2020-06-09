@@ -47,6 +47,8 @@ import static org.archive.format.warc.WARCConstants.HEADER_KEY_TYPE;
 public class WARCParser {
     private static Log log = LogFactory.getLog(WARCParser.class);
 
+    private static final Pattern stripWWWNRuleREGEX = Pattern.compile("(?i)^(https?://)(?:www[0-9]*\\.)([^/]*/.+)$");
+
     private List<String> record_type_includes;
     private List<String> record_response_includes;
     private List<String> record_primary_mimetype_includes;
@@ -112,7 +114,15 @@ public class WARCParser {
 
         String id = timeStamp + "/" + url_md5hex;
 
-        String surt_url = SURT.toSURT(parsedUrl.toString());
+        String surt_url;
+        Matcher matcher = stripWWWNRuleREGEX.matcher(parsedUrl.toString());
+        if (matcher.find()) {
+            surt_url = SURT.toSURT(matcher.group(2));
+        } else {
+            // Not http URIs fall here
+            surt_url = SURT.toSURT(parsedUrl.toString());
+        }
+
         doc.setSurt_url(surt_url);
         doc.setUrl(parsedUrl.toString());
         doc.setHost(parsedUrl.getHost());
