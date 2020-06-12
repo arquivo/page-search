@@ -26,6 +26,7 @@ public class InvertLinksMapper extends Mapper<WebArchiveKey, PageData, WebArchiv
         Outlink[] outlinks = value.getOutLinks();
         for (int i = 0; i < value.getnOutLinks(); i++) {
             Outlink outlink = outlinks[i];
+
             // FIXME canolize or normalize this link
             String toUrl = outlink.getToUrl();
             String anchorText = outlink.getAnchor();

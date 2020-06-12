@@ -1,6 +1,7 @@
 package pt.arquivo.indexer.parsers;
 
 import com.typesafe.config.Config;
+import de.l3s.boilerpipe.sax.BoilerpipeHTMLContentHandler;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpParser;
@@ -100,28 +101,37 @@ public class WARCParser {
         return false;
     }
 
+    public static ParsedUrl canocalizeUrl(String url){
+        if (url.charAt(0) == '<' && url.charAt(url.length() - 1) == '>'){
+            url = url.substring(1, url.length() -2);
+        }
+        ParsedUrl parsedUrl = ParsedUrl.parseUrl(url);
+        Canonicalizer.WHATWG.canonicalize(parsedUrl);
+        return parsedUrl;
+    }
+
+    public static String canocalizeSurtUrl(String url){
+        Matcher matcher = stripWWWNRuleREGEX.matcher(url);
+        if (matcher.find()) {
+            return SURT.toSURT(matcher.group(2));
+        } else {
+            // Not http URIs fall here
+            return SURT.toSURT(url);
+        }
+    }
 
     private void processEnvelopHeader(ArchiveRecordHeader header, PageData doc) throws NoSuchAlgorithmException {
         String timeStamp = (header.getDate().replaceAll("[^0-9]", ""));
         // Date date = getWaybackDate(waybackDate);
         // TODO change to digest utils?
         MessageDigest md5 = MessageDigest.getInstance("MD5");
-        ParsedUrl parsedUrl = ParsedUrl.parseUrl(header.getUrl());
-        Canonicalizer.WHATWG.canonicalize(parsedUrl);
+        ParsedUrl parsedUrl = canocalizeUrl(header.getUrl());
 
         byte[] url_md5digest = md5.digest(parsedUrl.toString().getBytes());
         final String url_md5hex = Base64.encodeBase64String(url_md5digest);
 
         String id = timeStamp + "/" + url_md5hex;
-
-        String surt_url;
-        Matcher matcher = stripWWWNRuleREGEX.matcher(parsedUrl.toString());
-        if (matcher.find()) {
-            surt_url = SURT.toSURT(matcher.group(2));
-        } else {
-            // Not http URIs fall here
-            surt_url = SURT.toSURT(parsedUrl.toString());
-        }
+        String surt_url = canocalizeSurtUrl(parsedUrl.toString());
 
         doc.setSurt_url(surt_url);
         doc.setUrl(parsedUrl.toString());
@@ -220,9 +230,9 @@ public class WARCParser {
         if (header.getUrl() == null)
             return null;
 
-        // canonalize??
-        String targetUrl = header.getUrl();
         processEnvelopHeader(header, doc);
+        // evaluating the targetUrl from the processed envelop because is already canocalized
+        String targetUrl = doc.getUrl();
 
         // Consume record and parse HTTP headers
         HTTPHeader httpHeader = null;

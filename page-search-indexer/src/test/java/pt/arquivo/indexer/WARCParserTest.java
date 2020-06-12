@@ -13,7 +13,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
@@ -36,7 +35,7 @@ public class WARCParserTest {
     @Test
     public void extract() throws IOException, NoSuchAlgorithmException, TikaException, SAXException {
         ClassLoader classLoader = getClass().getClassLoader();
-        URL fileUrl = classLoader.getResource("chunked.gzip.html.record.warc");
+        URL fileUrl = classLoader.getResource("chunked.gzip.html.record.warc.gz");
 
         ArchiveReader reader = ArchiveReaderFactory.get(fileUrl);
         Iterator<ArchiveRecord> ir = reader.iterator();

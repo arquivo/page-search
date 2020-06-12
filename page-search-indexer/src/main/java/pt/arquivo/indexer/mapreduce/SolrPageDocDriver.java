@@ -25,6 +25,7 @@ public class SolrPageDocDriver extends Configured implements Tool {
 
     public static final String DIR_NAME = "solr_data";
 
+
     public static class PageDataMapper extends Mapper<WebArchiveKey, PageData, WebArchiveKey, ObjectWritable> {
         @Override
         protected void map(WebArchiveKey key, PageData value, Context context) throws IOException, InterruptedException {
@@ -41,6 +42,11 @@ public class SolrPageDocDriver extends Configured implements Tool {
     }
 
     public static class SolrPageDocReducer extends Reducer<WebArchiveKey, ObjectWritable, NullWritable, Text> {
+
+        enum SolrPageDocCounters {
+            MATCHED_INLINKS,
+            NUMBER_DOCS
+        }
 
         private Gson gson;
 
@@ -64,6 +70,7 @@ public class SolrPageDocDriver extends Configured implements Tool {
             }
             if (pagedata != null) {
                 if (inlinks != null) {
+                    context.getCounter(SolrPageDocCounters.MATCHED_INLINKS).increment(inlinks.size());
                     String[] anchors = inlinks.getAnchors();
                     StringBuilder anchorText = new StringBuilder();
                     for (int i = 0; i < anchors.length; i++) {
@@ -72,6 +79,7 @@ public class SolrPageDocDriver extends Configured implements Tool {
                     pagedata.setAnchor(anchorText.toString());
                     pagedata.setnInLinks(inlinks.size());
                 }
+                context.getCounter(SolrPageDocCounters.NUMBER_DOCS).increment(1);
                 context.write(NullWritable.get(), new Text(gson.toJson(pagedata)));
             }
         }

@@ -53,7 +53,7 @@ public class HdfsPageSearchDataMapper extends Mapper<LongWritable, WritableArchi
                 if (rec instanceof ARCRecord) {
                     doc.setWarcName(((ARCRecord) rec).getMetaData().getArc());
                 } else {
-                    doc.setWarcName((String) rec.getHeader().getHeaderValue(WARCConstants.HEADER_KEY_FILENAME));
+                    doc.setWarcName((String) rec.getHeader().getHeaderValue(WARCConstants.READER_IDENTIFIER_FIELD_KEY));
                 }
 
                 doc.setWarcOffset(rec.getHeader().getOffset());
