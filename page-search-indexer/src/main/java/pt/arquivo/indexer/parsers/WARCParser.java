@@ -102,20 +102,25 @@ public class WARCParser {
         return false;
     }
 
+    public static String stripEndingSlashes(String url) {
+        if (!url.isEmpty() && url.charAt(url.length() - 1) == '/') {
+            url = url.substring(0, url.length() - 1);
+        }
+        return url;
+    }
+
     public static String canocalizeUrl(String url) {
+        // this should not need to be here
         if (url.charAt(0) == '<' && url.charAt(url.length() - 1) == '>') {
             url = url.substring(1, url.length() - 1);
         }
-        ParsedUrl parsedUrl = ParsedUrl.parseUrl(url);
+        ParsedUrl parsedUrl = ParsedUrl.parseUrl(stripEndingSlashes(url));
         Canonicalizer.WHATWG.canonicalize(parsedUrl);
         return parsedUrl.toString();
     }
 
     public static String canocalizeSurtUrl(String url) {
-        if (url.charAt(url.length() - 1) == '/'){
-            url = url.substring(0, url.length() - 1 );
-        }
-        Matcher matcher = stripWWWNRuleREGEX.matcher(url);
+        Matcher matcher = stripWWWNRuleREGEX.matcher(stripEndingSlashes(url));
         if (matcher.find()) {
             return SURT.toSURT(matcher.group(2));
         } else {
@@ -321,7 +326,7 @@ public class WARCParser {
             URI link = null;
             try {
                 link = new URI(links.get(i).getUri());
-                if (link.getScheme() == null){
+                if (link.getScheme() == null) {
                     link = URI.create(doc.getUrl()).resolve(link);
                     log.debug("Resolving " + links.get(i).getUri() + " to " + link);
                 }
