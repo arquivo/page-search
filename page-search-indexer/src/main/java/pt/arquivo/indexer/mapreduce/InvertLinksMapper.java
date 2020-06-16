@@ -6,6 +6,7 @@ import pt.arquivo.indexer.data.Inlink;
 import pt.arquivo.indexer.data.Outlink;
 import pt.arquivo.indexer.data.PageData;
 import pt.arquivo.indexer.data.WebArchiveKey;
+import pt.arquivo.indexer.parsers.WARCParser;
 
 import java.io.IOException;
 
@@ -27,17 +28,16 @@ public class InvertLinksMapper extends Mapper<WebArchiveKey, PageData, WebArchiv
         for (int i = 0; i < value.getnOutLinks(); i++) {
             Outlink outlink = outlinks[i];
 
-            // FIXME canolize or normalize this link
             String toUrl = outlink.getToUrl();
             String anchorText = outlink.getAnchor();
             String fromUrl = value.getUrl();
 
             String keyTimeStamp = value.getTstamp().substring(0, graphTimeSlice);
             Inlink inlink = new Inlink(fromUrl, anchorText);
-            logger.info("Generating Inlink from " + fromUrl);
 
-            WebArchiveKey webArchiveKey = new WebArchiveKey(toUrl, keyTimeStamp);
+            WebArchiveKey webArchiveKey = new WebArchiveKey(WARCParser.canocalizeSurtUrl(toUrl), keyTimeStamp);
             context.write(webArchiveKey, inlink);
+            logger.info("Generating Inlink from " + webArchiveKey.getTimeStamp() + "#" + webArchiveKey.getUrl()  + " to " + toUrl);
         }
     }
 }

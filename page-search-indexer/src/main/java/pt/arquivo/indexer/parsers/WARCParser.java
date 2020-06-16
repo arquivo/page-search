@@ -1,7 +1,6 @@
 package pt.arquivo.indexer.parsers;
 
 import com.typesafe.config.Config;
-import de.l3s.boilerpipe.sax.BoilerpipeHTMLContentHandler;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpParser;
@@ -35,6 +34,8 @@ import pt.arquivo.indexer.utils.HTTPHeader;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -101,16 +102,19 @@ public class WARCParser {
         return false;
     }
 
-    public static ParsedUrl canocalizeUrl(String url){
-        if (url.charAt(0) == '<' && url.charAt(url.length() - 1) == '>'){
-            url = url.substring(1, url.length() -2);
+    public static String canocalizeUrl(String url) {
+        if (url.charAt(0) == '<' && url.charAt(url.length() - 1) == '>') {
+            url = url.substring(1, url.length() - 1);
         }
         ParsedUrl parsedUrl = ParsedUrl.parseUrl(url);
         Canonicalizer.WHATWG.canonicalize(parsedUrl);
-        return parsedUrl;
+        return parsedUrl.toString();
     }
 
-    public static String canocalizeSurtUrl(String url){
+    public static String canocalizeSurtUrl(String url) {
+        if (url.charAt(url.length() - 1) == '/'){
+            url = url.substring(0, url.length() - 1 );
+        }
         Matcher matcher = stripWWWNRuleREGEX.matcher(url);
         if (matcher.find()) {
             return SURT.toSURT(matcher.group(2));
@@ -125,20 +129,20 @@ public class WARCParser {
         // Date date = getWaybackDate(waybackDate);
         // TODO change to digest utils?
         MessageDigest md5 = MessageDigest.getInstance("MD5");
-        ParsedUrl parsedUrl = canocalizeUrl(header.getUrl());
+        String canonalizedURL = canocalizeUrl(header.getUrl());
 
-        byte[] url_md5digest = md5.digest(parsedUrl.toString().getBytes());
+        byte[] url_md5digest = md5.digest(canonalizedURL.getBytes());
         final String url_md5hex = Base64.encodeBase64String(url_md5digest);
 
         String id = timeStamp + "/" + url_md5hex;
-        String surt_url = canocalizeSurtUrl(parsedUrl.toString());
+        String surt_url = canocalizeSurtUrl(canonalizedURL);
 
         doc.setSurt_url(surt_url);
-        doc.setUrl(parsedUrl.toString());
-        doc.setHost(parsedUrl.getHost());
+        doc.setUrl(canonalizedURL);
+        doc.setHost(ParsedUrl.parseUrl(canonalizedURL).getHost());
 
         // strip out the schema (http(s)://from url, we dont want this in the site field
-        String site = parsedUrl.toString().split("://")[1];
+        String site = canonalizedURL.split("://")[1];
         doc.setSite(site);
         doc.setTstamp(timeStamp);
         doc.setId(id);
@@ -306,14 +310,28 @@ public class WARCParser {
         doc.setContent(removeJunkCharacters(bodyHandler.toString()));
 
         // SET OUTLINKS
+        // TODO refactor this
         // TODO max number of outlinks (put this on a config file)
         int outlinksLimit = 1000;
 
         Outlink[] outlinks = new Outlink[outlinksLimit];
         List<Link> links = linkHandler.getLinks();
         for (int i = 0; i < links.size() && i < outlinksLimit; i++) {
-            Outlink outlink = new Outlink(links.get(i).getUri(), removeJunkCharacters(links.get(i).getText()));
-            outlinks[i] = outlink;
+            // TODO extract to method
+            URI link = null;
+            try {
+                link = new URI(links.get(i).getUri());
+                if (link.getScheme() == null){
+                    link = URI.create(doc.getUrl()).resolve(link);
+                    log.debug("Resolving " + links.get(i).getUri() + " to " + link);
+                }
+                Outlink outlink = new Outlink(canocalizeUrl(link.toString()), removeJunkCharacters(links.get(i).getText()));
+                outlinks[i] = outlink;
+            } catch (URISyntaxException e) {
+                log.error("Unable to resolve URL: " + links.get(i).getUri());
+                Outlink outlink = new Outlink(canocalizeUrl(links.get(i).getUri()), removeJunkCharacters(links.get(i).getText()));
+                outlinks[i] = outlink;
+            }
         }
         if (links.size() <= outlinksLimit) {
             doc.setnOutLinks(links.size());

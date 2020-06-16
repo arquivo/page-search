@@ -72,7 +72,7 @@ public class HdfsPageSearchDataMapper extends Mapper<LongWritable, WritableArchi
         }
 
         for (PageData doc : listDocs) {
-            WebArchiveKey webArchiveKey = new WebArchiveKey(doc.getUrl(), doc.getTstamp().substring(0, graphTimeSlice));
+            WebArchiveKey webArchiveKey = new WebArchiveKey(doc.getSurt_url(), doc.getTstamp().substring(0, graphTimeSlice));
             context.write(webArchiveKey, doc);
         }
     }

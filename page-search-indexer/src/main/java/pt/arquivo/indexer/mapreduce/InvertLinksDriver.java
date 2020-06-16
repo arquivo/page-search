@@ -3,6 +3,7 @@ package pt.arquivo.indexer.mapreduce;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.MapFileOutputFormat;
@@ -34,7 +35,7 @@ public class InvertLinksDriver extends Configured implements Tool {
         job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
         SequenceFileInputFormat.addInputPath(job, new Path(args[0], PageSearchDataDriver.DIR_NAME));
-        MapFileOutputFormat.setOutputPath(job, new Path(args[0], Inlinks.DIR_NAME));
+        SequenceFileOutputFormat.setOutputPath(job, new Path(args[0], Inlinks.DIR_NAME));
 
         job.setMapperClass(InvertLinksMapper.class);
         job.setReducerClass(InvertLinksReducer.class);
