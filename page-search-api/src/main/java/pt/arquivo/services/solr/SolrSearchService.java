@@ -77,18 +77,6 @@ public class SolrSearchService implements SearchService {
 
     SolrParams convertSearchQuery(SearchQuery searchQuery) {
         // TODO add site search option, and make sure to canolize the URL
-        /*
-            getQueryTerms - "q"
-            getOffset - "start"
-            getLimit - "rows"
-            getlimitPerSite
-            getSite
-            getType
-            getCollection
-            getFrom
-            getTo
-            getFields - "fl"
-         */
         Map<String, String> queryParamMap = new HashMap<String, String>();
         queryParamMap.put("q", searchQuery.getQueryTerms());
         queryParamMap.put("start", String.valueOf(searchQuery.getOffset()));
@@ -169,7 +157,7 @@ public class SolrSearchService implements SearchService {
             searchResult.setOffset((Long) doc.getFieldValue("warc_offset"));
             searchResult.setFileName((String) doc.getFieldValue("warc_name"));
             searchResult.setCollection((String) doc.getFieldValue("collection"));
-            searchResult.setContentLength((Long) doc.getFieldValue("contentLength"));
+            searchResult.setContentLength((Long) doc.getFieldValue("content_length"));
             searchResult.setDigest((String) doc.getFieldValue("digest"));
             searchResult.setEncoding((String) doc.getFieldValue("encoding"));
 
@@ -193,9 +181,15 @@ public class SolrSearchService implements SearchService {
     @Override
     public SearchResults query(SearchQuery searchQuery) {
 
-        // TODO have this already instanciated before doing the query. Is not that way because how @Value works
-        LOG.info("Initing SolrClient poiting to " + this.baseSolrUrl);
+        // TODO have this already instanced before doing the query. Is not that way because how @Value works
+        LOG.info("Initing SolrClient pointing to " + this.baseSolrUrl);
         this.solrClient = new HttpSolrClient.Builder(this.baseSolrUrl).build();
+
+        if (searchQuery.isSearchBySite() && searchQuery.getDedupField() == null) {
+            searchQuery.setDedupField("url");
+        } else if (searchQuery.getDedupField() == null) {
+            searchQuery.setDedupField("site");
+        }
 
         SolrParams solrParams = convertSearchQuery(searchQuery);
         try {

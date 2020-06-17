@@ -9,7 +9,7 @@
     <field name="warc_name" type="string" stored="true"/>
     <field name="warc_offset" type="plong" stored="true"/>
 
-	<field name="collection" type="string" multiValued="true" indexed="true" docValues="true" stored="true"/>
+	<field name="collection" type="string" indexed="true" docValues="true" stored="true"/>
 	<field name="boost" type="pint" stored="true"/>
 	<field name="digest" type="string" indexed="true" stored="true"/>
 	<field name="content_length" type="plong" indexed="true" stored="true"/>
