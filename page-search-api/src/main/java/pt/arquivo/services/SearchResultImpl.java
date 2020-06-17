@@ -239,6 +239,10 @@ public class SearchResultImpl implements SearchResult {
     public void setFields(String[] fields) {
         this.fields = fields;
     }
+
+    public String getSearchResultId(){
+       return getTstamp() + "/" + getOriginalURL();
+    }
 }
 
 

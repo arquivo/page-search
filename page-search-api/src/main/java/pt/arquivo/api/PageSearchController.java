@@ -152,6 +152,7 @@ public class PageSearchController {
                            @RequestParam(value = "collection", required = false) String[] collection,
                            @RequestParam(value = "fields", required = false) String[] fields,
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
+                           @RequestParam(value = "search_id", required = false) String searchId,
                            HttpServletRequest request
     ) {
         // TODO need to do this verification since versionHistory is merged on the term search. Remove it on the next API version, when versionHistory is removed from here
@@ -210,6 +211,7 @@ public class PageSearchController {
         } else {
             jacksonObjectMapper.disable(SerializationFeature.INDENT_OUTPUT);
         }
+        LOG.info(SERPLogging.logResult(searchId, pageSearchResponse, searchQuery));
         return pageSearchResponse;
     }
 
