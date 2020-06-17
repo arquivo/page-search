@@ -16,11 +16,10 @@ public class InvertLinksReducer extends Reducer<WebArchiveKey, Inlink, WebArchiv
     protected void reduce(WebArchiveKey key, Iterable<Inlink> values, Context context) throws IOException, InterruptedException {
 
         Inlinks inlinks = new Inlinks();
-        for (Inlink inlink : values){
-            logger.info(key.getUrl() + " <------- " + inlink.getFromUrl());
-            inlinks.add(inlink);
+        for (Inlink inlink : values) {
+            inlinks.add(new Inlink(inlink.getFromUrl(), inlink.getAnchor()));
         }
-        logger.info("Found Total "  + inlinks.size() + " inlinks to URL " + "(" + key.getTimeStamp() + "#" + key.getUrl() + ")");
+        logger.info("Found Total " + inlinks.size() + " inlinks to URL " + "(" + key.getTimeStamp() + "#" + key.getUrl() + ")");
         context.write(key, inlinks);
     }
 }
