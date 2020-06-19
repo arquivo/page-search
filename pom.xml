@@ -12,6 +12,7 @@
    <inceptionYear>2020</inceptionYear>
 
    <modules>
+      <module>utils</module>
       <module>page-search-api</module>
       <module>page-search-indexer</module>
    </modules>

@@ -7,7 +7,7 @@ import pt.arquivo.indexer.data.Inlink;
 import pt.arquivo.indexer.data.Outlink;
 import pt.arquivo.indexer.data.PageData;
 import pt.arquivo.indexer.data.WebArchiveKey;
-import pt.arquivo.indexer.utils.URLNormalizers;
+import pt.arquivo.utils.URLNormalizers;
 
 import java.io.IOException;
 

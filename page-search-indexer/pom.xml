@@ -41,11 +41,13 @@
             <artifactId>commons-logging</artifactId>
             <version>1.2</version>
         </dependency>
+
         <dependency>
             <groupId>org.netpreserve</groupId>
             <artifactId>urlcanon</artifactId>
             <version>0.3.0</version>
         </dependency>
+
         <dependency>
             <groupId>org.netpreserve.commons</groupId>
             <artifactId>webarchive-commons</artifactId>
@@ -116,6 +118,12 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.7.30</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.arquivo</groupId>
+            <artifactId>utils</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <scope>compile</scope>
         </dependency>
 
     </dependencies>

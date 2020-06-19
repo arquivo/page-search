@@ -9,9 +9,9 @@ import org.apache.solr.common.params.MapSolrParams;
 import org.apache.solr.common.params.SolrParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pt.arquivo.indexer.utils.URLNormalizers;
 import pt.arquivo.services.*;
 import org.springframework.beans.factory.annotation.Value;
+import pt.arquivo.utils.URLNormalizers;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;

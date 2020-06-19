@@ -28,8 +28,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import pt.arquivo.indexer.data.Outlink;
 import pt.arquivo.indexer.data.PageData;
-import pt.arquivo.indexer.utils.HTTPHeader;
-import pt.arquivo.indexer.utils.URLNormalizers;
+import pt.arquivo.utils.HTTPHeader;
+import pt.arquivo.utils.URLNormalizers;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.io.IOException;

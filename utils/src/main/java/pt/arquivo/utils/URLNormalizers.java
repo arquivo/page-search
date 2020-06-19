@@ -1,4 +1,4 @@
-package pt.arquivo.indexer.utils;
+package pt.arquivo.utils;
 
 import org.archive.url.SURT;
 import org.netpreserve.urlcanon.Canonicalizer;

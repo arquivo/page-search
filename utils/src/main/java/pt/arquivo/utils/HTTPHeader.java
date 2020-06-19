@@ -12,7 +12,7 @@
  *  limitations under the License.
  *
  */
-package pt.arquivo.indexer.utils;
+package pt.arquivo.utils;
 
 /*-
  * Copyright (C) 2013 - 2020 The webarchive-discovery project contributors
