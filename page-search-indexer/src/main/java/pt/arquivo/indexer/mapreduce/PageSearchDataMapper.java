@@ -6,10 +6,11 @@ import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.log4j.Logger;
 import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pt.arquivo.indexer.data.PageData;
 import pt.arquivo.indexer.data.WebArchiveKey;
 import pt.arquivo.indexer.parsers.WARCParser;
@@ -23,7 +24,7 @@ import java.util.Iterator;
 
 public class PageSearchDataMapper extends Mapper<LongWritable, Text, WebArchiveKey, PageData> {
     // maps from an ArchiveRecord to a intermediate format
-    private final Logger logger = Logger.getLogger(PageSearchDataMapper.class);
+    private final Logger logger = LoggerFactory.getLogger(PageSearchDataMapper.class);
     private WARCParser warcParser;
     private int graphTimeSlice;
 

@@ -50,4 +50,6 @@ public interface SearchQuery {
     boolean isSearchByType();
 
     boolean isSearchByCollection();
+
+    boolean isTimeBoundedQuery();
 }

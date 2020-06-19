@@ -22,15 +22,14 @@ import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.archive.io.arc.ARCRecord;
 import org.archive.io.warc.WARCRecord;
-import org.archive.url.SURT;
 import org.brotli.dec.BrotliInputStream;
-import org.netpreserve.urlcanon.Canonicalizer;
 import org.netpreserve.urlcanon.ParsedUrl;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import pt.arquivo.indexer.data.Outlink;
 import pt.arquivo.indexer.data.PageData;
 import pt.arquivo.indexer.utils.HTTPHeader;
+import pt.arquivo.indexer.utils.URLNormalizers;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.io.IOException;
@@ -49,7 +48,6 @@ import static org.archive.format.warc.WARCConstants.HEADER_KEY_TYPE;
 public class WARCParser {
     private static Log log = LogFactory.getLog(WARCParser.class);
 
-    private static final Pattern stripWWWNRuleREGEX = Pattern.compile("(?i)^(https?://)(?:www[0-9]*\\.)([^/]*/.+)$");
 
     private List<String> record_type_includes;
     private List<String> record_response_includes;
@@ -102,53 +100,23 @@ public class WARCParser {
         return false;
     }
 
-    public static String stripEndingSlashes(String url) {
-        if (!url.isEmpty() && url.charAt(url.length() - 1) == '/') {
-            url = url.substring(0, url.length() - 1);
-        }
-        return url;
-    }
-
-    public static String canocalizeUrl(String url) {
-        // this should not need to be here
-        if (url.charAt(0) == '<' && url.charAt(url.length() - 1) == '>') {
-            url = url.substring(1, url.length() - 1);
-        }
-        ParsedUrl parsedUrl = ParsedUrl.parseUrl(stripEndingSlashes(url));
-        Canonicalizer.WHATWG.canonicalize(parsedUrl);
-        return parsedUrl.toString();
-    }
-
-    public static String canocalizeSurtUrl(String url) {
-        Matcher matcher = stripWWWNRuleREGEX.matcher(stripEndingSlashes(url));
-        if (matcher.find()) {
-            return SURT.toSURT(matcher.group(2));
-        } else {
-            // Not http URIs fall here
-            return SURT.toSURT(url);
-        }
-    }
 
     private void processEnvelopHeader(ArchiveRecordHeader header, PageData doc) throws NoSuchAlgorithmException {
         String timeStamp = (header.getDate().replaceAll("[^0-9]", ""));
-        // Date date = getWaybackDate(waybackDate);
         // TODO change to digest utils?
         MessageDigest md5 = MessageDigest.getInstance("MD5");
-        String canonalizedURL = canocalizeUrl(header.getUrl());
+        String canonalizedURL = URLNormalizers.canocalizeUrl(header.getUrl());
 
         byte[] url_md5digest = md5.digest(canonalizedURL.getBytes());
         final String url_md5hex = Base64.encodeBase64String(url_md5digest);
 
         String id = timeStamp + "/" + url_md5hex;
-        String surt_url = canocalizeSurtUrl(canonalizedURL);
+        String surt_url = URLNormalizers.canocalizeSurtUrl(canonalizedURL);
 
         doc.setSurt_url(surt_url);
         doc.setUrl(canonalizedURL);
-        doc.setHost(ParsedUrl.parseUrl(canonalizedURL).getHost());
 
-        // strip out the schema (http(s)://from url, we dont want this in the site field
-        String site = canonalizedURL.split("://")[1];
-        doc.setSite(site);
+        doc.setSite(ParsedUrl.parseUrl(canonalizedURL).getHost());
         doc.setTstamp(timeStamp);
         doc.setId(id);
     }
@@ -311,7 +279,6 @@ public class WARCParser {
 
         String encoding = metadata.get("Content-Encoding") != null ? metadata.get("Content-Encoding") : "";
         doc.setEncoding(encoding);
-        doc.setTikaContentType(metadata.get("Content-Type"));
         doc.setContent(removeJunkCharacters(bodyHandler.toString()));
 
         // SET OUTLINKS
@@ -330,11 +297,11 @@ public class WARCParser {
                     link = URI.create(doc.getUrl()).resolve(link);
                     log.debug("Resolving " + links.get(i).getUri() + " to " + link);
                 }
-                Outlink outlink = new Outlink(canocalizeUrl(link.toString()), removeJunkCharacters(links.get(i).getText()));
+                Outlink outlink = new Outlink(URLNormalizers.canocalizeUrl(link.toString()), removeJunkCharacters(links.get(i).getText()));
                 outlinks[i] = outlink;
             } catch (URISyntaxException e) {
                 log.error("Unable to resolve URL: " + links.get(i).getUri());
-                Outlink outlink = new Outlink(canocalizeUrl(links.get(i).getUri()), removeJunkCharacters(links.get(i).getText()));
+                Outlink outlink = new Outlink(URLNormalizers.canocalizeUrl(links.get(i).getUri()), removeJunkCharacters(links.get(i).getText()));
                 outlinks[i] = outlink;
             }
         }

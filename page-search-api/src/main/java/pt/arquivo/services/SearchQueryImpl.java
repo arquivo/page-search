@@ -186,6 +186,12 @@ public class SearchQueryImpl implements SearchQuery {
         return this.collection != null && this.collection.length > 0;
     }
 
+    @Override
+    @JsonIgnore
+    public boolean isTimeBoundedQuery() {
+        return (this.getTo() != null || this.getFrom() != null);
+    }
+
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("q: ").append(this.queryTerms);

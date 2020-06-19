@@ -23,7 +23,6 @@ public class PageData implements Writable {
 
     String tstamp = "";
 
-    String host = "";
     String site = "";
     String url = "";
     String surt_url = "";
@@ -41,8 +40,6 @@ public class PageData implements Writable {
     String primaryType = "";
     @SerializedName("sub_type")
     String subType = "";
-    @SerializedName("tika_content_type")
-    String tikaContentType = "";
     String encoding = "";
 
     @SerializedName("warc_name")
@@ -114,14 +111,6 @@ public class PageData implements Writable {
         this.tstamp = tstamp;
     }
 
-    public String getHost() {
-        return host;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
-    }
-
     public String getSite() {
         return site;
     }
@@ -157,14 +146,6 @@ public class PageData implements Writable {
 
     public String getSubType() {
         return subType;
-    }
-
-    public String getTikaContentType() {
-        return tikaContentType;
-    }
-
-    public void setTikaContentType(String tikaContentType) {
-        this.tikaContentType = tikaContentType;
     }
 
     public String getEncoding() {
@@ -237,7 +218,6 @@ public class PageData implements Writable {
         Text.writeString(out, String.valueOf(contentLength));
         Text.writeString(out, digest);
         Text.writeString(out, tstamp);
-        Text.writeString(out, host);
         Text.writeString(out, site);
         Text.writeString(out, url);
         Text.writeString(out, collection);
@@ -250,7 +230,6 @@ public class PageData implements Writable {
         Text.writeString(out, type);
         Text.writeString(out, primaryType);
         Text.writeString(out, subType);
-        Text.writeString(out, tikaContentType);
         Text.writeString(out, encoding);
         Text.writeString(out, warcName);
         Text.writeString(out, String.valueOf(warcOffset));
@@ -266,7 +245,6 @@ public class PageData implements Writable {
         this.contentLength = Integer.parseInt(Text.readString(in));
         this.digest = Text.readString(in);
         this.tstamp = Text.readString(in);
-        this.host = Text.readString(in);
         this.site = Text.readString(in);
         this.url = Text.readString(in);
         this.collection = Text.readString(in);
@@ -288,7 +266,6 @@ public class PageData implements Writable {
         this.type = Text.readString(in);
         this.primaryType = Text.readString(in);
         this.subType = Text.readString(in);
-        this.tikaContentType = Text.readString(in);
         this.encoding = Text.readString(in);
         this.warcName = Text.readString(in);
         this.warcOffset = Integer.parseInt(Text.readString(in));

@@ -44,7 +44,6 @@ public class WARCParserTest {
         PageData doc = warcParser.extract(reader.getFileName(), rec);
 
         // ASSERT FIELDS
-        assertEquals(doc.getTikaContentType(), "application/gzip");
         assertEquals(doc.getTitle(), "");
         // assertEquals(doc.getSolrInputDocument().get("digest").getValue().toString(), "3129038109");
         // assertEquals(doc.getSolrInputDocument().get("encoding").getValue().toString(), "iso-8859-1");
@@ -55,7 +54,6 @@ public class WARCParserTest {
         assertEquals(doc.getUrl(), "http://publico.pt/");
         assertEquals(doc.getId(), "19961013180344/FhcAj9+g5IrKjL+HJyyf3g==");
         // assertEquals(doc.getSolrInputDocument().get("domain").getValue().toString(), "publico.pt");
-        assertEquals(doc.getHost(), "publico.pt");
         assertEquals(doc.getTstamp(), ("19961013180344"));
     }
 }

@@ -81,10 +81,6 @@ public class NutchWaxSearchService implements SearchService {
         this.searcherMaxHits = Integer.parseInt(this.conf.get(Global.MAX_FULLTEXT_MATCHES_RETURNED));
     }
 
-    private boolean isTimeBoundedQuery(SearchQuery searchQuery) {
-        return (searchQuery.getTo() != null || searchQuery.getFrom() != null);
-    }
-
     @Override
     public SearchResults query(SearchQuery searchQuery, boolean searchUrl) {
         if (searchUrl) {
@@ -105,7 +101,7 @@ public class NutchWaxSearchService implements SearchService {
     private String buildNutchwaxQueryString(SearchQuery searchQuery) {
         StringBuilder queryString = new StringBuilder();
 
-        if (isTimeBoundedQuery(searchQuery)) {
+        if (searchQuery.isTimeBoundedQuery()) {
             if (searchQuery.getFrom() == null) {
                 searchQuery.setFrom(startDate);
             }

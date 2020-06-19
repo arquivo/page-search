@@ -1,17 +1,18 @@
 package pt.arquivo.indexer.mapreduce;
 
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pt.arquivo.indexer.data.Inlink;
 import pt.arquivo.indexer.data.Outlink;
 import pt.arquivo.indexer.data.PageData;
 import pt.arquivo.indexer.data.WebArchiveKey;
-import pt.arquivo.indexer.parsers.WARCParser;
+import pt.arquivo.indexer.utils.URLNormalizers;
 
 import java.io.IOException;
 
 public class InvertLinksMapper extends Mapper<WebArchiveKey, PageData, WebArchiveKey, Inlink> {
-    private final Logger logger = Logger.getLogger(InvertLinksMapper.class);
+    private final Logger logger = LoggerFactory.getLogger(InvertLinksMapper.class);
     private int graphTimeSlice;
 
     @Override
@@ -35,9 +36,9 @@ public class InvertLinksMapper extends Mapper<WebArchiveKey, PageData, WebArchiv
             String keyTimeStamp = value.getTstamp().substring(0, graphTimeSlice);
             Inlink inlink = new Inlink(fromUrl, anchorText);
 
-            WebArchiveKey webArchiveKey = new WebArchiveKey(WARCParser.canocalizeSurtUrl(toUrl), keyTimeStamp);
+            WebArchiveKey webArchiveKey = new WebArchiveKey(URLNormalizers.canocalizeSurtUrl(toUrl), keyTimeStamp);
             context.write(webArchiveKey, inlink);
-            logger.info("Generating Inlink from " + webArchiveKey.getTimeStamp() + "#" + webArchiveKey.getUrl()  + " to " + toUrl);
+            logger.info("Generating Inlink from " + webArchiveKey.getTimeStamp() + "#" + webArchiveKey.getUrl() + " to " + toUrl);
         }
     }
 }

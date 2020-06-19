@@ -75,6 +75,7 @@ public class SolrPageDocDriver extends Configured implements Tool {
                     StringBuilder anchorText = new StringBuilder();
                     for (int i = 0; i < anchors.length; i++) {
                        anchorText.append(anchors[i]);
+                       anchorText.append(" ");
                     }
                     pagedata.setAnchor(anchorText.toString());
                     pagedata.setnInLinks(inlinks.size());

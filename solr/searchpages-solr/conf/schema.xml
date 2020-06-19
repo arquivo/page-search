@@ -16,20 +16,18 @@
 
 	<field name="tstamp" type="plong" stored="true"/>
 
-	<!-- <field name="domain" type="string" indexed="true" stored="true"/> -->
-	<field name="site" type="string" indexed="true" stored="false"/>
-	<field name="host" type="text_general" stored="true" multiValued="false"/>
+	<field name="site" type="text_general" stored="true" multiValued="false"/>
 
 	<field name="inlinks" type="pint" stored="true"/>
 	<field name="outlinks" type="pint" stored="true"/>
 
 	<!-- not tokenized -->
     <field name="encoding" type="string" stored="true"/>
-    <field name="tika_content_type" type="string" stored="true" />
 	<field name="type" type="string" indexed="true" stored="false"/>
 	<field name="primary_type" type="string" indexed="true"/>
 	<field name="sub_type" type="string" indexed="true"/>
 
+    <!-- this should be tokenized right?? -->
 	<field name="url" type="string" indexed="true" stored="true"/>
     <field name="surt_url" type="string" indexed="true" stored="true"/>
 

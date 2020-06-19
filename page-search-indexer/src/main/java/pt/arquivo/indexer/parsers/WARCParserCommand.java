@@ -52,7 +52,6 @@ public class WARCParserCommand {
                             solrDocumentWrapper.setUrl(doc.getUrl());
                             solrDocumentWrapper.setWarcName(doc.getWarcName());
                             solrDocumentWrapper.setWarcOffset(String.valueOf(doc.getWarcOffset()));
-                            solrDocumentWrapper.setTikaType(doc.getTikaContentType());
 
                             solrDocumentWrapper.setType(doc.getType());
 
