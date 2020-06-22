@@ -1,5 +1,6 @@
 package pt.arquivo.services.solr;
 
+import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -83,34 +84,49 @@ public class SolrSearchService implements SearchService {
                 "id_/" + searchResult.getOriginalURL());
     }
 
-    private SolrParams convertSearchQuery(SearchQuery searchQuery) {
-        Map<String, String> queryParamMap = new HashMap<String, String>();
-        queryParamMap.put("q", searchQuery.getQueryTerms());
-        queryParamMap.put("start", String.valueOf(searchQuery.getOffset()));
-        queryParamMap.put("rows", String.valueOf(searchQuery.getMaxItems()));
+    private SolrQuery convertSearchQuery(SearchQuery searchQuery) {
+        SolrQuery solrQuery = new SolrQuery();
+
+        solrQuery.setQuery(searchQuery.getQueryTerms());
+        solrQuery.setStart(searchQuery.getOffset());
+        solrQuery.setRows(searchQuery.getMaxItems());
 
         // enable highlighting
-        queryParamMap.put("hl", "on");
+        solrQuery.setHighlight(true);
 
         if (searchQuery.getCollection() != null) {
+            boolean multipleCollection = false;
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("collection:");
             for(String collection : searchQuery.getCollection()){
-                queryParamMap.put("fq", "collection:" + collection);
+                if (multipleCollection) stringBuilder.append(" OR ");
+                stringBuilder.append(collection);
+                multipleCollection = true;
             }
+            solrQuery.addFilterQuery(stringBuilder.toString());
         }
 
         if (searchQuery.isTimeBoundedQuery()) {
             String dateEnd = searchQuery.getTo() != null ? searchQuery.getTo() : "*";
-            queryParamMap.put("fq", "tstamp:[ " + searchQuery.getFrom() + " TO " + dateEnd + " ]");
+            solrQuery.addFilterQuery("tstamp:[ " + searchQuery.getFrom() + " TO " + dateEnd + " ]");
         }
 
         if (searchQuery.isSearchBySite()){
             String[] sites = searchQuery.getSite();
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("site:");
+            boolean multipleSite = false;
             for(String site : sites){
+                if (multipleSite) stringBuilder.append(" OR ");
                 // strip out protocol and www's
                 site = URLNormalizers.stripProtocolAndWWWUrl(site);
-                queryParamMap.put("fq", "site:*." + site);
-                queryParamMap.put("fq", "site:" + site);
+                stringBuilder.append("*.")
+                        .append(site)
+                        .append(" OR ")
+                        .append(site);
+                multipleSite = true;
             }
+            solrQuery.addFilterQuery(stringBuilder.toString());
         }
 
         // filter fields
@@ -122,12 +138,9 @@ public class SolrSearchService implements SearchService {
                 stringBuilderFields.append(",");
             }
             stringBuilderFields.append(fieldsArray[fieldsArray.length - 1]);
-
-            queryParamMap.put("fl", stringBuilderFields.toString());
+            solrQuery.setFields(stringBuilderFields.toString());
         }
-
-        MapSolrParams queryParams = new MapSolrParams(queryParamMap);
-        return queryParams;
+        return solrQuery;
     }
 
     public String getHighlightedText(final QueryResponse queryResponse, final String fieldName, final String docId) {
@@ -213,9 +226,9 @@ public class SolrSearchService implements SearchService {
             searchQuery.setDedupField("site");
         }
 
-        SolrParams solrParams = convertSearchQuery(searchQuery);
+        SolrQuery solrQuery = convertSearchQuery(searchQuery);
         try {
-            QueryResponse queryResponse = this.solrClient.query(solrParams);
+            QueryResponse queryResponse = this.solrClient.query(solrQuery);
             SearchResults searchResults = parseQueryResponse(queryResponse);
             return searchResults;
         } catch (SolrServerException e) {
