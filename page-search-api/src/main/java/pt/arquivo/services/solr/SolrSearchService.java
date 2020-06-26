@@ -85,7 +85,7 @@ public class SolrSearchService implements SearchService {
         // enable highlighting
         solrQuery.setHighlight(true);
 
-        if (searchQuery.getCollection() != null) {
+        if (searchQuery.isSearchByCollection()) {
             boolean multipleCollection = false;
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("collection:");
