@@ -6,12 +6,10 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
-import org.apache.solr.common.params.MapSolrParams;
-import org.apache.solr.common.params.SolrParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pt.arquivo.services.*;
 import org.springframework.beans.factory.annotation.Value;
+import pt.arquivo.services.*;
 import pt.arquivo.utils.URLNormalizers;
 
 import java.io.IOException;
@@ -21,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -34,30 +31,28 @@ public class SolrSearchService implements SearchService {
     // TODO should upgrade this for the SolrCloudClient
     private HttpSolrClient solrClient;
 
-    @Value("${searchpages.api.startdate}")
+    @Value("${searchpages.api.startdate:19960101000000}")
     private String startDate;
 
-    private DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-
-    @Value("${searchpages.service.link}")
+    @Value("${searchpages.service.link:http://localhost:8081}")
     private String serviceName;
 
-    @Value("${screenshot.service.endpoint}")
+    @Value("${screenshot.service.endpoint:https://preprod.arquivo.pt/screenshot}")
     private String screenshotServiceEndpoint;
 
-    @Value("${wayback.service.endpoint}")
+    @Value("${wayback.service.endpoint:https://preprod.arquivo.pt/wayback}")
     private String waybackServiceEndpoint;
 
-    @Value("${wayback.noframe.service.endpoint}")
+    @Value("${wayback.noframe.service.endpoint:https://preprod.arquivo.pt/noFrame/replay}")
     private String waybackNoFrameServiceEndpoint;
 
-    @Value("${searchpages.extractedtext.service.link}")
+    @Value("${searchpages.extractedtext.service.link:http://localhost:8081/textextracted}")
     private String extractedTextServiceEndpoint;
 
-    @Value("${searchpages.solr.service.link}")
+    @Value("${searchpages.textsearch.service.bean.solr.link:http://localhost:8983/solr/searchpages}")
     private String baseSolrUrl;
 
-    @Value("${searchpages.textsearch.service.link}")
+    @Value("${searchpages.textsearch.service.link:http://localhost:8081/textsearch}")
     private String textSearchServiceEndpoint;
 
     // TODO refactor this - extract duplicate code
@@ -98,7 +93,7 @@ public class SolrSearchService implements SearchService {
             boolean multipleCollection = false;
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("collection:");
-            for(String collection : searchQuery.getCollection()){
+            for (String collection : searchQuery.getCollection()) {
                 if (multipleCollection) stringBuilder.append(" OR ");
                 stringBuilder.append(collection);
                 multipleCollection = true;
@@ -111,12 +106,12 @@ public class SolrSearchService implements SearchService {
             solrQuery.addFilterQuery("tstamp:[ " + searchQuery.getFrom() + " TO " + dateEnd + " ]");
         }
 
-        if (searchQuery.isSearchBySite()){
+        if (searchQuery.isSearchBySite()) {
             String[] sites = searchQuery.getSite();
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("site:");
             boolean multipleSite = false;
-            for(String site : sites){
+            for (String site : sites) {
                 if (multipleSite) stringBuilder.append(" OR ");
                 // strip out protocol and www's
                 site = URLNormalizers.stripProtocolAndWWWUrl(site);
@@ -209,7 +204,7 @@ public class SolrSearchService implements SearchService {
     }
 
     @Override
-    public SearchResults query(SearchQuery searchQuery, boolean urlSearch){
+    public SearchResults query(SearchQuery searchQuery, boolean urlSearch) {
         return query(searchQuery);
     }
 
