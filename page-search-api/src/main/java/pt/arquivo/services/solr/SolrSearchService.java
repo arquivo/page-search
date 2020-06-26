@@ -16,17 +16,13 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 public class SolrSearchService implements SearchService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SolrSearchService.class);
-    private static final Pattern stripWWWNRuleREGEX = Pattern.compile("^(?:https?://)(?:www[0-9]*\\.)?([^/]*/?.*)$");
 
     // TODO should upgrade this for the SolrCloudClient
     private HttpSolrClient solrClient;

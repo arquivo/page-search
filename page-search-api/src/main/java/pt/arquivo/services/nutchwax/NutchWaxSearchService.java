@@ -36,30 +36,30 @@ public class NutchWaxSearchService implements SearchService {
     private Configuration conf;
     private NutchwaxBean bean;
 
-    @Value("${searchpages.api.startdate}")
+    @Value("${searchpages.api.startdate:19960101000000}")
     private String startDate;
 
     private DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
-    @Value("${searchpages.service.link}")
+    @Value("${searchpages.service.link:http://localhost:8081}")
     private String serviceName;
 
-    @Value("${screenshot.service.endpoint}")
+    @Value("${screenshot.service.endpoint:https://preprod.arquivo.pt/screenshot}")
     private String screenshotServiceEndpoint;
 
-    @Value("${wayback.service.endpoint}")
+    @Value("${wayback.service.endpoint:https://preprod.arquivo.pt/wayback}")
     private String waybackServiceEndpoint;
 
-    @Value("${wayback.noframe.service.endpoint}")
+    @Value("${wayback.noframe.service.endpoint:https://preprod.arquivo.pt/noFrame/replay}")
     private String waybackNoFrameServiceEndpoint;
 
-    @Value("${searchpages.extractedtext.service.link}")
+    @Value("${searchpages.extractedtext.service.link:http://localhost:8081/textextracted}")
     private String extractedTextServiceEndpoint;
 
-    @Value("${searchpages.textsearch.service.link}")
+    @Value("${searchpages.textsearch.service.link:http://localhost:8081/textsearch}")
     private String textSearchServiceEndpoint;
 
-    @Value("${searchpages.api.show.ids}")
+    @Value("${searchpages.api.show.ids:false}")
     private boolean showIds;
 
     public NutchWaxSearchService(Configuration conf) throws IOException {
