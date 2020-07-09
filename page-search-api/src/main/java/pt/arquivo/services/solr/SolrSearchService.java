@@ -223,6 +223,7 @@ public class SolrSearchService implements SearchService {
             SearchResults searchResults = parseQueryResponse(queryResponse);
             return searchResults;
         } catch (SolrServerException e) {
+            // TODO log this properly
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
