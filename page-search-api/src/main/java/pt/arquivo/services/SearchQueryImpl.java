@@ -36,7 +36,7 @@ public class SearchQueryImpl implements SearchQuery {
     @JsonIgnore
     private boolean prettyPrint;
 
-    private String dedupField = "site";
+    private String dedupField;
 
     public SearchQueryImpl(String queryTerms) {
         this.queryTerms = queryTerms;
@@ -83,7 +83,7 @@ public class SearchQueryImpl implements SearchQuery {
         return from;
     }
 
-    // TODO validate if its valida date (just numbers and at least a year)
+    // TODO validate if its valid date (just numbers and at least a year)
     public void setFrom(String from) {
         if (from.length() > 14) {
             this.from = from.substring(0, 14);
@@ -166,7 +166,6 @@ public class SearchQueryImpl implements SearchQuery {
     public boolean isPrettyPrint() {
         return prettyPrint;
     }
-
 
     @Override
     @JsonIgnore

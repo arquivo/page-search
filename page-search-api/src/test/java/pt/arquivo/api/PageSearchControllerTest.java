@@ -37,6 +37,49 @@ public class PageSearchControllerTest {
     private MockMvc mockMvc;
 
     @Test
+    public void testSearchBySiteDefaultDedup() throws Exception {
+        SearchResultImpl mockSearchResult1 = new SearchResultImpl();
+        SearchResults mockSearchResults = new SearchResults();
+
+        ArrayList<SearchResult> searchResults = new ArrayList<>();
+        searchResults.add(mockSearchResult1);
+
+        mockSearchResults.setResults(searchResults);
+
+        Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
+
+        String URI = "/textsearch?q=sapo&prettyPrint=true&siteSearch=example.com";
+        String URI2 = "/textsearch?q=sapo&prettyPrint=true";
+        String URI3 = "/textsearch?q=sapo&prettyPrint=true&siteSearch=example.com&dedupField=site";
+
+        // test searchSite default dedupField
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.get(URI);
+        MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+        MockHttpServletResponse response = result.getResponse();
+        JSONObject jsonResponse = new JSONObject(response.getContentAsString());
+        assertThat(jsonResponse.getJSONObject("request_parameters").getString("dedupField")).isEqualTo("url");
+
+        // test default dedupField when query is by site
+        requestBuilder = MockMvcRequestBuilders.get(URI2);
+        result = mockMvc.perform(requestBuilder).andReturn();
+
+        response = result.getResponse();
+
+        jsonResponse = new JSONObject(response.getContentAsString());
+        assertThat(jsonResponse.getJSONObject("request_parameters").getString("dedupField")).isEqualTo("site");
+
+        // test custom dedupField on a search by site query
+        requestBuilder = MockMvcRequestBuilders.get(URI3);
+        result = mockMvc.perform(requestBuilder).andReturn();
+
+        response = result.getResponse();
+
+        jsonResponse = new JSONObject(response.getContentAsString());
+        assertThat(jsonResponse.getJSONObject("request_parameters").getString("dedupField")).isEqualTo("site");
+    }
+
+    @Test
     public void pageSearch() throws Exception {
         /* Mainly verify API specification */
 

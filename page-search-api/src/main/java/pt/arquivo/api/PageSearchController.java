@@ -167,8 +167,7 @@ public class PageSearchController {
         SearchQueryImpl searchQuery = new SearchQueryImpl(query);
         searchQuery.setOffset(offset);
         searchQuery.setMaxItems(maxItems);
-        searchQuery.setDedupField(dedupField);
-        searchQuery.setDedupValue(dedupValue);
+
         // TODO to decrepate parameter
         if (itemsPerSite != null) {
             searchQuery.setLimitPerSite(itemsPerSite);
@@ -184,6 +183,14 @@ public class PageSearchController {
         searchQuery.setCollection(collection);
         searchQuery.setFields(fields);
         searchQuery.setPrettyPrint(prettyPrint);
+
+        searchQuery.setDedupValue(dedupValue);
+        if (request.getParameter("dedupField") == null && searchQuery.isSearchBySite()){
+            searchQuery.setDedupField("url");
+        }
+        else {
+            searchQuery.setDedupField(dedupField);
+        }
 
         SearchResults searchResults;
         searchResults = searchService.query(searchQuery);

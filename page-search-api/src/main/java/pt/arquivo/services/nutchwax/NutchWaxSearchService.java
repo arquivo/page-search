@@ -161,12 +161,6 @@ public class NutchWaxSearchService implements SearchService {
 
         boolean urlSearchQuery = Utils.urlValidator(searchQuery.getQueryTerms().split(" ")[0]) || searchQuery.getQueryTerms().contains("exacturl:");
 
-        if (searchQuery.isSearchBySite() && searchQuery.getDedupField() == null) {
-            searchQuery.setDedupField("url");
-        } else if (searchQuery.getDedupField() == null) {
-            searchQuery.setDedupField("site");
-        }
-
         int numberOfHits = searchQuery.getOffset() + searchQuery.getMaxItems();
 
         String nutchwaxQueryString = buildNutchwaxQueryString(searchQuery);
@@ -184,7 +178,7 @@ public class NutchWaxSearchService implements SearchService {
                 The problem is that then we are not able to know if this was the last page of results or not.
 
             */
-            if (searchQuery.getDedupValue() == 0){
+            if (searchQuery.getDedupValue() == 0) {
                 numberOfHits = numberOfHits + 1;
             }
             // don't get deceive by the maxHitsPerVersion, it doesn't work
