@@ -177,6 +177,17 @@ public class NutchWaxSearchService implements SearchService {
                             "searcherMaxHits: %s, hitsPerDup: %s, urlSearchQuery: %s", query, numberOfHits,
                     searcherMaxHits, searchQuery.getDedupValue(), urlSearchQuery));
 
+            /*
+                Query for numberOfHits + 1 so we can determine that its the last page with results.
+                when dedupValue == 0, there is not deduplication, therefore nutchwax doesn't apply
+                the numHitsRaw multiply factor, which makes sense because you don't really need to clean up results.
+                The problem is that then we are not able to know if this was the last page of results or not.
+
+            */
+            if (searchQuery.getDedupValue() == 0){
+                numberOfHits = numberOfHits + 1;
+            }
+            // don't get deceive by the maxHitsPerVersion, it doesn't work
             Hits hits = bean.search(query, numberOfHits, searcherMaxHits,
                     searchQuery.getDedupValue(), searchQuery.getDedupField(), null, false,
                     PwaFunctionsWritable.parse(conf.get(Global.RANKING_FUNCTIONS)), 1, urlSearchQuery);
