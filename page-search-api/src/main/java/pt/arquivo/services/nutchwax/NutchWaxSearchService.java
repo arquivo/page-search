@@ -191,6 +191,12 @@ public class NutchWaxSearchService implements SearchService {
             // build SearchResults
             if (hits.getLength() >= 1) {
                 int end = Math.min(hits.getLength() - searchQuery.getOffset(), searchQuery.getMaxItems());
+                // offset behind number of results
+                // no more results
+                if (end < 0){
+                    results.setResults(new ArrayList<>());
+                    return results;
+                }
                 Hit[] show = hits.getHits(searchQuery.getOffset(), end);
                 HitDetails[] details = bean.getDetails(show);
                 Summary[] summaries = bean.getSummary(details, query);

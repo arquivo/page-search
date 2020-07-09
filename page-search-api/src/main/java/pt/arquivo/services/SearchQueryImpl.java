@@ -36,7 +36,7 @@ public class SearchQueryImpl implements SearchQuery {
     @JsonIgnore
     private boolean prettyPrint;
 
-    private String dedupField;
+    private String dedupField = "site";
 
     public SearchQueryImpl(String queryTerms) {
         this.queryTerms = queryTerms;

@@ -111,6 +111,14 @@ public class NutchWaxSearchServiceTestIT {
         assertThat(searchResults.getResults().size()).isEqualTo(5);
     }
 
+    @Test
+    public void testOutOfRangeOffset(){
+        SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
+        searchQuery.setOffset(5000);
+        SearchResults searchResults = this.nutchWaxSearchService.query(searchQuery);
+        assertThat(searchResults.isLastPageResults()).isTrue();
+        assertThat(searchResults.getNumberResults()).isEqualTo(0);
+    }
 
     @Test
     public void testTimeBoundedQuery() {
