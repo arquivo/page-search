@@ -3,6 +3,8 @@ package pt.arquivo.services.nutchwax;
 import org.archive.access.nutch.NutchwaxConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +18,7 @@ import pt.arquivo.services.SearchResults;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -25,6 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
 public class NutchWaxSearchServiceTestIT {
+
+    private static final Logger LOG = LoggerFactory.getLogger(NutchWaxSearchServiceTestIT.class);
 
     @Configuration
     @PropertySource("classpath:application.properties")
@@ -39,7 +44,8 @@ public class NutchWaxSearchServiceTestIT {
             org.apache.hadoop.conf.Configuration configuration = NutchwaxConfiguration.getConfiguration();
             String fullPath = getClass().getClassLoader().getResource("search-servers.txt").getPath();
             String basePath = fullPath.substring(0, fullPath.lastIndexOf("/"));
-            configuration.set("searcher.dir", basePath);
+            System.out.println(">>>>>>>> search-server.txt file location: " + basePath);
+            configuration.set("searcher.dir", URLDecoder.decode(basePath, "utf8"));
             return new NutchWaxSearchService(configuration);
         }
     }

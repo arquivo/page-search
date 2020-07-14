@@ -130,7 +130,6 @@
                             <excludes>
                                 <exclude>**/SolrSearchServiceTestIT.java</exclude>
                             </excludes>
-
                         </configuration>
                         <executions>
                             <execution>
