@@ -8,8 +8,7 @@ services:
     build: ./solr
     container_name: solr-server
     volumes:
-      - ./solr/searchpages-solr:/var/solr/data/searchpages
-      # - ./custom.sh:/docker-entrypoint-initdb.d/custom.sh
+      - ./solr/pagesearch-solr:/var/solr/data/pagesearch
 
   api:
     build: ./page-search-api

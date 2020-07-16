@@ -1,3 +1,10 @@
 /release.properties
 **/pom.xml.releaseBackup
 *.iml
+.idea/
+/solr/pagesearch-solr/data/index/
+/solr/pagesearch-solr/data/snapshot_metadata/
+/solr/pagesearch-solr/data/tlog/
+/output_*
+**/target/
+/solr/test-data/

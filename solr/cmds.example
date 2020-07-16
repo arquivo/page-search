@@ -1,0 +1,6 @@
+# build image
+docker build . -t pagesearch-solr
+
+# run docker and map port 8983 to host
+docker run -p 8983:8983 pagesearch-solr
+
