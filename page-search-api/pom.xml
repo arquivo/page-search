@@ -172,12 +172,14 @@
                                         </ports>
                                     </run>
                                 </image>
+                                <!--
                                 <image>
                                     <name>arquivo/pagesearch-solr-test</name>
                                     <ports>
                                         <port>8983:8983</port>
                                     </ports>
                                 </image>
+                                -->
                             </images>
                         </configuration>
                     </plugin>
