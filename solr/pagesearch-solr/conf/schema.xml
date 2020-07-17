@@ -16,7 +16,7 @@
 
 	<field name="tstamp" type="plong" stored="true"/>
 
-	<field name="site" type="text_general" stored="true" multiValued="false"/>
+	<field name="site" type="string" stored="true" multiValued="false"/>
 
 	<field name="inlinks" type="pint" stored="true"/>
 	<field name="outlinks" type="pint" stored="true"/>
@@ -28,8 +28,8 @@
 	<field name="sub_type" type="string" indexed="true"/>
 
     <!-- this should be tokenized right?? -->
-	<field name="url" type="string" indexed="true" stored="true"/>
-    <field name="surt_url" type="string" indexed="true" stored="true"/>
+	<field name="url" type="text_general" indexed="true" stored="true" multiValued="false"/>
+    <field name="surt_url" type="string" indexed="false" stored="true"/>
 
 	<!-- TODO should we use the default text_pt?? -->
     <!-- does host needs this== -->

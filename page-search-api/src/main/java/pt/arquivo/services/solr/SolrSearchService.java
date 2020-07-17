@@ -6,6 +6,7 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.common.params.SolrParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -75,6 +76,17 @@ public class SolrSearchService implements SearchService {
                 "id_/" + searchResult.getOriginalURL());
     }
 
+    private void addDeduplicationFilterQuery(SolrQuery solrQuery, String dedupField){
+        if (dedupField.equalsIgnoreCase("url")){
+            dedupField = "surt_url";
+        }
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("{!collapse field=")
+                .append(dedupField).append("}");
+        solrQuery.addFilterQuery(stringBuilder.toString());
+    }
+
     private SolrQuery convertSearchQuery(SearchQuery searchQuery) {
         SolrQuery solrQuery = new SolrQuery();
 
@@ -114,6 +126,7 @@ public class SolrSearchService implements SearchService {
                 stringBuilder.append("*.")
                         .append(site)
                         .append(" OR ")
+                        .append("site:")
                         .append(site);
                 multipleSite = true;
             }
@@ -131,6 +144,9 @@ public class SolrSearchService implements SearchService {
             stringBuilderFields.append(fieldsArray[fieldsArray.length - 1]);
             solrQuery.setFields(stringBuilderFields.toString());
         }
+
+        addDeduplicationFilterQuery(solrQuery, searchQuery.getDedupField());
+
         return solrQuery;
     }
 
@@ -210,12 +226,6 @@ public class SolrSearchService implements SearchService {
         // TODO have this already instanced before doing the query. Is not that way because how @Value works
         LOG.info("Initing SolrClient pointing to " + this.baseSolrUrl);
         this.solrClient = new HttpSolrClient.Builder(this.baseSolrUrl).build();
-
-        if (searchQuery.isSearchBySite() && searchQuery.getDedupField() == null) {
-            searchQuery.setDedupField("url");
-        } else {
-            searchQuery.setDedupField("site");
-        }
 
         SolrQuery solrQuery = convertSearchQuery(searchQuery);
         try {

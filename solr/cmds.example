@@ -4,3 +4,8 @@ docker build . -t pagesearch-solr
 # run docker and map port 8983 to host
 docker run -p 8983:8983 pagesearch-solr
 
+# post data
+/opt/solr-8.4.1/bin/post -c pagesearch test-data/data.json
+
+
+# rebuild the image again

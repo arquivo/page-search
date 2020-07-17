@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import pt.arquivo.services.SearchQueryImpl;
 import pt.arquivo.services.SearchResult;
@@ -14,8 +15,6 @@ import pt.arquivo.services.SearchResultImpl;
 import pt.arquivo.services.SearchResults;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,15 +23,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SolrSearchServiceTestIT {
 
     @Configuration
+    @TestPropertySource(properties = { "searchpages.textsearch.service.bean=solr"})
     @PropertySource("classpath:application.properties")
     static class ContextConfiguration {
-        @Bean static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer(){
+        @Bean
+        static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
             return new PropertySourcesPlaceholderConfigurer();
         }
 
         @Bean
-        public SolrSearchService initSolrService(){
-           return new SolrSearchService();
+        public SolrSearchService initSolrService() {
+            return new SolrSearchService();
         }
     }
 
@@ -63,8 +64,8 @@ public class SolrSearchServiceTestIT {
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
         // assertThat(searchResults.isLastPageResults()).isTrue();
-        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(78);
-        assertThat(searchResults.getNumberResults()).isEqualTo(50);
+        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(36);
+        assertThat(searchResults.getNumberResults()).isEqualTo(36);
 
         ArrayList<SearchResult> arraySearchResult = searchResults.getResults();
         SearchResultImpl firstSearchResult = (SearchResultImpl) arraySearchResult.get(0);
@@ -102,7 +103,7 @@ public class SolrSearchServiceTestIT {
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
 
         assertThat(searchResults.isLastPageResults()).isFalse();
-        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(78);
+        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(36);
         assertThat(searchResults.getNumberResults()).isEqualTo(5);
     }
 
@@ -114,7 +115,7 @@ public class SolrSearchServiceTestIT {
         searchQuery.setTo("19961013150305");
 
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
-        assertThat(searchResults.getResults().size()).isEqualTo(3);
+        assertThat(searchResults.getResults().size()).isEqualTo(2);
     }
 
     @Test
@@ -130,8 +131,10 @@ public class SolrSearchServiceTestIT {
     public void testSiteBoundedQuery() {
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
         searchQuery.setSite(new String[]{"http://sapo.ua.pt/"});
+        searchQuery.setDedupField("url");
+        searchQuery.setDedupValue(1);
 
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
-        assertThat(searchResults.getResults().size()).isEqualTo(8);
+        assertThat(searchResults.getResults().size()).isEqualTo(50);
     }
 }
