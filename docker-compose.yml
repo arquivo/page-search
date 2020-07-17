@@ -6,7 +6,7 @@ services:
     ports:
       - "8983:8983"
     build: ./solr
-    container_name: solr-server
+    container_name: pagesearch-solr-test
     volumes:
       - ./solr/pagesearch-solr:/var/solr/data/pagesearch
 

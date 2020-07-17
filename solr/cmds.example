@@ -1,11 +1,13 @@
 # build image
-docker build . -t pagesearch-solr
+docker build . -t arquivo/pagesearch-solr
 
-# run docker and map port 8983 to host
-docker run -p 8983:8983 pagesearch-solr
+# run docker and map port 8983 to host, and map local folder so we can persist the Solr Index
+docker run -d -v /home/dbicho/IdeaProjects/searchpages/solr/pagesearch-solr/data/:/opt/solr-8.4.1/server/solr/pagesearch/data/ -p 8983:8983 arquivo/pagesearch-solr-test
 
 # post data
 /opt/solr-8.4.1/bin/post -c pagesearch test-data/data.json
 
+# rebuild the image again with the new Solr Index and publish
+docker build -t arquivo/pagesearch-solr-test .
 
-# rebuild the image again
+docker push arquivo/pagesearch-solr-test

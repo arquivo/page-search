@@ -127,9 +127,11 @@
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <version>2.22.2</version>
                         <configuration>
+                            <!--
                             <excludes>
                                 <exclude>**/SolrSearchServiceTestIT.java</exclude>
                             </excludes>
+                            -->
                         </configuration>
                         <executions>
                             <execution>
@@ -172,14 +174,14 @@
                                         </ports>
                                     </run>
                                 </image>
-                                <!--
                                 <image>
                                     <name>arquivo/pagesearch-solr-test</name>
-                                    <ports>
-                                        <port>8983:8983</port>
-                                    </ports>
+                                    <run>
+                                        <ports>
+                                            <port>8983:8983</port>
+                                        </ports>
+                                    </run>
                                 </image>
-                                -->
                             </images>
                         </configuration>
                     </plugin>
