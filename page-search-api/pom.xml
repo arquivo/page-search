@@ -180,6 +180,12 @@
                                         <ports>
                                             <port>8983:8983</port>
                                         </ports>
+                                        <wait>
+                                            <http>
+                                                <url>http://localhost:8983</url>
+                                            </http>
+                                            <time>10000</time>
+                                        </wait>
                                     </run>
                                 </image>
                             </images>
