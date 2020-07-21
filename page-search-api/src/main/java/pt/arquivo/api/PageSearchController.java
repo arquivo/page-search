@@ -98,7 +98,7 @@ public class PageSearchController {
 
     @CrossOrigin
     @GetMapping(value = {"/metadata"})
-    public ApiResponse getMetadata(@RequestParam(value = "metadata") String id) {
+    public ApiResponse getMetadata(@RequestParam(value = "id") String id) {
         LOG.info(String.format("Request to /metadata for ID=%s", id));
 
         MetadataResponse metadataResponse = new MetadataResponse();

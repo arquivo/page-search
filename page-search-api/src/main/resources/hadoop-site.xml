@@ -18,10 +18,4 @@
       <name>wax.webhost</name>
       <value>localhost</value>
   </property>
-
-  <property>
-      <name>wax.solrserver</name>
-      <value>http://p28.arquivo.pt:8983/solr/SAFE</value>
-  </property>
-
 </configuration>

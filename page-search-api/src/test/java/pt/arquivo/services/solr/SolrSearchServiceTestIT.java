@@ -45,17 +45,16 @@ public class SolrSearchServiceTestIT {
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
         // TODO Verify number of results with NutchWaxBackend
-        // assertThat(searchResults.getNumberResults()).isEqualTo(41);
-        // assertThat(searchResults.isLastPageResults()).isTrue();
+        assertThat(searchResults.getNumberResults()).isEqualTo(36);
+        assertThat(searchResults.isLastPageResults()).isTrue();
 
-        // verify first result
-        // SearchResultImpl searchResult = (SearchResultImpl) searchResults.getResults().get(0);
-        // assertThat(searchResult.getTitle()).isEqualTo("SAPO, Servidor de Apontadores Portugueses");
-        // assertThat(searchResult.getCollection()).isEqualTo("Roteiro");
-        // assertThat(searchResult.getStatusCode()).isNull();
-        // assertThat(searchResult.getTstamp()).isEqualTo("19961013150238");
-        // assertThat(searchResult.getId()).isNull();
-        // assertThat(searchResult.getDigest()).isEqualTo("6460448f99a916dc2b5d93b5bdacd169");
+        SearchResultImpl searchResult = (SearchResultImpl) searchResults.getResults().get(0);
+        assertThat(searchResult.getTitle()).isEqualTo("SAPO, Servidor de Apontadores Portugueses");
+        assertThat(searchResult.getCollection()).isEqualTo("Roteiro");
+        assertThat(searchResult.getStatusCode()).isNull();
+        assertThat(searchResult.getTstamp()).isEqualTo("19961013150238");
+        assertThat(searchResult.getId()).isNull();
+        assertThat(searchResult.getDigest()).isEqualTo("6460448f99a916dc2b5d93b5bdacd169");
     }
 
 

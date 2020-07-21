@@ -11,10 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.test.context.junit4.SpringRunner;
-import pt.arquivo.services.SearchQueryImpl;
-import pt.arquivo.services.SearchResult;
-import pt.arquivo.services.SearchResultImpl;
-import pt.arquivo.services.SearchResults;
+import pt.arquivo.services.*;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -52,6 +49,18 @@ public class NutchWaxSearchServiceTestIT {
 
     @Autowired
     private NutchWaxSearchService nutchWaxSearchService;
+
+    @Test void testTextExtractedRequest(){
+        SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
+        SearchResults searchResults = this.nutchWaxSearchService.query(searchQuery);
+
+        SearchResult searchResult = searchResults.getResults().get(0);
+        String extractedTextUrl = searchResult.getExtractedText();
+
+        // do a request to get the extracted text and verify it
+
+
+    }
 
     @Test
     public void testMetadataRequest() {
