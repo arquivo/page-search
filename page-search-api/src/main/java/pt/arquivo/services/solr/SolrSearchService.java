@@ -6,7 +6,6 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
-import org.apache.solr.common.params.SolrParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,6 +51,14 @@ public class SolrSearchService implements SearchService {
     @Value("${searchpages.textsearch.service.link:http://localhost:8081/textsearch}")
     private String textSearchServiceEndpoint;
 
+    public HttpSolrClient getSolrClient() {
+        if (this.solrClient == null) {
+            LOG.info("Initing SolrClient pointing to " + this.baseSolrUrl);
+            this.solrClient = new HttpSolrClient.Builder(this.baseSolrUrl).build();
+        }
+        return this.solrClient;
+    }
+
     // TODO refactor this - extract duplicate code
     private void populateEndpointsLinks(SearchResultSolrImpl searchResult) throws UnsupportedEncodingException {
         searchResult.setLinkToArchive(waybackServiceEndpoint +
@@ -76,8 +83,8 @@ public class SolrSearchService implements SearchService {
                 "id_/" + searchResult.getOriginalURL());
     }
 
-    private void addDeduplicationFilterQuery(SolrQuery solrQuery, String dedupField){
-        if (dedupField.equalsIgnoreCase("url")){
+    private void addDeduplicationFilterQuery(SolrQuery solrQuery, String dedupField) {
+        if (dedupField.equalsIgnoreCase("url")) {
             dedupField = "surt_url";
         }
 
@@ -219,7 +226,7 @@ public class SolrSearchService implements SearchService {
 
     @Override
     public SearchResults query(SearchQuery searchQuery, boolean urlSearch) {
-        if (urlSearch){
+        if (urlSearch) {
             String queryTerms = searchQuery.getQueryTerms();
             // TODO validate if it is a URL ??
             // TODO transform in surt_url?
@@ -230,14 +237,9 @@ public class SolrSearchService implements SearchService {
 
     @Override
     public SearchResults query(SearchQuery searchQuery) {
-
-        // TODO have this already instanced before doing the query. Is not that way because how @Value works
-        LOG.info("Initing SolrClient pointing to " + this.baseSolrUrl);
-        this.solrClient = new HttpSolrClient.Builder(this.baseSolrUrl).build();
-
         SolrQuery solrQuery = convertSearchQuery(searchQuery);
         try {
-            QueryResponse queryResponse = this.solrClient.query(solrQuery);
+            QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
             SearchResults searchResults = parseQueryResponse(queryResponse);
             return searchResults;
         } catch (SolrServerException e) {
