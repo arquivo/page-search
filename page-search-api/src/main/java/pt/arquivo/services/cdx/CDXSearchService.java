@@ -87,7 +87,7 @@ public class CDXSearchService {
             // searchResults.setResults(results);
             // check if we can get more information through the TextSearch API
             for (ItemCDX result : cdxResults) {
-                SearchResultImpl searchResult = new SearchResultImpl();
+                SearchResultNutchImpl searchResult = new SearchResultNutchImpl();
                 // text search api
                 SearchQuery urlSearchQuery = new SearchQueryImpl(result.getUrl());
                 urlSearchQuery.setMaxItems(1);
@@ -109,7 +109,7 @@ public class CDXSearchService {
 
                 if (textSearchResults.getNumberResults() > 0) {
                     LOG.debug("CDX record matched with full-text index.." + result.getUrl());
-                    SearchResultImpl searchResultText = (SearchResultImpl) textSearchResults.getResults().get(0);
+                    SearchResult searchResultText = textSearchResults.getResults().get(0);
                     searchResult.setTitle(searchResultText.getTitle());
                     if (result.getCollection() == null || result.getCollection().isEmpty()) {
                         searchResult.setCollection(searchResultText.getCollection());
@@ -245,7 +245,7 @@ public class CDXSearchService {
     }
 
 
-    private void populateEndpointsLinks(SearchResultImpl searchResult, boolean textMatch) throws UnsupportedEncodingException {
+    private void populateEndpointsLinks(SearchResultNutchImpl searchResult, boolean textMatch) throws UnsupportedEncodingException {
 
         searchResult.setLinkToArchive(waybackServiceEndpoint.concat("/")
                 .concat(searchResult.getTstamp().concat("/").concat(searchResult.getOriginalURL())));

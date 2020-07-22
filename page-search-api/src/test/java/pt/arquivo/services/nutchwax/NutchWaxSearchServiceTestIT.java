@@ -50,16 +50,16 @@ public class NutchWaxSearchServiceTestIT {
     @Autowired
     private NutchWaxSearchService nutchWaxSearchService;
 
-    @Test void testTextExtractedRequest(){
+    @Test
+    public void testTextExtractedRequest(){
+        // TODO
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
         SearchResults searchResults = this.nutchWaxSearchService.query(searchQuery);
 
         SearchResult searchResult = searchResults.getResults().get(0);
         String extractedTextUrl = searchResult.getExtractedText();
-
         // do a request to get the extracted text and verify it
-
-
+        assertThat(extractedTextUrl).isNotNull();
     }
 
     @Test
@@ -70,7 +70,7 @@ public class NutchWaxSearchServiceTestIT {
         assertThat(searchResults.isLastPageResults()).isTrue();
 
         // verify first result
-        SearchResultImpl searchResult = (SearchResultImpl) searchResults.getResults().get(0);
+        SearchResultNutchImpl searchResult = (SearchResultNutchImpl) searchResults.getResults().get(0);
         assertThat(searchResult.getTitle()).isEqualTo("SAPO, Servidor de Apontadores Portugueses");
         assertThat(searchResult.getCollection()).isEqualTo("Roteiro");
         assertThat(searchResult.getStatusCode()).isNull();
@@ -88,7 +88,7 @@ public class NutchWaxSearchServiceTestIT {
         assertThat(searchResults.getNumberResults()).isEqualTo(41);
 
         ArrayList<SearchResult> arraySearchResult = searchResults.getResults();
-        SearchResultImpl firstSearchResult = (SearchResultImpl) arraySearchResult.get(0);
+        SearchResultNutchImpl firstSearchResult = (SearchResultNutchImpl) arraySearchResult.get(0);
 
         assertThat(firstSearchResult.getCollection()).isEqualTo("Roteiro");
         assertThat(firstSearchResult.getTitle()).isEqualTo("SAPO, Servidor de Apontadores Portugueses");

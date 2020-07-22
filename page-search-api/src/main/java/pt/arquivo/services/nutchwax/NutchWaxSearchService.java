@@ -203,14 +203,14 @@ public class NutchWaxSearchService implements SearchService {
                 results.setNumberResults(hits.getLength());
 
                 for (int i = 0; i < end; i++) {
-                    SearchResultImpl searchResult = new SearchResultImpl();
+                    SearchResultNutchImpl searchResult = new SearchResultNutchImpl();
                     populateSearchResult(searchResult, details[i], summaries[i]);
                     populateEndpointsLinks(searchResult);
 
                     searchResult.setFields(searchQuery.getFields());
 
                     if (showIds) {
-                        searchResult.setId(show[i].getIndexDocNo());
+                        searchResult.setId(String.valueOf(show[i].getIndexDocNo()));
                     }
 
                     searchResults.add(searchResult);
@@ -224,7 +224,7 @@ public class NutchWaxSearchService implements SearchService {
         return results;
     }
 
-    private void populateSearchResult(SearchResultImpl searchResult, HitDetails detail, Summary summary) {
+    private void populateSearchResult(SearchResultNutchImpl searchResult, HitDetails detail, Summary summary) {
         searchResult.setTitle(detail.getValue("title"));
         searchResult.setOriginalURL(detail.getValue("url"));
         searchResult.setTstamp(Long.parseLong(this.parseTimeStamp(detail.getValue("tstamp").substring(0, 14))));
@@ -243,7 +243,7 @@ public class NutchWaxSearchService implements SearchService {
     }
 
 
-    private void populateEndpointsLinks(SearchResultImpl searchResult) throws UnsupportedEncodingException {
+    private void populateEndpointsLinks(SearchResultNutchImpl searchResult) throws UnsupportedEncodingException {
         searchResult.setLinkToArchive(waybackServiceEndpoint +
                 "/" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());

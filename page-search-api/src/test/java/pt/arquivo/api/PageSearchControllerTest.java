@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import pt.arquivo.services.SearchResult;
-import pt.arquivo.services.SearchResultImpl;
+import pt.arquivo.services.SearchResultNutchImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
 
@@ -38,7 +38,7 @@ public class PageSearchControllerTest {
 
     @Test
     public void testSearchBySiteDefaultDedup() throws Exception {
-        SearchResultImpl mockSearchResult1 = new SearchResultImpl();
+        SearchResultNutchImpl mockSearchResult1 = new SearchResultNutchImpl();
         SearchResults mockSearchResults = new SearchResults();
 
         ArrayList<SearchResult> searchResults = new ArrayList<>();
@@ -83,7 +83,7 @@ public class PageSearchControllerTest {
     public void pageSearch() throws Exception {
         /* Mainly verify API specification */
 
-        SearchResultImpl mockSearchResult1 = new SearchResultImpl();
+        SearchResultNutchImpl mockSearchResult1 = new SearchResultNutchImpl();
         mockSearchResult1.setTitle("test result 1");
 
         // just to force result spec verification below
@@ -105,7 +105,7 @@ public class PageSearchControllerTest {
         mockSearchResult1.setDate("some epocho number");
         mockSearchResult1.setEncoding("utf-8");
 
-        SearchResultImpl mockSearchResult2 = new SearchResultImpl();
+        SearchResultNutchImpl mockSearchResult2 = new SearchResultNutchImpl();
         mockSearchResult2.setTitle("test result 2");
 
         // just to force result spec verification below

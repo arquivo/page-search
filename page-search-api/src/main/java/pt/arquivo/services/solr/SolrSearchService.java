@@ -53,7 +53,7 @@ public class SolrSearchService implements SearchService {
     private String textSearchServiceEndpoint;
 
     // TODO refactor this - extract duplicate code
-    private void populateEndpointsLinks(SearchResultImpl searchResult) throws UnsupportedEncodingException {
+    private void populateEndpointsLinks(SearchResultSolrImpl searchResult) throws UnsupportedEncodingException {
         searchResult.setLinkToArchive(waybackServiceEndpoint +
                 "/" + searchResult.getTstamp() +
                 "/" + searchResult.getOriginalURL());
@@ -187,7 +187,7 @@ public class SolrSearchService implements SearchService {
         for (SolrDocument doc : solrDocumentList) {
 
             // TODO change this to SolrSearchResult or generalize
-            SearchResultImpl searchResult = new SearchResultImpl();
+            SearchResultSolrImpl searchResult = new SearchResultSolrImpl();
             searchResult.setTitle((String) doc.getFieldValue("title"));
             searchResult.setOriginalURL((String) doc.getFieldValue("url"));
             searchResult.setMimeType((String) doc.getFieldValue("type"));
@@ -198,6 +198,8 @@ public class SolrSearchService implements SearchService {
             searchResult.setContentLength((Long) doc.getFieldValue("content_length"));
             searchResult.setDigest((String) doc.getFieldValue("digest"));
             searchResult.setEncoding((String) doc.getFieldValue("encoding"));
+            searchResult.setId((String) doc.getFieldValue("id"));
+            searchResult.setSolrClient(this.solrClient);
             // TODO add missing fields
 
             searchResult.setSnippet(getHighlightedText(queryResponse, "content", (String) doc.get("id")));

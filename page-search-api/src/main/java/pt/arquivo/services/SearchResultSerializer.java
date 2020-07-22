@@ -19,7 +19,7 @@ public class SearchResultSerializer extends JsonSerializer {
 
     @Override
     public void serialize(Object o, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-        SearchResultImpl searchResult = (SearchResultImpl) o;
+        SearchResult searchResult = (SearchResult) o;
         jsonGenerator.writeStartObject();
         if (searchResult.getFields() != null) {
             for (Field field : searchResult.getClass().getDeclaredFields()) {
@@ -44,7 +44,8 @@ public class SearchResultSerializer extends JsonSerializer {
                                 jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
                             }
                         } else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
-                                && !field.getName().equals("details") && !field.getName().equals("fields")) {
+                                && !field.getName().equals("details") && !field.getName().equals("fields")
+                                && !field.getName().equals("solrClient")) {
                             jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
                         }
                     }

@@ -117,8 +117,8 @@ public class PageSearchController {
                 } else {
                     metadataSearchResults = textSearchResults;
                     if (cdxSearchResults.getResults().size() > 0) {
-                        SearchResultImpl textSearchResult = (SearchResultImpl) textSearchResults.getResults().get(0);
-                        SearchResultImpl cdxResult = (SearchResultImpl) cdxSearchResults.getResults().get(0);
+                        SearchResult textSearchResult =  textSearchResults.getResults().get(0);
+                        SearchResultNutchImpl cdxResult = (SearchResultNutchImpl) cdxSearchResults.getResults().get(0);
                         textSearchResult.setStatusCode(cdxResult.getStatusCode());
 
                         if (cdxResult.getCollection() != null && !cdxResult.getCollection().isEmpty())

@@ -15,14 +15,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 // TODO review this
-public class SearchResultImplTest {
+public class SearchResultNutchImplTest {
 
     @Test
     public void getExtractedText() throws IOException {
         NutchwaxBean bean = mock(NutchwaxBean.class);
         Mockito.when(bean.getParseText((HitDetails) Mockito.any())).thenThrow(new IOException());
 
-        SearchResultImpl searchResult = new SearchResultImpl();
+        SearchResultNutchImpl searchResult = new SearchResultNutchImpl();
         searchResult.setBean(bean);
 
         String extractedText = searchResult.getExtractedText();
@@ -31,7 +31,7 @@ public class SearchResultImplTest {
 
     @Test
     public void testCustomSerialization() throws JsonProcessingException {
-        SearchResultImpl searchResult = new SearchResultImpl();
+        SearchResultNutchImpl searchResult = new SearchResultNutchImpl();
         searchResult.setStatusCode(0);
         searchResult.setTitle("teste");
 
@@ -50,7 +50,7 @@ public class SearchResultImplTest {
         assertThat(hashMap.get("statusCode")).isNull();
     }
 
-    private HashMap<String, Object> toJson(SearchResultImpl searchResult) throws JsonProcessingException {
+    private HashMap<String, Object> toJson(SearchResultNutchImpl searchResult) throws JsonProcessingException {
         String json = new ObjectMapper().writeValueAsString(searchResult);
         Gson gson = new Gson();
         HashMap<String, Object> hashMap = gson.fromJson(json, HashMap.class);

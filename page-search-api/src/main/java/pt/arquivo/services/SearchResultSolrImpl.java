@@ -4,15 +4,18 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.nutch.searcher.HitDetails;
-import org.apache.nutch.searcher.NutchBean;
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.SolrDocument;
 
 import java.io.IOException;
 
 @JsonSerialize(using = SearchResultSerializer.class)
-public class SearchResultImpl implements SearchResult {
+public class SearchResultSolrImpl implements SearchResult {
 
-    private static final Log LOG = LogFactory.getLog(SearchResultImpl.class);
+    private static final Log LOG = LogFactory.getLog(SearchResultSolrImpl.class);
 
     private String title;
     private String originalURL;
@@ -33,13 +36,11 @@ public class SearchResultImpl implements SearchResult {
     private String collection;
     private long offset;
     private Integer statusCode;
-    private Integer id;
+    private String id;
 
     private String[] fields;
 
-    private NutchBean bean;
-
-    private HitDetails details;
+    private SolrClient solrClient;
 
     public String getTitle() {
         return title;
@@ -200,36 +201,38 @@ public class SearchResultImpl implements SearchResult {
     @JsonIgnore
     @Override
     public String getExtractedText() {
+        StringBuilder extractedText = new StringBuilder();
+        SolrQuery solQuery = new SolrQuery();
+        solQuery.setQuery("id:".concat(this.id));
         try {
-            return this.bean.getParseText(this.details).getText();
+            QueryResponse queryResponse = solrClient.query(solQuery);
+            SolrDocument doc = queryResponse.getResults().get(0);
+            extractedText.append(doc.getFieldValue("title"));
+            extractedText.append(", ");
+            extractedText.append(doc.getFieldValue("content"));
+        } catch (SolrServerException e) {
+            // TODO log this
+            e.printStackTrace();
         } catch (IOException e) {
-            LOG.error("Error while extracting text: ", e);
+            e.printStackTrace();
         }
-        return "";
+        return extractedText.toString();
     }
 
-    public Integer getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public HitDetails getDetails() {
-        return details;
+    public SolrClient getSolrClient() {
+        return solrClient;
     }
 
-    public void setDetails(HitDetails details) {
-        this.details = details;
-    }
-
-    public NutchBean getBean() {
-        return bean;
-    }
-
-    public void setBean(NutchBean bean) {
-        this.bean = bean;
+    public void setSolrClient(SolrClient solrClient) {
+        this.solrClient = solrClient;
     }
 
     public String[] getFields() {
@@ -240,8 +243,8 @@ public class SearchResultImpl implements SearchResult {
         this.fields = fields;
     }
 
-    public String getSearchResultId(){
-       return getTstamp() + "/" + getOriginalURL();
+    public String getSearchResultId() {
+        return getTstamp() + "/" + getOriginalURL();
     }
 }
 

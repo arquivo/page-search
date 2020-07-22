@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ContextConfiguration(classes = {TestNutchConfig.class, PageSearchApplication.class})
-public class PageSearchControllerTestIT {
+public class PageSearchControllerTestNutchIT {
 
     TestRestTemplate testRestTemplate = new TestRestTemplate();
     HttpHeaders headers = new HttpHeaders();
