@@ -219,6 +219,12 @@ public class SolrSearchService implements SearchService {
 
     @Override
     public SearchResults query(SearchQuery searchQuery, boolean urlSearch) {
+        if (urlSearch){
+            String queryTerms = searchQuery.getQueryTerms();
+            // TODO validate if it is a URL ??
+            // TODO transform in surt_url?
+            searchQuery.setQueryTerms("url:\"".concat(queryTerms).concat("\""));
+        }
         return query(searchQuery);
     }
 
