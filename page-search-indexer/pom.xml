@@ -177,7 +177,9 @@
                             <goal>prepare-agent</goal>
                         </goals>
                         <configuration>
-                            <includes>pt/arquivo/**/*.class</includes>
+                            <includes>
+                                <include>>pt/arquivo/**/*.class</include>
+                            </includes>
                         </configuration>
                     </execution>
                     <execution>
@@ -187,7 +189,9 @@
                             <goal>report</goal>
                         </goals>
                         <configuration>
-                            <includes>pt/arquivo/**/*.class</includes>
+                            <includes>
+                                <include>>pt/arquivo/**/*.class</include>
+                            </includes>
                         </configuration>
                     </execution>
                 </executions>
