@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -41,6 +41,40 @@ public class PageSearchControllerTestNutchIT {
         JSONObject jsonResponse = new JSONObject(response.getBody());
         JSONArray jsonArray = jsonResponse.getJSONArray("response_items");
         assertThat(jsonArray.getJSONObject(0).getString("title")).isEqualTo("SAPO, Servidor de Apontadores Portugueses");
+    }
+
+    @Test
+    public void TestTextSearchEndpointOffsets() throws JSONException {
+        HttpEntity<String> entity = new HttpEntity<>(null, headers);
+        String uri = "/textsearch?q=sapo";
+
+        ResponseEntity<String> response = testRestTemplate.exchange(
+                "http://localhost:" + port + uri,
+                HttpMethod.GET, entity, String.class
+        );
+
+        final JSONObject jsonResponse = new JSONObject(response.getBody());
+        assertThatExceptionOfType(JSONException.class).isThrownBy(() -> {
+            jsonResponse.getString("next_page");
+        });
+        JSONArray jsonArray = jsonResponse.getJSONArray("response_items");
+        assertThat(jsonArray.getJSONObject(0).getString("title")).isEqualTo("SAPO, Servidor de Apontadores Portugueses");
+
+        uri = "/textsearch?q=ua";
+        response = testRestTemplate.exchange(
+                "http://localhost:" + port + uri,
+                HttpMethod.GET, entity, String.class
+        );
+        JSONObject jsonResponse2 = new JSONObject(response.getBody());
+        assertThat(jsonResponse2.getString("next_page")).isNotBlank();
+
+        uri = "/textsearch?q=ua&offset=50";
+        response = testRestTemplate.exchange(
+                "http://localhost:" + port + uri,
+                HttpMethod.GET, entity, String.class
+        );
+        jsonResponse2 = new JSONObject(response.getBody());
+        assertThat(jsonResponse2.getString("previous_page")).isNotBlank();
     }
 
     @Test

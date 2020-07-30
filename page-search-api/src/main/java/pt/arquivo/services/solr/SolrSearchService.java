@@ -241,6 +241,7 @@ public class SolrSearchService implements SearchService {
         try {
             QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
             SearchResults searchResults = parseQueryResponse(queryResponse);
+            searchResults.setLastPageResults(isLastPage(searchResults.getEstimatedNumberResults(), searchQuery));
             return searchResults;
         } catch (SolrServerException e) {
             // TODO log this properly
@@ -250,8 +251,13 @@ public class SolrSearchService implements SearchService {
         }
         SearchResults searchResults = new SearchResults();
         searchResults.setEstimatedNumberResults(0);
+        searchResults.setLastPageResults(false);
         searchResults.setNumberResults(0);
         return searchResults;
+    }
+
+    public static boolean isLastPage(long numberOfResults, SearchQuery searchQuery) {
+        return numberOfResults <= searchQuery.getOffset() + searchQuery.getMaxItems();
     }
 
     public String getScreenshotServiceEndpoint() {

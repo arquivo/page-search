@@ -16,6 +16,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(properties = "searchpages.textsearch.service.bean=solr", webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -42,6 +43,22 @@ public class PageSearchControllerTestSolrIT {
         JSONArray jsonArray = jsonResponse.getJSONArray("response_items");
         // TODO this differ from the nutchwax search service. The ranking is different. We would need to adjust this later
         assertThat(jsonArray.getJSONObject(0).getString("title")).isEqualTo("SAPO / Pesquisa");
+    }
+
+    @Test
+    public void TestTextSearchEndpointOffsets() throws JSONException {
+        HttpEntity<String> entity = new HttpEntity<>(null, headers);
+        String uri = "/textsearch?q=sapo";
+
+        ResponseEntity<String> response = testRestTemplate.exchange(
+                "http://localhost:" + port + uri,
+                HttpMethod.GET, entity, String.class
+        );
+
+        final JSONObject jsonResponse = new JSONObject(response.getBody());
+        assertThatExceptionOfType(JSONException.class).isThrownBy(() -> {
+            jsonResponse.getString("next_page");
+        });
     }
 
     @Test
