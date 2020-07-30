@@ -176,15 +176,10 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
-                        <configuration>
-                            <includes>
-                                <include>>pt/arquivo/**/*.class</include>
-                            </includes>
-                        </configuration>
                     </execution>
                     <execution>
                         <id>report</id>
-                        <phase>package</phase>
+                        <phase>verify</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
