@@ -44,7 +44,6 @@ public class SolrSearchServiceTestIT {
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
 
-        // TODO Verify number of results with NutchWaxBackend
         assertThat(searchResults.getNumberResults()).isEqualTo(36);
         // assertThat(searchResults.isLastPageResults()).isTrue();
 

@@ -210,11 +210,8 @@ public class SearchResultSolrImpl implements SearchResult {
             extractedText.append(doc.getFieldValue("title"));
             extractedText.append(", ");
             extractedText.append(doc.getFieldValue("content"));
-        } catch (SolrServerException e) {
-            // TODO log this
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (SolrServerException | IOException e) {
+            LOG.error("Error while querying Solr: ", e);
         }
         return extractedText.toString();
     }

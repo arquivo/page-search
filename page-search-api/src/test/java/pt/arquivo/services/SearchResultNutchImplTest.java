@@ -14,7 +14,6 @@ import java.util.HashMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-// TODO review this
 public class SearchResultNutchImplTest {
 
     @Test
@@ -55,5 +54,13 @@ public class SearchResultNutchImplTest {
         Gson gson = new Gson();
         HashMap<String, Object> hashMap = gson.fromJson(json, HashMap.class);
         return hashMap;
+    }
+
+    @Test
+    public void getSearchResultId() {
+        SearchResultNutchImpl searchResult = new SearchResultNutchImpl();
+        searchResult.setTimeStamp("2019");
+        searchResult.setOriginalURL("http://example.com");
+        assertThat(searchResult.getSearchResultId()).isEqualTo("2019/http://example.com");
     }
 }

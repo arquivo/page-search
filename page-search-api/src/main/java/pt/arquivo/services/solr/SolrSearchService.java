@@ -101,7 +101,7 @@ public class SolrSearchService implements SearchService {
         solrQuery.setStart(searchQuery.getOffset());
         solrQuery.setRows(searchQuery.getMaxItems());
 
-        // enable highlighting
+        // Enable highlighting
         solrQuery.setHighlight(true);
 
         if (searchQuery.isSearchByCollection()) {
@@ -173,7 +173,6 @@ public class SolrSearchService implements SearchService {
         return highlightedText;
     }
 
-    // TODO REVIEW THIS
     private static final String getFragments(List<String> snippets) {
         StringBuilder fragments = new StringBuilder();
         for (int i = 0; i < snippets.size(); i++) {
@@ -193,7 +192,6 @@ public class SolrSearchService implements SearchService {
         SolrDocumentList solrDocumentList = queryResponse.getResults();
         for (SolrDocument doc : solrDocumentList) {
 
-            // TODO change this to SolrSearchResult or generalize
             SearchResultSolrImpl searchResult = new SearchResultSolrImpl();
             searchResult.setTitle((String) doc.getFieldValue("title"));
             searchResult.setOriginalURL((String) doc.getFieldValue("url"));
@@ -207,7 +205,6 @@ public class SolrSearchService implements SearchService {
             searchResult.setEncoding((String) doc.getFieldValue("encoding"));
             searchResult.setId((String) doc.getFieldValue("id"));
             searchResult.setSolrClient(this.solrClient);
-            // TODO add missing fields
 
             searchResult.setSnippet(getHighlightedText(queryResponse, "content", (String) doc.get("id")));
             try {
@@ -228,8 +225,7 @@ public class SolrSearchService implements SearchService {
     public SearchResults query(SearchQuery searchQuery, boolean urlSearch) {
         if (urlSearch) {
             String queryTerms = searchQuery.getQueryTerms();
-            // TODO validate if it is a URL ??
-            // TODO transform in surt_url?
+            // TODO validate if it is a URL AND transform in surt_url to properly query Solr
             searchQuery.setQueryTerms("url:\"".concat(queryTerms).concat("\""));
         }
         return query(searchQuery);
@@ -243,12 +239,10 @@ public class SolrSearchService implements SearchService {
             SearchResults searchResults = parseQueryResponse(queryResponse);
             searchResults.setLastPageResults(isLastPage(searchResults.getEstimatedNumberResults(), searchQuery));
             return searchResults;
-        } catch (SolrServerException e) {
-            // TODO log this properly
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (SolrServerException | IOException e) {
+            LOG.error("Error querying Solr: ", e);
         }
+
         SearchResults searchResults = new SearchResults();
         searchResults.setEstimatedNumberResults(0);
         searchResults.setLastPageResults(false);

@@ -69,7 +69,6 @@
         </implementation>
     </extension>
 
-   <!-- TODO MC -->   
    <extension id="org.archive.access.nutch.searcher"
           name="Internet Archive ExacturlExpand Query Filter"
           point="org.apache.nutch.searcher.QueryFilter">
@@ -87,5 +86,4 @@
           <parameter name="raw-fields" value="closestdate" />
       </implementation>
    </extension>
-   <!-- TODO MC -->
 </plugin>
