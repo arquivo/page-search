@@ -20,4 +20,12 @@ public class UtilsTest {
         assertThat(Utils.urlValidator(notUrl1)).isEqualTo(false);
         assertThat(Utils.urlValidator(notUrl2)).isEqualTo(false);
     }
+
+    @Test
+    public void metadataValidator(){
+        String[] validMetadata = new String[] {"https://example.com", "201901301002010234"};
+        String[] notValidMetadata = new String[] {"", "201901301002010234"};
+        assertThat(Utils.metadataValidator(validMetadata)).isTrue();
+        assertThat(Utils.metadataValidator(notValidMetadata)).isFalse();
+    }
 }

@@ -22,6 +22,7 @@ public class SpringFoxConfig {
                 .apis(RequestHandlerSelectors.withClassAnnotation(RestController.class))
                 .paths(PathSelectors.any())
                 .build()
-                .tags(new Tag("PageSearch", "Endpoints to search for Archived WebPages content"));
+                .tags(new Tag("PageSearch", "Endpoints to search for Archived WebPages content"))
+                .tags(new Tag("Metadata", "(Not Published) Endpoints to retrieve metadata information about an Archived Web Resource"));
     }
 }

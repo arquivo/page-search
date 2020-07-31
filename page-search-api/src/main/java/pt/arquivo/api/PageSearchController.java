@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 import pt.arquivo.api.exceptions.ApiRequestException;
 import pt.arquivo.services.*;
 import pt.arquivo.services.cdx.CDXSearchService;
@@ -39,6 +40,9 @@ public class PageSearchController {
 
     @Autowired
     private ObjectMapper jacksonObjectMapper;
+
+    @Autowired
+    MetadataController metadataController;
 
     @ApiIgnore
     @CrossOrigin
@@ -79,7 +83,7 @@ public class PageSearchController {
         int idx = id.lastIndexOf("/");
         if (idx > 0) {
             String[] versionIdSplited = {id.substring(0, idx), id.substring(idx + 1)};
-            if (metadataValidator(versionIdSplited)) {
+            if (Utils.metadataValidator(versionIdSplited)) {
 
                 SearchResults searchResults = queryByUrl(versionIdSplited);
 
@@ -90,7 +94,7 @@ public class PageSearchController {
         return extractedText;
     }
 
-    private SearchResults queryByUrl(String[] versionIdSplited) {
+    protected SearchResults queryByUrl(String[] versionIdSplited) {
         LOG.debug("Querying By Url with versionIdSplited as ", versionIdSplited);
         String url = versionIdSplited[0];
         String timeStamp = versionIdSplited[1];
@@ -103,44 +107,6 @@ public class PageSearchController {
         return searchService.query(searchQuery, true);
     }
 
-    @ApiOperation(value = "Get the metadata information about an archived page")
-    @CrossOrigin
-    @GetMapping(value = {"/metadata"})
-    public ApiResponse getMetadata(@RequestParam(value = "id") String id) {
-        LOG.info(String.format("Request to /metadata for ID=%s", id));
-
-        MetadataResponse metadataResponse = new MetadataResponse();
-        // TODO Refactor
-        int idx = id.lastIndexOf("/");
-        if (idx > 0) {
-            String[] versionIdSplited = {id.substring(0, idx), id.substring(idx + 1)};
-            if (metadataValidator(versionIdSplited)) {
-                SearchResults metadataSearchResults;
-                SearchResults textSearchResults = queryByUrl(versionIdSplited);
-                SearchResults cdxSearchResults = this.cdxSearchService.getResults(versionIdSplited[0],
-                        versionIdSplited[1], versionIdSplited[1], 1, 0);
-
-                if (textSearchResults.getNumberResults() == 0) {
-                    metadataSearchResults = cdxSearchResults;
-                } else {
-                    metadataSearchResults = textSearchResults;
-                    if (cdxSearchResults.getResults().size() > 0) {
-                        SearchResult textSearchResult = textSearchResults.getResults().get(0);
-                        SearchResultNutchImpl cdxResult = (SearchResultNutchImpl) cdxSearchResults.getResults().get(0);
-                        textSearchResult.setStatusCode(cdxResult.getStatusCode());
-
-                        if (cdxResult.getCollection() != null && !cdxResult.getCollection().isEmpty())
-                            textSearchResult.setCollection(cdxResult.getCollection());
-                    }
-                }
-                metadataResponse.setLinkToService(linkToService);
-                metadataResponse.setServiceName(serviceName);
-                metadataResponse.setResponseItems(metadataSearchResults.getResults());
-            }
-        }
-
-        return metadataResponse;
-    }
 
     @ApiOperation(value = "Search for Archived Pages that match the query parameters")
     @CrossOrigin
@@ -167,7 +133,8 @@ public class PageSearchController {
         if (url != null) {
             return searchCdxURL(url, from, to, maxItems, offset, request);
         } else if (id != null) {
-            return getMetadata(id);
+            return metadataController.getMetadata(id);
+
         } else if (query == null) {
             LOG.error("Invalid API Request " + request.getQueryString());
             throw new ApiRequestException("Invalid API Request");
@@ -234,12 +201,4 @@ public class PageSearchController {
         return pageSearchResponse;
     }
 
-
-    private static boolean metadataValidator(String[] versionIdsplited) {
-        LOG.debug("metadata versionId[0][" + versionIdsplited[0] + "] versionId[1][" + versionIdsplited[1] + "]");
-        if (Utils.urlValidator(versionIdsplited[0]) && versionIdsplited[1].matches("[0-9]+"))
-            return true;
-        else
-            return false;
-    }
 }
