@@ -80,6 +80,39 @@ public class PageSearchControllerTest {
     }
 
     @Test
+    public void pageSearchOffset() throws Exception {
+        SearchResultNutchImpl mockSearchResult1 = new SearchResultNutchImpl();
+        SearchResultNutchImpl mockSearchResult2 = new SearchResultNutchImpl();
+        SearchResultNutchImpl mockSearchResult3 = new SearchResultNutchImpl();
+
+        mockSearchResult1.setTitle("test result 1");
+        mockSearchResult2.setTitle("test result 2");
+        mockSearchResult3.setTitle("test result 3");
+
+        ArrayList<SearchResult> searchResults = new ArrayList<>();
+        searchResults.add(mockSearchResult1);
+        searchResults.add(mockSearchResult2);
+        searchResults.add(mockSearchResult3);
+
+        SearchResults mockSearchResults = new SearchResults();
+        mockSearchResults.setNumberResults(3);
+        mockSearchResults.setEstimatedNumberResults(10);
+        mockSearchResults.setResults(searchResults);
+
+        Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
+
+        String URI = "/textsearch?q=sapo&offset=2&maxItems=1";
+
+        RequestBuilder requestBuilder = MockMvcRequestBuilders.get(URI);
+        MvcResult result = mockMvc.perform(requestBuilder).andReturn();
+
+
+        MockHttpServletResponse response = result.getResponse();
+        JSONObject jsonResponse = new JSONObject(response.getContentAsString());
+        assertThat(jsonResponse.getString("next_page")).isEqualTo("http://localhost:8081/textsearch?q=sapo&offset=3&maxItems=1");
+    }
+
+    @Test
     public void pageSearch() throws Exception {
         /* Mainly verify API specification */
 
