@@ -1,3 +1,5 @@
+#!/bin/bash
+HADOOP_HOME=/opt/hadoop-3.2.1
 HADOOP_EXEC=${HADOOP_HOME}/bin/hadoop
 HADOOP_JAR_JOB=pagesearch-indexer-1.0.0-SNAPSHOT-jar-with-dependencies.jar
 
@@ -29,14 +31,14 @@ function evaluate_and_exit() {
 }
 
 ## 1. Create PageData
-#echo "Create PageData from WARCS" >> "indexing_$COLLECTION_timereport.txt"
-#\time --append -o "$LOCAL_INDEXING_DATA/indexing_$COLLECTION_timereport.txt" -f "%E" $HADOOP_EXEC jar $HADOOP_JAR_JOB $CREATE_PAGEDATA_JOB -D jobName="CreatePageData_$COLLECTION" -D collection=$COLLECTION $INPUT_ARC_LOCATION $OUTPUT_LOCATION
-#evaluate_and_exit
+echo "Create PageData from WARCS" >> "indexing_${COLLECTION}_timereport.txt"
+\time --append -o "$LOCAL_INDEXING_DATA/indexing_${COLLECTION}_timereport.txt" -f "%E" $HADOOP_EXEC jar $HADOOP_JAR_JOB $CREATE_PAGEDATA_JOB -D jobName="CreatePageData_${COLLECTION}" -D collection=$COLLECTION $INPUT_ARC_LOCATION $OUTPUT_LOCATION
+evaluate_and_exit
 
 # 2. Invert Links
-# echo "Invert Links" >> "${LOCAL_INDEXING_DATA}/indexing_${COLLECTION}_timereport.txt"
-# \time --append -o "${LOCAL_INDEXING_DATA}/indexing_${COLLECTION}_timereport.txt" -f "%E" $HADOOP_EXEC jar $HADOOP_JAR_JOB pt.arquivo.indexer.mapreduce.InvertLinksDriver -D mapreduce.job.reduces=$HADOOP_REDUCES_NUM $OUTPUT_LOCATION
-# evaluate_and_exit
+echo "Invert Links" >> "${LOCAL_INDEXING_DATA}/indexing_${COLLECTION}_timereport.txt"
+\time --append -o "${LOCAL_INDEXING_DATA}/indexing_${COLLECTION}_timereport.txt" -f "%E" $HADOOP_EXEC jar $HADOOP_JAR_JOB pt.arquivo.indexer.mapreduce.InvertLinksDriver -D mapreduce.job.reduces=$HADOOP_REDUCES_NUM $OUTPUT_LOCATION
+evaluate_and_exit
 
 # 3. Merge and generate SolrDocs
 echo "Merge and generate SolrDocs" >> "${LOCAL_INDEXING_DATA}/indexing_$COLLECTION_timereport.txt"
