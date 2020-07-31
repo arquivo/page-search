@@ -105,8 +105,8 @@ public class ItemCDX {
     }
 
     public Boolean checkFields() {
-        if (isDefined(url) || isDefined(timestamp) || isDefined(digest) || isDefined(mime)
-                || isDefined(status) || isDefined(filename) || isDefined(length) || isDefined(offset))
+        if (isDefined(url) && isDefined(timestamp) && isDefined(digest) && isDefined(mime)
+                && isDefined(status) && isDefined(filename) && isDefined(length) && isDefined(offset))
             return true;
         else
             return false;
