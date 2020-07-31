@@ -2,6 +2,8 @@ package pt.arquivo.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +13,13 @@ import pt.arquivo.api.exceptions.ApiRequestException;
 import pt.arquivo.services.*;
 import pt.arquivo.services.cdx.CDXSearchService;
 import pt.arquivo.utils.Utils;
+import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 
+
+@Api(tags = "PageSearch")
 @RestController
 public class PageSearchController {
 
@@ -35,6 +40,7 @@ public class PageSearchController {
     @Autowired
     private ObjectMapper jacksonObjectMapper;
 
+    @ApiIgnore
     @CrossOrigin
     @GetMapping(value = {"/urlsearch/{url}"})
     public @ResponseBody
@@ -63,6 +69,7 @@ public class PageSearchController {
         return pageSearchResponse;
     }
 
+    @ApiOperation(value = "Get the extracted text of an Archived Page")
     @CrossOrigin
     @GetMapping(value = "/textextracted")
     public String extractedText(@RequestParam(value = "m") String id) {
@@ -96,6 +103,7 @@ public class PageSearchController {
         return searchService.query(searchQuery, true);
     }
 
+    @ApiOperation(value = "Get the metadata information about an archived page")
     @CrossOrigin
     @GetMapping(value = {"/metadata"})
     public ApiResponse getMetadata(@RequestParam(value = "id") String id) {
@@ -117,7 +125,7 @@ public class PageSearchController {
                 } else {
                     metadataSearchResults = textSearchResults;
                     if (cdxSearchResults.getResults().size() > 0) {
-                        SearchResult textSearchResult =  textSearchResults.getResults().get(0);
+                        SearchResult textSearchResult = textSearchResults.getResults().get(0);
                         SearchResultNutchImpl cdxResult = (SearchResultNutchImpl) cdxSearchResults.getResults().get(0);
                         textSearchResult.setStatusCode(cdxResult.getStatusCode());
 
@@ -134,6 +142,7 @@ public class PageSearchController {
         return metadataResponse;
     }
 
+    @ApiOperation(value = "Search for Archived Pages that match the query parameters")
     @CrossOrigin
     @GetMapping(value = "/textsearch")
     public @ResponseBody
@@ -185,10 +194,9 @@ public class PageSearchController {
         searchQuery.setPrettyPrint(prettyPrint);
 
         searchQuery.setDedupValue(dedupValue);
-        if (request.getParameter("dedupField") == null && searchQuery.isSearchBySite()){
+        if (request.getParameter("dedupField") == null && searchQuery.isSearchBySite()) {
             searchQuery.setDedupField("url");
-        }
-        else {
+        } else {
             searchQuery.setDedupField(dedupField);
         }
 
@@ -218,7 +226,7 @@ public class PageSearchController {
             jacksonObjectMapper.disable(SerializationFeature.INDENT_OUTPUT);
         }
         StringBuffer requestUrl = request.getRequestURL();
-        if (request.getQueryString() != null){
+        if (request.getQueryString() != null) {
             requestUrl.append("?");
             requestUrl.append(request.getQueryString());
         }
