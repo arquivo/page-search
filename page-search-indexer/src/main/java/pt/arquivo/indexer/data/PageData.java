@@ -10,42 +10,41 @@ import java.io.IOException;
 
 public class PageData implements Writable {
 
+    private String id = "";
+    private String title = "";
+    private String anchor = "";
+    private String collection = "";
 
-    String id = "";
-    String title = "";
-    String anchor = "";
-    String collection = "";
-
-    String content = "";
+    private String content = "";
     @SerializedName("content_length")
-    int contentLength = 0;
-    String digest = "";
+    private int contentLength = 0;
+    private String digest = "";
 
-    String tstamp = "";
+    private String tstamp = "";
 
-    String site = "";
-    String url = "";
-    String surt_url = "";
+    private String site = "";
+    private String url = "";
+    private String surt_url = "";
 
     @SerializedName("inlinks")
-    int nInLinks = 0;
+    private int nInLinks = 0;
     @SerializedName("outlinks")
-    int nOutLinks = 0;
+    private int nOutLinks = 0;
 
-    transient Outlink[] outLinks = new Outlink[0];
-    transient Inlinks inLinks = new Inlinks();
+    private transient Outlink[] outLinks = new Outlink[0];
+    private transient Inlinks inLinks = new Inlinks();
 
-    String type = "";
+    private String type = "";
     @SerializedName("primary_type")
-    String primaryType = "";
+    private String primaryType = "";
     @SerializedName("sub_type")
-    String subType = "";
-    String encoding = "";
+    private String subType = "";
+    private String encoding = "";
 
     @SerializedName("warc_name")
-    String warcName = "";
+    private String warcName = "";
     @SerializedName("warc_offset")
-    long warcOffset = 0;
+    private long warcOffset = 0;
 
     public String getId() {
         return id;
@@ -59,8 +58,7 @@ public class PageData implements Writable {
         return title;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setTitle(String title) { this.title = title;
     }
 
     public String getAnchor() {
@@ -132,12 +130,12 @@ public class PageData implements Writable {
     }
 
     public void setType(String contentType) {
-        String type = new String(contentType.toString().split(";")[0]);
+        String type = contentType.split(";")[0];
         this.type = type;
 
-        String[] contentTypeParts = type.toString().split("/");
-        this.primaryType = new String(contentTypeParts[0]);
-        this.subType = new String(contentTypeParts[1]);
+        String[] contentTypeParts = type.split("/");
+        this.primaryType = contentTypeParts[0];
+        this.subType = contentTypeParts[1];
     }
 
     public String getPrimaryType() {
@@ -208,32 +206,22 @@ public class PageData implements Writable {
         this.surt_url = surt_url;
     }
 
+    private void serializeStringFields(DataOutput out, String... fields) throws IOException {
+        for (String field : fields) {
+            Text.writeString(out, field);
+        }
+    }
+
     @Override
     public void write(DataOutput out) throws IOException {
-        // TODO refactor this mess of duplicated code
-        Text.writeString(out, id);
-        Text.writeString(out, title);
-        Text.writeString(out, anchor);
-        Text.writeString(out, content);
-        Text.writeString(out, String.valueOf(contentLength));
-        Text.writeString(out, digest);
-        Text.writeString(out, tstamp);
-        Text.writeString(out, site);
-        Text.writeString(out, url);
-        Text.writeString(out, collection);
-        Text.writeString(out, String.valueOf(nInLinks));
-        Text.writeString(out, String.valueOf(nOutLinks));
+        serializeStringFields(out, id, title, anchor, content, String.valueOf(contentLength), digest, tstamp, site,
+                url, collection, String.valueOf(nInLinks), String.valueOf(nOutLinks));
         for (int i = 0; i < nOutLinks; i++) {
             outLinks[i].write(out);
         }
         inLinks.write(out);
-        Text.writeString(out, type);
-        Text.writeString(out, primaryType);
-        Text.writeString(out, subType);
-        Text.writeString(out, encoding);
-        Text.writeString(out, warcName);
-        Text.writeString(out, String.valueOf(warcOffset));
-        Text.writeString(out, String.valueOf(surt_url));
+        serializeStringFields(out, type, primaryType, subType, encoding, warcName, String.valueOf(warcOffset),
+                String.valueOf(surt_url));
     }
 
     @Override
