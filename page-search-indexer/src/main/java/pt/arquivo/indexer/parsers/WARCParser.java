@@ -151,7 +151,6 @@ public class WARCParser {
      *
      * @return {@link HTTPHeader} containing extracted HTTP status and headers for the record.
      */
-
     private HTTPHeader processWARCHTTPHeaders(
             ArchiveRecord record, ArchiveRecordHeader warcHeader, String targetUrl, PageData doc)
             throws IOException {
@@ -189,8 +188,7 @@ public class WARCParser {
         final ArchiveRecordHeader header = record.getHeader();
 
         PageData doc = new PageData();
-        doc.setWarcName(archiveName);
-
+        if (! archiveName.isEmpty()) doc.setWarcName(archiveName);
         doc.setWarcOffset(header.getOffset());
 
         if (!header.getHeaderFields().isEmpty()) {
@@ -305,11 +303,7 @@ public class WARCParser {
                 outlinks[i] = outlink;
             }
         }
-        if (links.size() <= outlinksLimit) {
-            doc.setnOutLinks(links.size());
-        } else {
-            doc.setnOutLinks(outlinksLimit);
-        }
+        doc.setnOutLinks(Math.min(links.size(), outlinksLimit));
         doc.setOutLinks(outlinks);
 
         HexBinaryAdapter hexBinaryAdapter = new HexBinaryAdapter();
@@ -319,7 +313,7 @@ public class WARCParser {
         return doc;
     }
 
-    public String removeJunkCharacters(String str) {
+    private String removeJunkCharacters(String str) {
         Pattern pattern = Pattern.compile("\\s+");
         Matcher matcher = pattern.matcher(str.trim().replaceAll("[\\n\\t]", " "));
         return matcher.replaceAll(" ");

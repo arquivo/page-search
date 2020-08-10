@@ -191,7 +191,7 @@
                         </goals>
                         <configuration>
                             <includes>
-                                <include>>pt/arquivo/**/*.class</include>
+                                <include>pt/arquivo/**/*.class</include>
                             </includes>
                         </configuration>
                     </execution>
