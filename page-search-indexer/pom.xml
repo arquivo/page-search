@@ -193,6 +193,12 @@
                             <includes>
                                 <include>pt/arquivo/**/*.class</include>
                             </includes>
+                            <excludes>
+                                <!-- Not testing this, we are using the HdfsPageSearch. Keeping this just for reference. -->
+                                <exclude>pt/arquivo/indexer/mapreduce/PageSearchDataDriver.class</exclude>
+                                <exclude>pt/arquivo/indexer/mapreduce/PageSearchDataMapper.class</exclude>
+                                <exclude>pt/arquivo/indexer/mapreduce/PageSearchDataReducer.class</exclude>
+                            </excludes>
                         </configuration>
                     </execution>
                 </executions>

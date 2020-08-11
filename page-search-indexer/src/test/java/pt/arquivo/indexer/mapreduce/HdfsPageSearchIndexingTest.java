@@ -14,7 +14,7 @@ import java.io.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-public class PageSearchIndexingTest {
+public class HdfsPageSearchIndexingTest {
     private Configuration conf;
     private Path output;
 
