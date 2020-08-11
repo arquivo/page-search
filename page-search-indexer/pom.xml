@@ -198,6 +198,8 @@
                                 <exclude>pt/arquivo/indexer/mapreduce/PageSearchDataDriver.class</exclude>
                                 <exclude>pt/arquivo/indexer/mapreduce/PageSearchDataMapper.class</exclude>
                                 <exclude>pt/arquivo/indexer/mapreduce/PageSearchDataReducer.class</exclude>
+                                <!-- from ukwa -->
+                                <exclude>pt/arquivo/indexer/data/WritableArchiveRecord.class</exclude>
                             </excludes>
                         </configuration>
                     </execution>
