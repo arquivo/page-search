@@ -8,10 +8,7 @@ import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -87,6 +84,14 @@ public class PageSearchControllerTestNutchIT {
                 HttpMethod.GET, entity, String.class
         );
         assertThat(response.getBody()).startsWith("SAPO");
+
+        // Test bad resource id
+        String badResourceUri = "/textextracted?m=http://idontexist.pt//19961013150238";
+        ResponseEntity<String> notFoundResponse = testRestTemplate.exchange(
+                "http://localhost:" + port + badResourceUri,
+                HttpMethod.GET, entity, String.class
+        );
+        assertThat(notFoundResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test

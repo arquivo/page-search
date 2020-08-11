@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.ModelAndView;
+import pt.arquivo.api.exceptions.ApiNotFoundResourceException;
 import pt.arquivo.api.exceptions.ApiRequestException;
 import pt.arquivo.services.*;
 import pt.arquivo.services.cdx.CDXSearchService;
@@ -84,14 +84,15 @@ public class PageSearchController {
         if (idx > 0) {
             String[] versionIdSplited = {id.substring(0, idx), id.substring(idx + 1)};
             if (Utils.metadataValidator(versionIdSplited)) {
-
                 SearchResults searchResults = queryByUrl(versionIdSplited);
-
                 ArrayList<SearchResult> searchResultsArray = searchResults.getResults();
-                extractedText = searchResultsArray.get(0).getExtractedText();
+                if (searchResultsArray.size() > 0) {
+                    extractedText = searchResultsArray.get(0).getExtractedText();
+                    return extractedText;
+                }
             }
         }
-        return extractedText;
+        throw new ApiNotFoundResourceException("Resource ID doesn't exist: " + id);
     }
 
     protected SearchResults queryByUrl(String[] versionIdSplited) {

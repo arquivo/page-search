@@ -21,4 +21,15 @@ public class ApiExceptionHandler {
         );
         return new ResponseEntity<>(apiException, badRequest);
     }
+
+    @ExceptionHandler(value = ApiNotFoundResourceException.class)
+    public ResponseEntity<Object> handleApiNotFoundResourceException(ApiNotFoundResourceException e) {
+        HttpStatus notFound = HttpStatus.NOT_FOUND;
+        ApiException apiException = new ApiException(
+                e.getMessage(),
+                notFound.value(),
+                ZonedDateTime.now(ZoneId.of("Z"))
+        );
+       return new ResponseEntity<>(apiException, notFound);
+    }
 }
