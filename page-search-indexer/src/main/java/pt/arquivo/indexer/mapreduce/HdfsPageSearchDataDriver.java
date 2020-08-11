@@ -13,6 +13,7 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import pt.arquivo.indexer.data.ArchiveFileInputFormat;
 import pt.arquivo.indexer.data.PageData;
+import pt.arquivo.indexer.data.WarcsPathFilter;
 import pt.arquivo.indexer.data.WebArchiveKey;
 
 
@@ -40,11 +41,11 @@ public class HdfsPageSearchDataDriver extends Configured implements Tool {
         FileSystem dfs = DistributedFileSystem.get(conf);
 
         RemoteIterator<LocatedFileStatus> fileIterator = dfs.listFiles(new Path(args[0]), true);
-        WarcPathFilter warcPathFilter = new WarcPathFilter();
+        WarcsPathFilter warcsPathFilter = new WarcsPathFilter();
 
         while (fileIterator.hasNext()) {
             LocatedFileStatus fileStatus = fileIterator.next();
-            if (fileStatus.isFile() && warcPathFilter.accept(fileStatus.getPath())) {
+            if (fileStatus.isFile() && warcsPathFilter.accept(fileStatus.getPath())) {
                 ArchiveFileInputFormat.addInputPath(job, fileStatus.getPath());
             }
         }
