@@ -50,8 +50,7 @@ public class Outlink implements Writable {
         if (!(o instanceof Outlink))
             return false;
         Outlink other = (Outlink) o;
-        return this.toUrl.equals(other.toUrl) &&
-                this.anchor.equals(other.anchor);
+        return this.toUrl.equals(other.toUrl) && this.anchor.equals(other.anchor);
     }
 
     public String toString() {
