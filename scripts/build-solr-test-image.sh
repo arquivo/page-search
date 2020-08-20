@@ -2,12 +2,12 @@
 set -e
 
 # Defaults
-INDEX_NAME=pagesearch
-BUILD_CONTAINER_NAME=solr-build-image
-SOLR_FILES="$PWD/../solr/pagesearch-solr"
+INDEX_NAME=${INDEX_NAME:-pagesearch}
+BUILD_CONTAINER_NAME=${BUILD_CONTAINER_NAME:-solr-build-image}
+SOLR_FILES=${SOLR_FILES:-"$PWD/../solr/pagesearch-solr"}
 
-SOLR_DOCKER_IMAGE=solr:8.4.1
-SOLR_ARQUIVO_IMAGE="arquivo/$INDEX_NAME-solr-test"
+SOLR_DOCKER_IMAGE=${SOLR_DOCKER_IMAGE:-solr:8.4.1}
+SOLR_ARQUIVO_IMAGE=${SOLR_ARQUIVO_IMAGE:-"arquivo/$INDEX_NAME-solr-test"}
 
 echo "Cleaning old solr-db-data"
 rm -rf "$SOLR_FILES/solr-db-data"
