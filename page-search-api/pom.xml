@@ -166,6 +166,9 @@
                                         <ports>
                                             <port>21112:21112</port>
                                         </ports>
+                                        <wait>
+                                            <time>5000</time>
+                                        </wait>
                                     </run>
                                 </image>
                                 <image>
