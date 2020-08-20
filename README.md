@@ -7,7 +7,7 @@ This project aims to replace the legacy search system. The legacy search system,
 To be able to compile the project we need in the machine's maven repository the Arquivo.pt Nutchwax Project libraries.
 In order for Page Search API to use NutchWaxSearchService as the full-text backend (In the future we can remove these libraries).
 
-1. Satisfy the following page-search-api/pom.xml requirements for NutchWaxSearchService (legacy backend):
+a) Satisfy the following page-search-api/pom.xml requirements for NutchWaxSearchService (legacy backend):
 ```
 <dependency>
     <groupId>pt.arquivo</groupId>
@@ -22,15 +22,21 @@ In order for Page Search API to use NutchWaxSearchService as the full-text backe
 </dependency>
 ```
 
-You will need to compile pwa-technologies to satisfy this:
+You will need the following to satisfy these dependencies:
 
+**hadoop-common (0.14)**
+```shell script
+$ git clone -b branch-0.14 https://github.com/arquivo/hadoop-common.git
+$ mvn clean install -f hadoop-common/pom.xml
+```
+**PwaLucene and PwaArchive-access**
 ```shell script
 $ git clone https://github.com/arquivo/pwa-technologies.git
 $ mvn clean install -f pwa-technologies/PwaLucene/pom.xml
 $ mvn clean install -f pwa-technologies/PwaArchive-access/pom.xml
 ```
 
-2. Clone and compile Page Search
+b) Clone and compile Page Search
 
 ```
 $ git clone https://github.com/arquivo/pagesearch.git
