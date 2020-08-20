@@ -44,7 +44,7 @@ public class SolrSearchServiceTestIT {
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
 
-        assertThat(searchResults.getNumberResults()).isEqualTo(36);
+        assertThat(searchResults.getNumberResults()).isEqualTo(38);
         // assertThat(searchResults.isLastPageResults()).isTrue();
 
         SearchResult searchResult = searchResults.getResults().get(0);
@@ -57,8 +57,8 @@ public class SolrSearchServiceTestIT {
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
 
         // assertThat(searchResults.isLastPageResults()).isTrue();
-        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(36);
-        assertThat(searchResults.getNumberResults()).isEqualTo(36);
+        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(38);
+        assertThat(searchResults.getNumberResults()).isEqualTo(38);
 
         ArrayList<SearchResult> arraySearchResult = searchResults.getResults();
         SearchResult firstSearchResult = arraySearchResult.get(0);
@@ -83,7 +83,7 @@ public class SolrSearchServiceTestIT {
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
 
         assertThat(searchResults.isLastPageResults()).isFalse();
-        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(36);
+        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(38);
         assertThat(searchResults.getNumberResults()).isEqualTo(5);
     }
 
