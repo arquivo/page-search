@@ -20,6 +20,13 @@ public class TestNutchConfig {
         String basePath = fullPath.substring(0, fullPath.lastIndexOf("/"));
         System.out.println(">>>>>>>> search-server.txt file location: " + basePath);
         configuration.set("searcher.dir", URLDecoder.decode(basePath, "utf8"));
+        // to solve the following problem  https://stackoverflow.com/questions/17265002/hadoop-no-filesystem-for-scheme-file
+        configuration.set("fs.hdfs.impl",
+                org.apache.hadoop.dfs.DistributedFileSystem.class.getName()
+        );
+        configuration.set("fs.file.impl",
+                org.apache.hadoop.fs.LocalFileSystem.class.getName()
+        );
         return new NutchWaxSearchService(configuration);
     }
 }
