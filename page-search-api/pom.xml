@@ -160,6 +160,7 @@
                         </executions>
 
                         <configuration>
+                            <imagePullPolicy>Always</imagePullPolicy>
                             <images>
                                 <image>
                                     <name>arquivo/nutchwaxquery</name>
