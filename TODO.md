@@ -1,4 +1,5 @@
 # TODO
+* Process WARC Resource Types
 * ~~Change docker Image Pulling Policy (so it updates the testing image automatically)~~
 * Update the general docker-compose file
 * ~~Document Development Proceedings (local)~~
@@ -30,4 +31,3 @@
     * Old Documents are 'better' 
 * **versionHistory** just search StatusCode = 200 records. This should be deleted altogether.
 * Add an uniform error reporting representation (https://tools.ietf.org/html/rfc7807)
-* Add More Features

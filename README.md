@@ -7,6 +7,8 @@ This project aims to replace the legacy search system. The legacy search system,
 To be able to compile the project we need in the machine's maven repository the Arquivo.pt Nutchwax Project libraries.
 In order for Page Search API to use NutchWaxSearchService as the full-text backend (In the future we can remove these libraries).
 
+**NOTE: Do not try to compile with other Java than Java 8**, because of the nutchwax dependecies
+
 a) Satisfy the following page-search-api/pom.xml requirements for NutchWaxSearchService (legacy backend):
 ```
 <dependency>
