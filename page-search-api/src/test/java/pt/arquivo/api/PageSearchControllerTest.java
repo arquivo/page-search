@@ -19,10 +19,12 @@ import pt.arquivo.services.SearchResult;
 import pt.arquivo.services.SearchResultNutchImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
+import pt.arquivo.services.cdx.ItemCDX;
 
 import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static pt.arquivo.services.cdx.CDXSearchService.getSearchResultNutch;
 
 
 @SpringBootTest(classes = PageSearchApplication.class)
@@ -213,5 +215,12 @@ public class PageSearchControllerTest {
 
         // verify pretty print
         response.getContentAsString().contains("{\n");
+    }
+
+    @Test
+    public void pageSearchNutch() throws Exception {
+        ItemCDX item = new ItemCDX("URL", "123456789", "", "", null, "",
+                null, "0", "");
+        getSearchResultNutch(item);
     }
 }

@@ -87,7 +87,7 @@ public class CDXSearchService {
             // searchResults.setResults(results);
             // check if we can get more information through the TextSearch API
             for (ItemCDX result : cdxResults) {
-                SearchResultNutchImpl searchResult = new SearchResultNutchImpl();
+
                 // text search api
                 SearchQuery urlSearchQuery = new SearchQueryImpl(result.getUrl());
                 urlSearchQuery.setMaxItems(1);
@@ -96,22 +96,7 @@ public class CDXSearchService {
 
                 SearchResults textSearchResults = searchService.query(urlSearchQuery, true);
 
-                searchResult.setFileName(result.getFilename());
-                searchResult.setOffset(Long.parseLong(result.getOffset()));
-
-                if (result.getLength() != null)
-                    searchResult.setContentLength(Long.parseLong(result.getLength()));
-
-                // TODO SANITY CHECK HERE with the digest (important)
-                searchResult.setDigest(result.getDigest());
-                searchResult.setMimeType(result.getMime());
-                searchResult.setTimeStamp(result.getTimestamp());
-                searchResult.setOriginalURL(result.getUrl());
-
-                if (result.getStatus() != null)
-                    searchResult.setStatusCode(Integer.parseInt(result.getStatus()));
-
-                searchResult.setCollection(result.getCollection());
+                SearchResultNutchImpl searchResult = getSearchResultNutch(result);
 
                 if (textSearchResults.getNumberResults() > 0) {
                     LOG.debug("CDX record matched with full-text index.." + result.getUrl());
@@ -142,6 +127,28 @@ public class CDXSearchService {
             searchResultsResponse.setEstimatedNumberResults(0);
             return searchResultsResponse;
         }
+    }
+
+    public static SearchResultNutchImpl getSearchResultNutch(ItemCDX result) {
+        SearchResultNutchImpl searchResult = new SearchResultNutchImpl();
+        searchResult.setFileName(result.getFilename());
+        searchResult.setOffset(Long.parseLong(result.getOffset()));
+
+        if (result.getLength() != null)
+            searchResult.setContentLength(Long.parseLong(result.getLength()));
+
+        // TODO SANITY CHECK HERE with the digest (important)
+        searchResult.setDigest(result.getDigest());
+        searchResult.setMimeType(result.getMime());
+        searchResult.setTimeStamp(result.getTimestamp());
+        searchResult.setOriginalURL(result.getUrl());
+
+        if (result.getStatus() != null)
+            searchResult.setStatusCode(Integer.parseInt(result.getStatus()));
+
+        searchResult.setCollection(result.getCollection());
+
+        return searchResult;
     }
 
     private String generateCdxQuery(String url, String from, String to) {
