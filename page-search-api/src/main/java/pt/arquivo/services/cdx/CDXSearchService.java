@@ -98,13 +98,19 @@ public class CDXSearchService {
 
                 searchResult.setFileName(result.getFilename());
                 searchResult.setOffset(Long.parseLong(result.getOffset()));
-                searchResult.setContentLength(Long.parseLong(result.getLength()));
+
+                if (result.getLength() != null)
+                    searchResult.setContentLength(Long.parseLong(result.getLength()));
+
                 // TODO SANITY CHECK HERE with the digest (important)
                 searchResult.setDigest(result.getDigest());
                 searchResult.setMimeType(result.getMime());
                 searchResult.setTimeStamp(result.getTimestamp());
                 searchResult.setOriginalURL(result.getUrl());
-                searchResult.setStatusCode(Integer.parseInt(result.getStatus()));
+
+                if (result.getStatus() != null)
+                    searchResult.setStatusCode(Integer.parseInt(result.getStatus()));
+
                 searchResult.setCollection(result.getCollection());
 
                 if (textSearchResults.getNumberResults() > 0) {
