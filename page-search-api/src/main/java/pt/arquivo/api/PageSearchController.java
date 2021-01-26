@@ -78,7 +78,7 @@ public class PageSearchController {
     @GetMapping(value = "/textextracted")
     public String extractedText(@RequestParam(value = "m") String id) {
         LOG.info(String.format("Request to /textextracted for ID=%s", id));
-        String extractedText = "";
+        String extractedText;
 
         int idx = id.lastIndexOf("/");
         if (idx > 0) {
@@ -198,7 +198,18 @@ public class PageSearchController {
             requestUrl.append("?");
             requestUrl.append(request.getQueryString());
         }
-        LOG.info(SERPLogging.logResult(requestUrl.toString(), pageSearchResponse, searchQuery));
+
+        String ipAddress = request.getHeader("X-FORWARDED-FOR");
+        if (ipAddress == null) {
+            ipAddress = request.getRemoteAddr();
+        }
+
+        String userAgent = request.getHeader("User-Agent");
+        if (userAgent == null || userAgent.trim().isEmpty())
+            userAgent = "-";
+
+
+        LOG.info(SERPLogging.logResult(ipAddress, userAgent, requestUrl.toString(), pageSearchResponse, searchQuery));
         return pageSearchResponse;
     }
 
