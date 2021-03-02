@@ -130,6 +130,10 @@ public class PageSearchController {
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
                            HttpServletRequest request
     ) {
+        long startTime;
+        long endTime;
+        long duration;
+        startTime = System.currentTimeMillis();
         // TODO need to do this verification since versionHistory is merged on the term search. Remove it on the next API version, when versionHistory is removed from here
         if (url != null) {
             return searchCdxURL(url, from, to, maxItems, offset, request);
@@ -208,9 +212,11 @@ public class PageSearchController {
         if (userAgent == null || userAgent.trim().isEmpty())
             userAgent = "-";
 
+        endTime = System.currentTimeMillis();
+        duration = (endTime - startTime);
 
-        LOG.info(SERPLogging.logResult(ipAddress, userAgent, requestUrl.toString(), pageSearchResponse, searchQuery));
+
+        LOG.info(SERPLogging.logResult(duration, ipAddress, userAgent, requestUrl.toString(), pageSearchResponse, searchQuery));
         return pageSearchResponse;
     }
-
 }

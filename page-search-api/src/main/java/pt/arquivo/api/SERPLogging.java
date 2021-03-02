@@ -13,13 +13,15 @@ public class SERPLogging {
 
     private static final Logger LOG = LoggerFactory.getLogger(SERPLogging.class);
 
-    public static String logResult(String ipAddress, String userAgent, String urlRequest, PageSearchResponse pageSearchResponse, SearchQuery searchQuery) {
+    public static String logResult(long duration, String ipAddress, String userAgent, String urlRequest, PageSearchResponse pageSearchResponse, SearchQuery searchQuery) {
         StringBuilder serpLog = new StringBuilder();
         serpLog.append(ipAddress);
         serpLog.append("\t");
         serpLog.append(userAgent);
         serpLog.append("\t");
         serpLog.append(urlRequest);
+        serpLog.append("\t");
+        serpLog.append(duration);
         serpLog.append("\tsearch_parameters: ");
 
         ObjectMapper mapper = new ObjectMapper();
