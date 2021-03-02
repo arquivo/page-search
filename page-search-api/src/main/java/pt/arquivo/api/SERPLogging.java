@@ -22,6 +22,7 @@ public class SERPLogging {
         serpLog.append(urlRequest);
         serpLog.append("\t");
         serpLog.append(duration);
+        serpLog.append(" ms");
         serpLog.append("\tsearch_parameters: ");
 
         ObjectMapper mapper = new ObjectMapper();
