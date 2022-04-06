@@ -7,8 +7,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.util.List;
 
 public class SearchResultSerializer extends JsonSerializer {
 
@@ -42,7 +45,7 @@ public class SearchResultSerializer extends JsonSerializer {
                         if (field.getName().equals("id")) {
                             if (showIds) {
                                 jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
-                                jsonGenerator.writeObjectField("TEST", "YO");
+                                jsonGenerator.writeObjectField("python", runPython());
                             }
                         } else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
                                 && !field.getName().equals("details") && !field.getName().equals("fields")
@@ -67,6 +70,33 @@ public class SearchResultSerializer extends JsonSerializer {
             return false;
         } else {
             return true;
+        }
+    }
+
+    private String runPython() {
+        ProcessBuilder processBuilder = new ProcessBuilder("python3", "./test.py");
+        processBuilder.redirectErrorStream(true);
+    
+        try {
+
+        
+        Process process = processBuilder.start();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+        
+        String line, output;
+        output = "";
+        while ((line = reader.readLine()) != null) {
+            output += line;
+        }
+
+
+
+        int exitCode = process.waitFor();
+        return output;
+
+        } catch (Exception e) {
+            return "Failed :(";
         }
     }
 }
