@@ -42,6 +42,7 @@ public class SearchResultSerializer extends JsonSerializer {
                         if (field.getName().equals("id")) {
                             if (showIds) {
                                 jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
+                                jsonGenerator.writeObjectField("TEST", "YO");
                             }
                         } else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
                                 && !field.getName().equals("details") && !field.getName().equals("fields")

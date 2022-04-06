@@ -31,7 +31,6 @@ public class SearchResultNutchImpl implements SearchResult {
     private String snippet;
     private String fileName;
     private String collection;
-    private String test = "yo";
     private long offset;
     private Integer statusCode;
     private String id;
@@ -41,14 +40,6 @@ public class SearchResultNutchImpl implements SearchResult {
     private NutchBean bean;
 
     private HitDetails details;
-
-    public String getTest() {
-        return test;
-    }
-
-    public void setTest(String test) {
-        this.test = test;
-    }
 
     public String getTitle() {
         return title;

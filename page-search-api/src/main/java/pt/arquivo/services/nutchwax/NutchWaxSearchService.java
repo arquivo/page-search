@@ -207,13 +207,7 @@ public class NutchWaxSearchService implements SearchService {
                     populateSearchResult(searchResult, details[i], summaries[i]);
                     populateEndpointsLinks(searchResult);
 
-                    String[] oldFields = searchQuery.getFields();
-                    String[] newFields = new String[oldFields.length+1];
-                    for(int j = 0; j<oldFields.length; j++){
-                        newFields[j] = oldFields[j];
-                    }
-                    newFields[oldFields.length] = "test";
-                    searchResult.setFields(newFields);
+                    searchResult.setFields(searchQuery.getFields());
 
                     if (showIds) {
                         searchResult.setId(String.valueOf(show[i].getIndexDocNo()));
