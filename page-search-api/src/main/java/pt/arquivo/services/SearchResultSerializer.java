@@ -21,7 +21,6 @@ public class SearchResultSerializer extends JsonSerializer {
     public void serialize(Object o, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
         SearchResult searchResult = (SearchResult) o;
         jsonGenerator.writeStartObject();
-        jsonGenerator.writeObjectField("test","yo");
         if (searchResult.getFields() != null) {
             for (Field field : searchResult.getClass().getDeclaredFields()) {
                 if (serializeField(field.getName(), searchResult.getFields())) {
