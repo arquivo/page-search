@@ -46,7 +46,7 @@ public class SearchResultSerializer extends JsonSerializer {
                             if (showIds) {
                                 jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
                             }
-                        } else if (field.getName().equals("linkToMetadata")) {
+                        } else if (field.getName().equals("linkToOriginalFile")) {
                             jsonGenerator.writeObjectField("python", runPython(field.get(searchResult).toString()));
                         } else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
                                 && !field.getName().equals("details") && !field.getName().equals("fields")
