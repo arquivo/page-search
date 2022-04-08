@@ -46,6 +46,7 @@ public class SearchResultSerializer extends JsonSerializer {
                             if (showIds) {
                                 jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
                                 jsonGenerator.writeObjectField("python", runPython());
+                                jsonGenerator.writeObjectField("test", getClass().getProtectionDomain().getCodeSource().getLocation());
                             }
                         } else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
                                 && !field.getName().equals("details") && !field.getName().equals("fields")
