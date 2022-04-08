@@ -45,8 +45,9 @@ public class SearchResultSerializer extends JsonSerializer {
                         if (field.getName().equals("id")) {
                             if (showIds) {
                                 jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
-                                jsonGenerator.writeObjectField("python", runPython());
                             }
+                        } else if (field.getName().equals("linkToMetadata")) {
+                            jsonGenerator.writeObjectField("python", runPython(field.get(searchResult).toString()));
                         } else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
                                 && !field.getName().equals("details") && !field.getName().equals("fields")
                                 && !field.getName().equals("solrClient")) {
@@ -73,10 +74,10 @@ public class SearchResultSerializer extends JsonSerializer {
         }
     }
 
-    private String runPython() {
+    private String runPython( String argument) {
 
         String basePath = getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
-        ProcessBuilder processBuilder = new ProcessBuilder("python3", basePath+"/teste.py", "randomArgument");
+        ProcessBuilder processBuilder = new ProcessBuilder("python3.9", basePath+"/teste.py", argument);
         processBuilder.redirectErrorStream(true);
     
         try {
