@@ -1,9 +1,9 @@
 package pt.arquivo.services;
 
-import org.json.*;
-
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +54,8 @@ public class SearchResultSerializer extends JsonSerializer {
                             if (extractions.indexOf("{") == -1) {
                                 extractions = "{}";
                             }
-                            jsonGenerator.writeObjectField("parsedInformation", new JSONObject(extractions.substring(extractions.indexOf("{"), extractions.lastIndexOf("}") + 1) ));
+
+                            jsonGenerator.writeObjectField("parsedInformation", new ObjectMapper().readTree(extractions));
                         } else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
                                 && !field.getName().equals("details") && !field.getName().equals("fields")
                                 && !field.getName().equals("solrClient")) {
