@@ -50,8 +50,11 @@ public class SearchResultSerializer extends JsonSerializer {
                             }
                         } else if (field.getName().equals("linkToOriginalFile")) {
                             jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
-                            JSONObject extractions = new JSONObject(runPython(field.get(searchResult).toString()));
-                            jsonGenerator.writeObjectField("parsedInformation", extractions);
+                            String extractions = runPython(field.get(searchResult).toString());
+                            if (extractions.indexOf("{") == -1) {
+                                extractions = "{}";
+                            }
+                            jsonGenerator.writeObjectField("parsedInformation", new JSONObject(extractions.substring(extractions.indexOf("{"), extractions.lastIndexOf("}") + 1) ));
                         } else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
                                 && !field.getName().equals("details") && !field.getName().equals("fields")
                                 && !field.getName().equals("solrClient")) {
