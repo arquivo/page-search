@@ -1,5 +1,7 @@
 package pt.arquivo.services;
 
+import org.json.*;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -48,8 +50,8 @@ public class SearchResultSerializer extends JsonSerializer {
                             }
                         } else if (field.getName().equals("linkToOriginalFile")) {
                             jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
-                            jsonGenerator.writeObjectField("n3kSource", field.get(searchResult).toString());
-                            jsonGenerator.writeObjectField("newspaper3kExtractedText", runPython(field.get(searchResult).toString()));
+                            JSONObject extractions = new JSONObject(runPython(field.get(searchResult).toString()));
+                            jsonGenerator.writeObjectField("parsedInformation", extractions);
                         } else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
                                 && !field.getName().equals("details") && !field.getName().equals("fields")
                                 && !field.getName().equals("solrClient")) {
