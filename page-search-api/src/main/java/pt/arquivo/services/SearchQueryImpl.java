@@ -8,7 +8,7 @@ import org.apache.commons.lang.StringUtils;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SearchQueryImpl implements SearchQuery {
 
-    private static final int MAX_ALLOWED_ITEMS = 2000; 
+    private static final int MAX_ALLOWED_ITEMS = 500; 
 
     @JsonProperty("q")
     private String queryTerms;
