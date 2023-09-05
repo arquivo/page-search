@@ -8,6 +8,8 @@ import org.apache.commons.lang.StringUtils;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SearchQueryImpl implements SearchQuery {
 
+    private static final int MAX_ALLOWED_ITEMS = 500; 
+
     @JsonProperty("q")
     private String queryTerms;
 
@@ -65,6 +67,8 @@ public class SearchQueryImpl implements SearchQuery {
     public void setMaxItems(int maxItems) {
         if (maxItems < 0) {
             this.maxItems = 0;
+        } else if (maxItems > MAX_ALLOWED_ITEMS){
+            this.maxItems = MAX_ALLOWED_ITEMS;
         } else {
             this.maxItems = maxItems;
         }
