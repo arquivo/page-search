@@ -17,6 +17,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -98,6 +99,7 @@ public class SolrSearchService implements SearchService {
         SolrQuery solrQuery = new SolrQuery();
 
         solrQuery.setQuery(searchQuery.getQueryTerms());
+        solrQuery.add("df","content");
         solrQuery.setStart(searchQuery.getOffset());
         solrQuery.setRows(searchQuery.getMaxItems());
 
@@ -193,13 +195,13 @@ public class SolrSearchService implements SearchService {
         for (SolrDocument doc : solrDocumentList) {
 
             SearchResultSolrImpl searchResult = new SearchResultSolrImpl();
-            searchResult.setTitle((String) doc.getFieldValue("title"));
+            searchResult.setTitle((String) doc.getFieldValues("title").iterator().next());
             searchResult.setOriginalURL((String) doc.getFieldValue("url"));
             searchResult.setMimeType((String) doc.getFieldValue("type"));
             searchResult.setTstamp((Long) doc.getFieldValue("tstamp"));
-            searchResult.setOffset((Long) doc.getFieldValue("warc_offset"));
-            searchResult.setFileName((String) doc.getFieldValue("warc_name"));
-            searchResult.setCollection((String) doc.getFieldValue("collection"));
+            // searchResult.setOffset((Long) doc.getFieldValue("warc_offset"));
+            // searchResult.setFileName((String) doc.getFieldValue("warc_name"));
+            searchResult.setCollection((String) doc.getFieldValues("collection").iterator().next());
             searchResult.setContentLength((Long) doc.getFieldValue("content_length"));
             searchResult.setDigest((String) doc.getFieldValue("digest"));
             searchResult.setEncoding((String) doc.getFieldValue("encoding"));
