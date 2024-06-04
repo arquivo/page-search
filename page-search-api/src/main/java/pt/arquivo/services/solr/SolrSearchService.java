@@ -196,7 +196,7 @@ public class SolrSearchService implements SearchService {
 
             SearchResultSolrImpl searchResult = new SearchResultSolrImpl();
             searchResult.setTitle((String) doc.getFieldValues("title").iterator().next());
-            searchResult.setOriginalURL((String) doc.getFieldValue("url"));
+            searchResult.setOriginalURL((String) doc.getFieldValues("url").iterator().next());
             searchResult.setMimeType((String) doc.getFieldValue("type"));
             searchResult.setTstamp((Long) doc.getFieldValue("tstamp"));
             // searchResult.setOffset((Long) doc.getFieldValue("warc_offset"));
