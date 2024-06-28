@@ -18,6 +18,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -85,14 +86,14 @@ public class SolrSearchService implements SearchService {
     }
 
     private void addDeduplicationFilterQuery(SolrQuery solrQuery, String dedupField) {
-        if (dedupField.equalsIgnoreCase("url")) {
-            dedupField = "surt_url";
-        }
+        // if (dedupField.equalsIgnoreCase("url")) {
+        //     dedupField = "surt_url";
+        // }
 
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("{!collapse field=")
-                .append(dedupField).append("}");
-        solrQuery.addFilterQuery(stringBuilder.toString());
+        // StringBuilder stringBuilder = new StringBuilder();
+        // stringBuilder.append("{!collapse field=")
+        //         .append(dedupField).append("}");
+        // solrQuery.addFilterQuery(stringBuilder.toString());
     }
 
     private SolrQuery convertSearchQuery(SearchQuery searchQuery) {
@@ -187,6 +188,22 @@ public class SolrSearchService implements SearchService {
     }
 
 
+    private Object coalesce(Object obj1, Object obj2){
+        if(obj1 == null){
+            return obj2;
+        }
+        return obj1;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object getFirstResult(SolrDocument doc, String fieldName, Object defaultValue){
+        Collection <Object> solrField = (Collection <Object>) coalesce(doc.getFieldValues(fieldName), new HashSet<Object> ());
+        if(solrField.size() == 0){
+            return defaultValue;
+        }
+        return solrField.iterator().next();
+    }
+
     private SearchResults parseQueryResponse(QueryResponse queryResponse) {
         SearchResults searchResults = new SearchResults();
         ArrayList<SearchResult> searchResultArrayList = new ArrayList<>();
@@ -195,17 +212,17 @@ public class SolrSearchService implements SearchService {
         for (SolrDocument doc : solrDocumentList) {
 
             SearchResultSolrImpl searchResult = new SearchResultSolrImpl();
-            searchResult.setTitle((String) doc.getFieldValues("title").iterator().next());
-            searchResult.setOriginalURL((String) doc.getFieldValues("url").iterator().next());
-            searchResult.setMimeType((String) doc.getFieldValue("type"));
-            searchResult.setTstamp((Long) doc.getFieldValue("tstamp"));
+            searchResult.setTitle((String) getFirstResult(doc, "title", ""));
+            searchResult.setOriginalURL((String) getFirstResult(doc, "urls", ""));
+            searchResult.setMimeType((String) getFirstResult(doc,"type",""));
+            searchResult.setTstamp(Long.parseLong((String) coalesce(doc.getFieldValue("tstamp"),"0")));
             // searchResult.setOffset((Long) doc.getFieldValue("warc_offset"));
             // searchResult.setFileName((String) doc.getFieldValue("warc_name"));
-            searchResult.setCollection((String) doc.getFieldValues("collection").iterator().next());
-            searchResult.setContentLength((Long) doc.getFieldValue("content_length"));
-            searchResult.setDigest((String) doc.getFieldValue("digest"));
-            searchResult.setEncoding((String) doc.getFieldValue("encoding"));
-            searchResult.setId((String) doc.getFieldValue("id"));
+            searchResult.setCollection((String) getFirstResult(doc,"collection",""));
+            searchResult.setContentLength(Long.valueOf(((String) getFirstResult(doc,"content","")).length()));
+            // searchResult.setDigest((String) doc.getFieldValue("digest"));
+            // searchResult.setEncoding((String) doc.getFieldValue("encoding"));
+            searchResult.setId((String) coalesce(doc.getFieldValue("id"),""));
             searchResult.setSolrClient(this.solrClient);
 
             searchResult.setSnippet(getHighlightedText(queryResponse, "content", (String) doc.get("id")));
