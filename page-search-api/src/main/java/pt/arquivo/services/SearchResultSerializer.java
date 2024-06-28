@@ -45,7 +45,6 @@ public class SearchResultSerializer extends JsonSerializer {
                         if (field.getName().equals("id")) {
                             if (showIds) {
                                 jsonGenerator.writeObjectField(field.getName(), field.get(searchResult));
-                                jsonGenerator.writeObjectField("python", runPython());
                             }
                         } else if (!field.getName().equals("LOG") && !field.getName().equals("bean")
                                 && !field.getName().equals("details") && !field.getName().equals("fields")
@@ -73,30 +72,4 @@ public class SearchResultSerializer extends JsonSerializer {
         }
     }
 
-    private String runPython() {
-        ProcessBuilder processBuilder = new ProcessBuilder("python3", "/tmp/pagesearch/test.py");
-        processBuilder.redirectErrorStream(true);
-    
-        try {
-
-        
-        Process process = processBuilder.start();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-        
-        String line, output;
-        output = "";
-        while ((line = reader.readLine()) != null) {
-            output += line;
-        }
-
-
-
-        int exitCode = process.waitFor();
-        return output;
-
-        } catch (Exception e) {
-            return "Failed :(";
-        }
-    }
 }
