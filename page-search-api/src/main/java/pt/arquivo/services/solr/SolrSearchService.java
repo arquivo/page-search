@@ -152,12 +152,6 @@ public class SolrSearchService implements SearchService {
                 multipleSite = true;
             }
             solrQuery.addFilterQuery(stringBuilder.toString());
-
-            
-            System.err.println("###########################################################");
-            System.err.println("FilterQuery:" + stringBuilder.toString());
-            System.err.println("solrQuery:" + solrQuery.toString());
-            System.err.println("###########################################################");
         }
 
         // filter fields
@@ -188,6 +182,31 @@ public class SolrSearchService implements SearchService {
             List<String> snippets = fieldsSnippet.getOrDefault(fieldName, null);
             if (snippets != null) {
                 highlightedText = getFragments(snippets);
+            }
+        }
+        int maxChunkSize = 20;
+        int maxTotalSize = 200;
+
+        String[] fragments = highlightedText.split("<em>");
+        highlightedText = "";
+        boolean first = false;
+        for (String fragment:fragments){
+            if(first){
+                if(fragment.length() < maxChunkSize + "... ".length()){
+                    highlightedText = fragment;
+                } else {
+                    highlightedText = "... " + fragment.substring(fragment.length()-maxChunkSize);
+                }
+                first = false;
+            } else {
+                if (fragment.length() < 2*maxChunkSize + " ... ".length()) {
+                    highlightedText += fragment;
+                } else {
+                    highlightedText += fragment.substring(0, maxChunkSize) + " ... " + fragment.substring(fragment.length()-maxChunkSize); 
+                }
+            }
+            if(highlightedText.length() > maxTotalSize){
+                break;
             }
         }
         return highlightedText;
