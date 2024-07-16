@@ -192,17 +192,18 @@ public class SolrSearchService implements SearchService {
         boolean first = false;
         for (String fragment:fragments){
             if(first){
-                if(fragment.length() < maxChunkSize + "... ".length()){
+                if(fragment.length() < maxChunkSize + "… ".length()){
                     highlightedText = fragment;
                 } else {
-                    highlightedText = "... " + fragment.substring(fragment.length()-maxChunkSize);
+                    highlightedText = "… " + fragment.substring(fragment.length()-maxChunkSize);
                 }
                 first = false;
             } else {
-                if (fragment.length() < 2*maxChunkSize + " ... ".length()) {
+                fragment = "<em>" + fragment;
+                if (fragment.length() < 2*maxChunkSize + " … ".length()) {
                     highlightedText += fragment;
                 } else {
-                    highlightedText += fragment.substring(0, maxChunkSize) + " ... " + fragment.substring(fragment.length()-maxChunkSize); 
+                    highlightedText += fragment.substring(0, maxChunkSize) + " … " + fragment.substring(fragment.length()-maxChunkSize); 
                 }
             }
             if(highlightedText.length() > maxTotalSize){
