@@ -44,7 +44,7 @@ public class SolrSearchServiceTestIT {
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
 
-        assertThat(searchResults.getNumberResults()).isEqualTo(38);
+        assertThat(searchResults.getNumberResults()).isEqualTo(50);
         // assertThat(searchResults.isLastPageResults()).isTrue();
 
         SearchResult searchResult = searchResults.getResults().get(0);
@@ -57,18 +57,18 @@ public class SolrSearchServiceTestIT {
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
 
         // assertThat(searchResults.isLastPageResults()).isTrue();
-        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(38);
-        assertThat(searchResults.getNumberResults()).isEqualTo(38);
+        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(5605986);
+        assertThat(searchResults.getNumberResults()).isEqualTo(50);
 
         ArrayList<SearchResult> arraySearchResult = searchResults.getResults();
         SearchResult firstSearchResult = arraySearchResult.get(0);
 
-        assertThat(firstSearchResult.getTitle()).isEqualTo("SAPO / Pesquisa");
-        assertThat(firstSearchResult.getCollection()).isEqualTo("TESTE");
-        assertThat(firstSearchResult.getStatusCode()).isNull();
-        assertThat(firstSearchResult.getTstamp()).isEqualTo("19961013204836");
-        assertThat(firstSearchResult.getId()).isEqualTo("19961013204836/kJqQ+fFJTVBmNzgH8ncb7w==");
-        assertThat(firstSearchResult.getDigest()).isEqualTo("FC2C56AA56000FE6D881F2139F5DCA74");
+        assertThat(firstSearchResult.getTitle()).isEqualTo("Portugal sapo. Sapo portugal on line and sapo portugal on line with portugal sapo");
+        assertThat(firstSearchResult.getCollection()).isEqualTo("IA");
+        // assertThat(firstSearchResult.getStatusCode()).isNull();
+        assertThat(firstSearchResult.getTstamp()).isEqualTo("20070912072240");
+        assertThat(firstSearchResult.getId()).isEqualTo("1DE965A3FF427D580131E4FBE0818787");
+        // assertThat(firstSearchResult.getDigest()).isEqualTo("FC2C56AA56000FE6D881F2139F5DCA74");
         // TODO check other fields
 
         // TODO Teste this later when the result order is not always changing.
@@ -83,7 +83,7 @@ public class SolrSearchServiceTestIT {
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
 
         assertThat(searchResults.isLastPageResults()).isFalse();
-        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(38);
+        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(5605986);
         assertThat(searchResults.getNumberResults()).isEqualTo(5);
     }
 
@@ -95,7 +95,7 @@ public class SolrSearchServiceTestIT {
         searchQuery.setTo("19961013150305");
 
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
-        assertThat(searchResults.getResults().size()).isEqualTo(2);
+        assertThat(searchResults.getResults().size()).isEqualTo(3);
     }
 
     @Test
