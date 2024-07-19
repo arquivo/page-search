@@ -8,7 +8,6 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
-import org.apache.solr.common.util.NamedList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,11 +23,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class SolrSearchService implements SearchService {
@@ -62,12 +60,46 @@ public class SolrSearchService implements SearchService {
     @Value("${searchpages.textsearch.service.link:http://localhost:8081/textsearch}")
     private String textSearchServiceEndpoint;
 
+    private String[] allRelevantRequestFields = null;
+
     public HttpSolrClient getSolrClient() {
         if (this.solrClient == null) {
             LOG.info("Initing SolrClient pointing to " + this.baseSolrUrl);
             this.solrClient = new HttpSolrClient.Builder(this.baseSolrUrl).build();
         }
         return this.solrClient;
+    }
+
+    // new Hashtable<String, Boolean>();
+
+    private String[] getDefaultRequestFields(){
+        if (allRelevantRequestFields == null){ 
+            ArrayList<String> fields = new ArrayList<String>();
+            fields.add("id");
+            fields.add("type");
+            // fields.add("typeReported");
+            fields.add("tstamp");
+            // fields.add("date");
+            // fields.add("dateLatest");
+            // fields.add("timeRange");
+            // fields.add("host");
+            fields.add("urlTimestamp");
+            // fields.add("surts");
+            // fields.add("inlinksInternal");
+            // fields.add("inlinksExternal");
+            // fields.add("captureCount");
+            fields.add("statusCode");
+            // fields.add("metadata");
+            fields.add("title");
+            fields.add("collection");
+            // fields.add("inlinkAnchorsInternal");
+            // fields.add("urlTokens");
+            // fields.add("urls");
+            // fields.add("_version_");
+            // fields.add("content");
+            allRelevantRequestFields = fields.toArray(new String[0]);
+         }
+         return allRelevantRequestFields;
     }
 
     // TODO refactor this - extract duplicate code
@@ -159,14 +191,62 @@ public class SolrSearchService implements SearchService {
         }
 
         // filter fields
+        String[] fieldsArray = getDefaultRequestFields(); 
+        Boolean[] fieldsToInclude = new Boolean[fieldsArray.length];
+        Boolean needsSnippet = true; //Snippet is more complex, we'll handle it separately
         if (searchQuery.getFields() != null) {
-            String[] fieldsArray = searchQuery.getFields();
-            StringBuilder stringBuilderFields = new StringBuilder();
-            for (int i = 0; i <= fieldsArray.length - 1; i++) {
-                if(i > 0){ stringBuilderFields.append(","); }
-                stringBuilderFields.append(ClientUtils.escapeQueryChars(fieldsArray[i]));
+            Hashtable<String,Integer> fieldsIndexes = new Hashtable<String,Integer>();
+            for(int i = 0; i< fieldsArray.length; i++){
+                fieldsIndexes.put(fieldsArray[i],i);
+                fieldsToInclude[i] = false;
+            }
+            fieldsToInclude[fieldsIndexes.get("urlTimestamp")] = true;
+            needsSnippet = false;
+            for(String field: searchQuery.getFields()){
+                switch (field) {
+                    case "title":
+                    case "tstamp":
+                    case "collection":
+                        fieldsToInclude[fieldsIndexes.get(field)] = true;
+                        break;
+                    case "digest":
+                    case "id":
+                        fieldsToInclude[fieldsIndexes.get("id")] = true;
+                        break;
+                    case "mimeType":
+                        fieldsToInclude[fieldsIndexes.get("type")] = true;
+                        break;
+                    case "snippet":
+                        fieldsToInclude[fieldsIndexes.get("id")] = true;
+                        needsSnippet = true;
+                        break;
+                }
+            }
+            // Solr fields: id, type, typeReported, tstamp, urlTimestamp, statusCode, title, collection, 
+            // API fields: title, originalURL, linkToArchive, tstamp, contentLength, digest, mimeType, linkToScreenshot, date, encoding, linkToNoFrame, linkToOriginalFile, collection, snippet, linkToExtractedText
+        } else {
+            for(int i = 0; i< fieldsArray.length; i++){
+                fieldsToInclude[i] = true;
+            }
+        }
+        StringBuilder stringBuilderFields = new StringBuilder();
+            boolean multipleFields = false;
+            for (int i = 0; i < fieldsArray.length; i++) {
+                if(fieldsToInclude[i] == true){
+                    if(multipleFields){ 
+                        stringBuilderFields.append(","); 
+                    }
+                    stringBuilderFields.append(fieldsArray[i]);
+                    multipleFields = true;
+                }
             }
             solrQuery.setFields(stringBuilderFields.toString());
+
+        if (needsSnippet) {
+            solrQuery.setHighlight(true);
+            solrQuery.setHighlightFragsize(50);
+            solrQuery.setHighlightSnippets(10);
+            solrQuery.add("hl.method","fastVector");
         }
 
         addDeduplicationFilterQuery(solrQuery, searchQuery.getDedupField());
@@ -195,39 +275,11 @@ public class SolrSearchService implements SearchService {
         StringBuilder fragments = new StringBuilder();
         for (int i = 0; i < snippets.size(); i++) {
             if (i > 0) {
-                fragments.append("............");
+                fragments.append("<span class=\"ellipsis\"> ... </span>");
             }
             fragments.append(snippets.get(i));
         }
-        String highlightedText = fragments.toString();
-
-        int maxChunkSize = 20;
-        int maxTotalSize = 200;
-
-        String[] chunks = highlightedText.split("<em>");
-        highlightedText = "";
-        boolean first = false;
-        for (String chunk:chunks){
-            if(first){
-                if(chunk.length() < maxChunkSize + "… ".length()){
-                    highlightedText = chunk;
-                } else {
-                    highlightedText = "… " + chunk.substring(chunk.length()-maxChunkSize);
-                }
-                first = false;
-            } else {
-                chunk = "<em>" + chunk;
-                if (chunk.length() < 2*maxChunkSize + " … ".length()) {
-                    highlightedText += chunk;
-                } else {
-                    highlightedText += chunk.substring(0, maxChunkSize) + " … " + chunk.substring(chunk.length()-maxChunkSize); 
-                }
-            }
-            if(highlightedText.length() > maxTotalSize){
-                break;
-            }
-        }
-        return highlightedText;
+        return fragments.toString();
     }
 
 
@@ -340,7 +392,7 @@ public class SolrSearchService implements SearchService {
             searchResult.setStatusCode((Integer) coalesce(doc.getFieldValue("statusCode"), Integer.valueOf(0)));
             searchResult.setCollection((String) getFirstResult(doc,"collection",""));
             searchResult.setContentLength(Long.valueOf(((String) getFirstResult(doc,"content","")).length()));
-            // searchResult.setDigest((String) doc.getFieldValue("digest"));
+            searchResult.setDigest((String) doc.getFieldValue("id"));
             // searchResult.setEncoding((String) doc.getFieldValue("encoding"));
             searchResult.setId((String) coalesce(doc.getFieldValue("id"),""));
             searchResult.setSolrClient(this.solrClient);
