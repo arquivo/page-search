@@ -108,9 +108,9 @@ public class SolrSearchService implements SearchService {
     private SolrQuery convertSearchQuery(SearchQuery searchQuery) {
         SolrQuery solrQuery = new SolrQuery();
 
-        solrQuery.setQuery(searchQuery.getQueryTerms());
-        solrQuery.add("df","content");
-        solrQuery.setStart(searchQuery.getOffset());
+        solrQuery.setQuery(ClientUtils.escapeQueryChars(searchQuery.getQueryTerms()));
+        solrQuery.add("df","content");   // Remove this when solr has a default df
+        solrQuery.setStart(searchQuery.getOffset()); // No need to escape because offset and maxItems are integers
         solrQuery.setRows(searchQuery.getMaxItems());
 
         // Enable highlighting
@@ -122,7 +122,7 @@ public class SolrSearchService implements SearchService {
             stringBuilder.append("collection:");
             for (String collection : searchQuery.getCollection()) {
                 if (multipleCollection) stringBuilder.append(" OR ");
-                stringBuilder.append(collection);
+                stringBuilder.append(ClientUtils.escapeQueryChars(collection));
                 multipleCollection = true;
             }
             solrQuery.addFilterQuery(stringBuilder.toString());
@@ -130,10 +130,10 @@ public class SolrSearchService implements SearchService {
 
         if (searchQuery.isTimeBoundedQuery()) {
             if (searchQuery.getFrom() != null){
-                solrQuery.addFilterQuery("dateLatest:[ "+Utils.timestampToSolrDate(searchQuery.getFrom())+" TO * ]");
+                solrQuery.addFilterQuery("dateLatest:[ "+ClientUtils.escapeQueryChars(Utils.timestampToSolrDate(searchQuery.getFrom()))+" TO * ]");
             }
             if (searchQuery.getTo() != null){
-                solrQuery.addFilterQuery("date:[ * TO "+Utils.timestampToSolrDate(searchQuery.getTo())+"]");
+                solrQuery.addFilterQuery("date:[ * TO "+ClientUtils.escapeQueryChars(Utils.timestampToSolrDate(searchQuery.getTo()))+"]");
             }
         }
 
@@ -151,7 +151,7 @@ public class SolrSearchService implements SearchService {
                     stringBuilder.append(ClientUtils.escapeQueryChars(fullSurt[0]) + "*");
                 } else {
                     // If a full URL is given, look only for the exact URL 
-                    stringBuilder.append(ClientUtils.escapeQueryChars(fullSurt[0] + ")" + fullSurt[1])+"*");
+                    stringBuilder.append(ClientUtils.escapeQueryChars(fullSurt[0] + ")" + fullSurt[1]) + "*");
                 }
                 multipleSite = true;
             }
@@ -163,10 +163,9 @@ public class SolrSearchService implements SearchService {
             String[] fieldsArray = searchQuery.getFields();
             StringBuilder stringBuilderFields = new StringBuilder();
             for (int i = 0; i <= fieldsArray.length - 1; i++) {
-                stringBuilderFields.append(fieldsArray[i]);
-                stringBuilderFields.append(",");
+                if(i > 0){ stringBuilderFields.append(","); }
+                stringBuilderFields.append(ClientUtils.escapeQueryChars(fieldsArray[i]));
             }
-            stringBuilderFields.append(fieldsArray[fieldsArray.length - 1]);
             solrQuery.setFields(stringBuilderFields.toString());
         }
 
