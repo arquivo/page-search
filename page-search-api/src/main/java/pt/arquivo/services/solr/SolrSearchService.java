@@ -72,8 +72,8 @@ public class SolrSearchService implements SearchService {
 
     // new Hashtable<String, Boolean>();
 
-    private String[] getDefaultRequestFields(){
-        if (allRelevantRequestFields == null){ 
+    private String[] getDefaultRequestFields() {
+        if (allRelevantRequestFields == null) {
             ArrayList<String> fields = new ArrayList<String>();
             fields.add("id");
             fields.add("type");
@@ -84,6 +84,7 @@ public class SolrSearchService implements SearchService {
             // fields.add("timeRange");
             // fields.add("host");
             fields.add("urlTimestamp");
+            // fields.add("surt");
             // fields.add("surts");
             // fields.add("inlinksInternal");
             // fields.add("inlinksExternal");
@@ -94,46 +95,23 @@ public class SolrSearchService implements SearchService {
             fields.add("collection");
             // fields.add("inlinkAnchorsInternal");
             // fields.add("urlTokens");
+            fields.add("url");
             // fields.add("urls");
             // fields.add("_version_");
             // fields.add("content");
             allRelevantRequestFields = fields.toArray(new String[0]);
-         }
-         return allRelevantRequestFields;
-    }
-
-    // TODO refactor this - extract duplicate code
-    private void populateEndpointsLinks(SearchResultSolrImpl searchResult, String oldestTimestamp, String oldestUrl) throws UnsupportedEncodingException {
-        searchResult.setLinkToArchive(waybackServiceEndpoint +
-                "/" + oldestTimestamp +
-                "/" + oldestUrl);
-
-        searchResult.setLinkToNoFrame(waybackNoFrameServiceEndpoint +
-                "/" + oldestTimestamp +
-                "/" + oldestUrl);
-
-        searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
-                "?url=" + URLEncoder.encode(searchResult.getLinkToNoFrame(), StandardCharsets.UTF_8.toString()));
-
-        searchResult.setLinkToExtractedText(extractedTextServiceEndpoint.concat("?m=")
-                .concat(URLEncoder.encode(oldestUrl.concat("/").concat(oldestTimestamp), StandardCharsets.UTF_8.toString())));
-
-        searchResult.setLinkToMetadata(textSearchServiceEndpoint.concat("?metadata=")
-                .concat(URLEncoder.encode(oldestUrl.concat("/").concat(oldestTimestamp), StandardCharsets.UTF_8.toString())));
-
-        searchResult.setLinkToOriginalFile(waybackNoFrameServiceEndpoint +
-                "/" + oldestTimestamp +
-                "id_/" + oldestUrl);
+        }
+        return allRelevantRequestFields;
     }
 
     private void addDeduplicationFilterQuery(SolrQuery solrQuery, String dedupField) {
         // if (dedupField.equalsIgnoreCase("url")) {
-        //     dedupField = "surt_url";
+        // dedupField = "surt_url";
         // }
 
         // StringBuilder stringBuilder = new StringBuilder();
         // stringBuilder.append("{!collapse field=")
-        //         .append(dedupField).append("}");
+        // .append(dedupField).append("}");
         // solrQuery.addFilterQuery(stringBuilder.toString());
     }
 
@@ -141,7 +119,7 @@ public class SolrSearchService implements SearchService {
         SolrQuery solrQuery = new SolrQuery();
 
         solrQuery.setQuery(ClientUtils.escapeQueryChars(searchQuery.getQueryTerms()));
-        solrQuery.add("df","content");   // Remove this when solr has a default df
+        solrQuery.add("df", "content"); // Remove this when solr has a default df
         solrQuery.setStart(searchQuery.getOffset()); // No need to escape because offset and maxItems are integers
         solrQuery.setRows(searchQuery.getMaxItems());
 
@@ -153,7 +131,8 @@ public class SolrSearchService implements SearchService {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("collection:");
             for (String collection : searchQuery.getCollection()) {
-                if (multipleCollection) stringBuilder.append(" OR ");
+                if (multipleCollection)
+                    stringBuilder.append(" OR ");
                 stringBuilder.append(ClientUtils.escapeQueryChars(collection));
                 multipleCollection = true;
             }
@@ -161,11 +140,13 @@ public class SolrSearchService implements SearchService {
         }
 
         if (searchQuery.isTimeBoundedQuery()) {
-            if (searchQuery.getFrom() != null){
-                solrQuery.addFilterQuery("dateLatest:[ "+ClientUtils.escapeQueryChars(Utils.timestampToSolrDate(searchQuery.getFrom()))+" TO * ]");
+            if (searchQuery.getFrom() != null) {
+                solrQuery.addFilterQuery("dateLatest:[ "
+                        + ClientUtils.escapeQueryChars(Utils.timestampToSolrDate(searchQuery.getFrom())) + " TO * ]");
             }
-            if (searchQuery.getTo() != null){
-                solrQuery.addFilterQuery("date:[ * TO "+ClientUtils.escapeQueryChars(Utils.timestampToSolrDate(searchQuery.getTo()))+"]");
+            if (searchQuery.getTo() != null) {
+                solrQuery.addFilterQuery("date:[ * TO "
+                        + ClientUtils.escapeQueryChars(Utils.timestampToSolrDate(searchQuery.getTo())) + "]");
             }
         }
 
@@ -175,14 +156,15 @@ public class SolrSearchService implements SearchService {
             stringBuilder.append("surts:");
             boolean multipleSite = false;
             for (String site : sites) {
-                if (multipleSite) stringBuilder.append(" OR surts:");
-                
+                if (multipleSite)
+                    stringBuilder.append(" OR surts:");
+
                 String[] fullSurt = URLNormalizers.canocalizeSurtUrl(site).split("\\)");
-                if(fullSurt.length == 1 || fullSurt[1].length() == 0 ){
+                if (fullSurt.length == 1 || fullSurt[1].length() == 0) {
                     // If only a domain is given, search for all subdomains
                     stringBuilder.append(ClientUtils.escapeQueryChars(fullSurt[0]) + "*");
                 } else {
-                    // If a full URL is given, look only for the exact URL 
+                    // If a full URL is given, look only for the exact URL
                     stringBuilder.append(ClientUtils.escapeQueryChars(fullSurt[0] + ")" + fullSurt[1]) + "*");
                 }
                 multipleSite = true;
@@ -191,18 +173,24 @@ public class SolrSearchService implements SearchService {
         }
 
         // filter fields
-        String[] fieldsArray = getDefaultRequestFields(); 
+        String[] fieldsArray = getDefaultRequestFields();
         Boolean[] fieldsToInclude = new Boolean[fieldsArray.length];
-        Boolean needsSnippet = true; //Snippet is more complex, we'll handle it separately
+        Boolean needsSnippet = true; // Snippet is more complex, we'll handle it separately
         if (searchQuery.getFields() != null) {
-            Hashtable<String,Integer> fieldsIndexes = new Hashtable<String,Integer>();
-            for(int i = 0; i< fieldsArray.length; i++){
-                fieldsIndexes.put(fieldsArray[i],i);
+            Hashtable<String, Integer> fieldsIndexes = new Hashtable<String, Integer>();
+            for (int i = 0; i < fieldsArray.length; i++) {
+                fieldsIndexes.put(fieldsArray[i], i);
                 fieldsToInclude[i] = false;
             }
+
+            // We always want URL & timestamp, we'll need it for other things like to, from,
+            // or siteSearch filters.
             fieldsToInclude[fieldsIndexes.get("urlTimestamp")] = true;
+            fieldsToInclude[fieldsIndexes.get("url")] = true;
+            fieldsToInclude[fieldsIndexes.get("tstamp")] = true;
+
             needsSnippet = false;
-            for(String field: searchQuery.getFields()){
+            for (String field : searchQuery.getFields()) {
                 switch (field) {
                     case "title":
                     case "tstamp":
@@ -222,31 +210,34 @@ public class SolrSearchService implements SearchService {
                         break;
                 }
             }
-            // Solr fields: id, type, typeReported, tstamp, urlTimestamp, statusCode, title, collection, 
-            // API fields: title, originalURL, linkToArchive, tstamp, contentLength, digest, mimeType, linkToScreenshot, date, encoding, linkToNoFrame, linkToOriginalFile, collection, snippet, linkToExtractedText
+            // Solr fields: id, type, typeReported, tstamp, urlTimestamp, statusCode, title,
+            // collection,
+            // API fields: title, originalURL, linkToArchive, tstamp, contentLength, digest,
+            // mimeType, linkToScreenshot, date, encoding, linkToNoFrame,
+            // linkToOriginalFile, collection, snippet, linkToExtractedText
         } else {
-            for(int i = 0; i< fieldsArray.length; i++){
+            for (int i = 0; i < fieldsArray.length; i++) {
                 fieldsToInclude[i] = true;
             }
         }
         StringBuilder stringBuilderFields = new StringBuilder();
-            boolean multipleFields = false;
-            for (int i = 0; i < fieldsArray.length; i++) {
-                if(fieldsToInclude[i] == true){
-                    if(multipleFields){ 
-                        stringBuilderFields.append(","); 
-                    }
-                    stringBuilderFields.append(fieldsArray[i]);
-                    multipleFields = true;
+        boolean multipleFields = false;
+        for (int i = 0; i < fieldsArray.length; i++) {
+            if (fieldsToInclude[i] == true) {
+                if (multipleFields) {
+                    stringBuilderFields.append(",");
                 }
+                stringBuilderFields.append(fieldsArray[i]);
+                multipleFields = true;
             }
-            solrQuery.setFields(stringBuilderFields.toString());
+        }
+        solrQuery.setFields(stringBuilderFields.toString());
 
         if (needsSnippet) {
             solrQuery.setHighlight(true);
             solrQuery.setHighlightFragsize(50);
             solrQuery.setHighlightSnippets(10);
-            solrQuery.add("hl.method","fastVector");
+            solrQuery.add("hl.method", "fastVector");
         }
 
         addDeduplicationFilterQuery(solrQuery, searchQuery.getDedupField());
@@ -267,43 +258,42 @@ public class SolrSearchService implements SearchService {
                 highlightedText = getFragments(snippets);
             }
         }
-        
+
         return highlightedText;
     }
 
     private static final String getFragments(List<String> snippets) {
         StringBuilder fragments = new StringBuilder();
         for (int i = 0; i < snippets.size(); i++) {
-            if (i > 0) {
-                fragments.append("<span class=\"ellipsis\"> ... </span>");
-            }
             fragments.append(snippets.get(i));
+            fragments.append("<span class=\"ellipsis\"> ... </span>");
         }
         return fragments.toString();
     }
 
-
-    private Object coalesce(Object obj1, Object obj2){
-        if(obj1 == null){
+    private Object coalesce(Object obj1, Object obj2) {
+        if (obj1 == null) {
             return obj2;
         }
         return obj1;
     }
 
     @SuppressWarnings("unchecked")
-    private Object getFirstResult(SolrDocument doc, String fieldName, Object defaultValue){
-        Collection <Object> solrField = (Collection <Object>) coalesce(doc.getFieldValues(fieldName), new HashSet<Object> ());
-        if(solrField.size() == 0){
+    private Object getFirstResult(SolrDocument doc, String fieldName, Object defaultValue) {
+        Collection<Object> solrField = (Collection<Object>) coalesce(doc.getFieldValues(fieldName),
+                new HashSet<Object>());
+        if (solrField.size() == 0) {
             return defaultValue;
         }
         return solrField.iterator().next();
     }
 
-    private String timestampSurtToTimestamp(String tu){
-        return tu.substring(0,tu.indexOf("/"));
+    private String timestampSurtToTimestamp(String tu) {
+        return tu.substring(0, tu.indexOf("/"));
     }
-    private String timestampSurtToSurt(String tu){
-        return tu.substring(tu.indexOf("/")+1);
+
+    private String timestampSurtToSurt(String tu) {
+        return tu.substring(tu.indexOf("/") + 1);
     }
 
     private SearchResults parseQueryResponse(QueryResponse queryResponse, SearchQuery searchQuery) {
@@ -312,97 +302,168 @@ public class SolrSearchService implements SearchService {
 
         SolrDocumentList solrDocumentList = queryResponse.getResults();
 
-        final Long to,from;
+        final Long to, from;
         final String[] siteSearchSurts;
 
-        if(searchQuery.isSearchBySite()){
+        final String[] replyFields;
+
+        if (searchQuery.getFields() == null) {
+            replyFields = new String[] { "title", "originalURL", "mimeType", "tstamp", "digest", "collection", "id",
+                    "snippet", "linkToArchive", "linkToNoFrame", "linkToScreenshot", "linkToExtractedText",
+                    "linkToMetadata", "linkToOriginalFile" };
+        } else {
+            replyFields = searchQuery.getFields();
+        }
+
+        if (searchQuery.isSearchBySite()) {
             siteSearchSurts = Arrays.asList(searchQuery.getSite()).stream()
-                .map(s -> URLNormalizers.canocalizeSurtUrl(s))
-                .collect(Collectors.toList())
-                .toArray(new String[0]);
+                    .map(s -> URLNormalizers.canocalizeSurtUrl(s))
+                    .collect(Collectors.toList())
+                    .toArray(new String[0]);
         } else {
             siteSearchSurts = null;
         }
 
-        if (searchQuery.getFrom() != null){
+        if (searchQuery.getFrom() != null) {
             from = Long.parseLong(Utils.canocalizeTimestamp(searchQuery.getFrom()));
         } else {
             from = null;
         }
 
-        if (searchQuery.getTo() != null){
+        if (searchQuery.getTo() != null) {
             to = Long.parseLong(Utils.canocalizeTimestamp(searchQuery.getTo()));
         } else {
             to = null;
         }
 
         for (SolrDocument doc : solrDocumentList) {
-            
-            List<Object> urlstimestamps = new ArrayList<Object>(doc.getFieldValues("urlTimestamp"));
-            
-            // Sanity check: urltimestamps should be in format TIMESTAMP/SURT
-            urlstimestamps = urlstimestamps.stream()
-                .filter(u -> ((String) u).indexOf("/") >= 0)
-                .collect(Collectors.toList());
-
-            // Filter out urltimestamps from wrong URLs if siteSearch was made
-            if(siteSearchSurts != null){
-                urlstimestamps = urlstimestamps.stream()
-                .filter(tu -> StringUtils.startsWithAny(timestampSurtToSurt((String) tu), siteSearchSurts))
-                .collect(Collectors.toList());
-            }
-
-            // Filter out urltimestamps from outside time-range if it's a time bounded query
-            if (from != null){
-                urlstimestamps = urlstimestamps.stream()
-                .filter(u -> Long.parseLong(timestampSurtToTimestamp((String) u)) >= from)
-                .collect(Collectors.toList());
-            }
-            if (to != null){
-                urlstimestamps = urlstimestamps.stream()
-                .filter(u -> Long.parseLong(timestampSurtToTimestamp((String) u)) <= to)
-                .collect(Collectors.toList());
-            }
-
-            if(urlstimestamps.size() == 0){
-                continue;
-            }
 
             // Find oldest URL/timestamp that matches the user query
             String oldestUrl = null, oldestTimestamp = null;
 
-            Iterator <Object> it = (Iterator <Object>) urlstimestamps.iterator();
-            while (it.hasNext()){
-                String currentUrlTimestamp = (String) it.next();
-                String currentTimestamp = timestampSurtToTimestamp(currentUrlTimestamp);
+            // User query doesn't care about time range or siteSearch, so we display the
+            // oldest version available:
+            if (from == null && to == null && siteSearchSurts == null) {
+                oldestUrl = (String) doc.getFieldValue("url");
+                oldestTimestamp = (String) doc.getFieldValue("tstamp");
+            } else // User query specifies dates or siteSearch, we need to go through the list of
+                   // versions and find the oldest that matches user query:
+            {
+                List<Object> urlstimestamps = new ArrayList<Object>(doc.getFieldValues("urlTimestamp"));
 
-                if(oldestUrl == null || Long.parseLong(oldestTimestamp) > Long.parseLong(currentTimestamp)) {
-                    oldestTimestamp = currentTimestamp;
-                    oldestUrl = URLNormalizers.surtToUrl(timestampSurtToSurt(currentUrlTimestamp));
+                // Sanity check: urltimestamps should be in format TIMESTAMP/SURT
+                urlstimestamps = urlstimestamps.stream()
+                        .filter(u -> ((String) u).indexOf("/") >= 0)
+                        .collect(Collectors.toList());
+
+                // Filter out urltimestamps from wrong URLs if siteSearch was made
+                if (siteSearchSurts != null) {
+                    urlstimestamps = urlstimestamps.stream()
+                            .filter(tu -> StringUtils.startsWithAny(timestampSurtToSurt((String) tu), siteSearchSurts))
+                            .collect(Collectors.toList());
+                }
+
+                // Filter out urltimestamps from outside time-range if it's a time bounded query
+                if (from != null) {
+                    urlstimestamps = urlstimestamps.stream()
+                            .filter(u -> Long.parseLong(timestampSurtToTimestamp((String) u)) >= from)
+                            .collect(Collectors.toList());
+                }
+                if (to != null) {
+                    urlstimestamps = urlstimestamps.stream()
+                            .filter(u -> Long.parseLong(timestampSurtToTimestamp((String) u)) <= to)
+                            .collect(Collectors.toList());
+                }
+
+                if (urlstimestamps.size() == 0) {
+                    continue;
+                }
+
+                Iterator<Object> it = (Iterator<Object>) urlstimestamps.iterator();
+                while (it.hasNext()) {
+                    String currentUrlTimestamp = (String) it.next();
+                    String currentTimestamp = timestampSurtToTimestamp(currentUrlTimestamp);
+
+                    if (oldestUrl == null || Long.parseLong(oldestTimestamp) > Long.parseLong(currentTimestamp)) {
+                        oldestTimestamp = currentTimestamp;
+                        oldestUrl = URLNormalizers.surtToUrl(timestampSurtToSurt(currentUrlTimestamp));
+                    }
                 }
             }
 
             SearchResultSolrImpl searchResult = new SearchResultSolrImpl();
-            searchResult.setTitle((String) doc.getFieldValue("title"));
-            searchResult.setOriginalURL(oldestUrl);
-            searchResult.setMimeType((String) getFirstResult(doc,"type",""));
-            searchResult.setTstamp(Long.parseLong(oldestTimestamp));
-            // searchResult.setOffset((Long) doc.getFieldValue("warc_offset"));
-            // searchResult.setFileName((String) doc.getFieldValue("warc_name"));
-            searchResult.setStatusCode((Integer) coalesce(doc.getFieldValue("statusCode"), Integer.valueOf(0)));
-            searchResult.setCollection((String) getFirstResult(doc,"collection",""));
-            searchResult.setContentLength(Long.valueOf(((String) getFirstResult(doc,"content","")).length()));
-            searchResult.setDigest((String) doc.getFieldValue("id"));
-            // searchResult.setEncoding((String) doc.getFieldValue("encoding"));
-            searchResult.setId((String) coalesce(doc.getFieldValue("id"),""));
-            searchResult.setSolrClient(this.solrClient);
 
-            searchResult.setSnippet(getHighlightedText(queryResponse, "content", (String) doc.get("id")));
-            try {
-                populateEndpointsLinks(searchResult,oldestTimestamp,oldestUrl);
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+            for (String field : replyFields) {
+                switch (field) {
+                    case "title":
+                        searchResult.setTitle((String) coalesce(doc.getFieldValue("title"),""));
+                        break;
+                    case "originalURL":
+                        searchResult.setOriginalURL(oldestUrl);
+                        break;
+                    case "mimeType":
+                        searchResult.setMimeType((String) coalesce(doc.getFieldValue("type"), ""));
+                        break;
+                    case "tstamp":
+                        searchResult.setTstamp(Long.parseLong(oldestTimestamp));
+                        break;
+                    case "digest":
+                        searchResult.setDigest((String) coalesce(doc.getFieldValue("id"), ""));
+                        break;
+                    case "collection":
+                        searchResult.setCollection((String) getFirstResult(doc, "collection", ""));
+                        break;
+                    case "id":
+                        searchResult.setId((String) coalesce(doc.getFieldValue("id"), ""));
+                        break;
+                    case "snippet":
+                        searchResult.setSnippet(getHighlightedText(queryResponse, "content", (String) doc.get("id")));
+                        break;
+                    case "linkToArchive":
+                        searchResult.setLinkToArchive(waybackServiceEndpoint + "/" + oldestTimestamp + "/" + oldestUrl);
+                        break;
+                    case "linkToNoFrame":
+                        searchResult.setLinkToNoFrame(
+                                waybackNoFrameServiceEndpoint + "/" + oldestTimestamp + "/" + oldestUrl);
+                        break;
+                    case "linkToScreenshot":
+                        try {
+                            searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
+                                    "?url="
+                                    + URLEncoder.encode(waybackNoFrameServiceEndpoint + "/" + oldestTimestamp + "/" + oldestUrl,
+                                            StandardCharsets.UTF_8.toString()));
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    case "linkToExtractedText":
+                        try {
+                            searchResult.setLinkToExtractedText(extractedTextServiceEndpoint.concat("?m=")
+                                    .concat(URLEncoder.encode(oldestUrl.concat("/").concat(oldestTimestamp),
+                                            StandardCharsets.UTF_8.toString())));
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    case "linkToMetadata":
+                        try {
+                            searchResult.setLinkToMetadata(textSearchServiceEndpoint.concat("?metadata=")
+                                    .concat(URLEncoder.encode(oldestUrl.concat("/").concat(oldestTimestamp),
+                                            StandardCharsets.UTF_8.toString())));
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    case "linkToOriginalFile":
+                        searchResult.setLinkToOriginalFile(
+                                waybackNoFrameServiceEndpoint + "/" + oldestTimestamp + "id_/" + oldestUrl);
+                        break;
+
+                }
+
             }
+            
+            searchResult.setSolrClient(this.solrClient);
             searchResultArrayList.add(searchResult);
         }
         searchResults.setResults(searchResultArrayList);
@@ -416,11 +477,11 @@ public class SolrSearchService implements SearchService {
     public SearchResults query(SearchQuery searchQuery, boolean urlSearch) {
         if (urlSearch) {
             String queryTerms = searchQuery.getQueryTerms();
-            List<String> solrQueryForSites = Arrays.asList( queryTerms.split(",") ).stream()
-                .filter(url -> Utils.urlValidator(url))
-                .map(url -> URLNormalizers.canocalizeSurtUrl(url))
-                .map(surt -> "surts:" + ClientUtils.escapeQueryChars(surt) + "*" )
-                .collect(Collectors.toList());
+            List<String> solrQueryForSites = Arrays.asList(queryTerms.split(",")).stream()
+                    .filter(url -> Utils.urlValidator(url))
+                    .map(url -> URLNormalizers.canocalizeSurtUrl(url))
+                    .map(surt -> "surts:" + ClientUtils.escapeQueryChars(surt) + "*")
+                    .collect(Collectors.toList());
             searchQuery.setQueryTerms(String.join(" OR ", solrQueryForSites));
         }
         return query(searchQuery);
@@ -431,7 +492,7 @@ public class SolrSearchService implements SearchService {
         SolrQuery solrQuery = convertSearchQuery(searchQuery);
         try {
             QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
-            SearchResults searchResults = parseQueryResponse(queryResponse,searchQuery);
+            SearchResults searchResults = parseQueryResponse(queryResponse, searchQuery);
             searchResults.setLastPageResults(isLastPage(searchResults.getEstimatedNumberResults(), searchQuery));
             return searchResults;
         } catch (SolrServerException | IOException e) {
