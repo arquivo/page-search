@@ -84,7 +84,7 @@ public class SolrSearchService implements SearchService {
             // fields.add("timeRange");
             // fields.add("host");
             fields.add("urlTimestamp");
-            // fields.add("surt");
+            fields.add("surt");
             // fields.add("surts");
             // fields.add("inlinksInternal");
             // fields.add("inlinksExternal");
@@ -105,14 +105,16 @@ public class SolrSearchService implements SearchService {
     }
 
     private void addDeduplicationFilterQuery(SolrQuery solrQuery, String dedupField) {
-        // if (dedupField.equalsIgnoreCase("url")) {
-        // dedupField = "surt_url";
-        // }
+        if (dedupField.equalsIgnoreCase("site")) {
+            dedupField = "surt";
+        }
 
-        // StringBuilder stringBuilder = new StringBuilder();
-        // stringBuilder.append("{!collapse field=")
-        // .append(dedupField).append("}");
-        // solrQuery.addFilterQuery(stringBuilder.toString());
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("{!collapse field=")
+        .append(dedupField).append("}");
+        solrQuery.addFilterQuery(stringBuilder.toString());
+        solrQuery.add("expand","true");
+        solrQuery.add("expand.rows","1");
     }
 
     private SolrQuery convertSearchQuery(SearchQuery searchQuery) {
@@ -187,6 +189,7 @@ public class SolrSearchService implements SearchService {
             // or siteSearch filters.
             fieldsToInclude[fieldsIndexes.get("urlTimestamp")] = true;
             fieldsToInclude[fieldsIndexes.get("url")] = true;
+            fieldsToInclude[fieldsIndexes.get("surt")] = true;
             fieldsToInclude[fieldsIndexes.get("tstamp")] = true;
 
             needsSnippet = false;
@@ -210,11 +213,6 @@ public class SolrSearchService implements SearchService {
                         break;
                 }
             }
-            // Solr fields: id, type, typeReported, tstamp, urlTimestamp, statusCode, title,
-            // collection,
-            // API fields: title, originalURL, linkToArchive, tstamp, contentLength, digest,
-            // mimeType, linkToScreenshot, date, encoding, linkToNoFrame,
-            // linkToOriginalFile, collection, snippet, linkToExtractedText
         } else {
             for (int i = 0; i < fieldsArray.length; i++) {
                 fieldsToInclude[i] = true;
@@ -301,11 +299,11 @@ public class SolrSearchService implements SearchService {
         ArrayList<SearchResult> searchResultArrayList = new ArrayList<>();
 
         SolrDocumentList solrDocumentList = queryResponse.getResults();
-
+        
         final Long to, from;
         final String[] siteSearchSurts;
-
         final String[] replyFields;
+        final Map<String, SolrDocumentList> expandedResults = queryResponse.getExpandedResults();
 
         if (searchQuery.getFields() == null) {
             replyFields = new String[] { "title", "originalURL", "mimeType", "tstamp", "digest", "collection", "id",
@@ -392,79 +390,22 @@ public class SolrSearchService implements SearchService {
             }
 
             SearchResultSolrImpl searchResult = new SearchResultSolrImpl();
-
-            for (String field : replyFields) {
-                switch (field) {
-                    case "title":
-                        searchResult.setTitle((String) coalesce(doc.getFieldValue("title"),""));
-                        break;
-                    case "originalURL":
-                        searchResult.setOriginalURL(oldestUrl);
-                        break;
-                    case "mimeType":
-                        searchResult.setMimeType((String) coalesce(doc.getFieldValue("type"), ""));
-                        break;
-                    case "tstamp":
-                        searchResult.setTstamp(Long.parseLong(oldestTimestamp));
-                        break;
-                    case "digest":
-                        searchResult.setDigest((String) coalesce(doc.getFieldValue("id"), ""));
-                        break;
-                    case "collection":
-                        searchResult.setCollection((String) getFirstResult(doc, "collection", ""));
-                        break;
-                    case "id":
-                        searchResult.setId((String) coalesce(doc.getFieldValue("id"), ""));
-                        break;
-                    case "snippet":
-                        searchResult.setSnippet(getHighlightedText(queryResponse, "content", (String) doc.get("id")));
-                        break;
-                    case "linkToArchive":
-                        searchResult.setLinkToArchive(waybackServiceEndpoint + "/" + oldestTimestamp + "/" + oldestUrl);
-                        break;
-                    case "linkToNoFrame":
-                        searchResult.setLinkToNoFrame(
-                                waybackNoFrameServiceEndpoint + "/" + oldestTimestamp + "/" + oldestUrl);
-                        break;
-                    case "linkToScreenshot":
-                        try {
-                            searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
-                                    "?url="
-                                    + URLEncoder.encode(waybackNoFrameServiceEndpoint + "/" + oldestTimestamp + "/" + oldestUrl,
-                                            StandardCharsets.UTF_8.toString()));
-                        } catch (UnsupportedEncodingException e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    case "linkToExtractedText":
-                        try {
-                            searchResult.setLinkToExtractedText(extractedTextServiceEndpoint.concat("?m=")
-                                    .concat(URLEncoder.encode(oldestUrl.concat("/").concat(oldestTimestamp),
-                                            StandardCharsets.UTF_8.toString())));
-                        } catch (UnsupportedEncodingException e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    case "linkToMetadata":
-                        try {
-                            searchResult.setLinkToMetadata(textSearchServiceEndpoint.concat("?metadata=")
-                                    .concat(URLEncoder.encode(oldestUrl.concat("/").concat(oldestTimestamp),
-                                            StandardCharsets.UTF_8.toString())));
-                        } catch (UnsupportedEncodingException e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    case "linkToOriginalFile":
-                        searchResult.setLinkToOriginalFile(
-                                waybackNoFrameServiceEndpoint + "/" + oldestTimestamp + "id_/" + oldestUrl);
-                        break;
-
-                }
-
-            }
-            
+            populateSearchResult(searchResult, queryResponse, doc, oldestUrl, oldestTimestamp, replyFields);
             searchResult.setSolrClient(this.solrClient);
             searchResultArrayList.add(searchResult);
+
+            if(expandedResults != null && expandedResults.size() > 0){
+                String surt = (String) doc.getFieldValue("surt");
+                if (surt == null || !expandedResults.containsKey(surt)) { 
+                    continue; 
+                }
+                SolrDocument expandedDoc = expandedResults.get(surt).iterator().next();
+                SearchResultSolrImpl expandedResult = new SearchResultSolrImpl();
+                populateSearchResult(expandedResult, queryResponse, expandedDoc, (String) expandedDoc.getFieldValue("url"), (String) expandedDoc.getFieldValue("tstamp"), replyFields);
+                searchResult.setSolrClient(this.solrClient);
+                searchResultArrayList.add(searchResult);
+            }
+
         }
         searchResults.setResults(searchResultArrayList);
         searchResults.setEstimatedNumberResults(queryResponse.getResults().getNumFound());
@@ -473,6 +414,77 @@ public class SolrSearchService implements SearchService {
         return searchResults;
     }
 
+    private void populateSearchResult(SearchResultSolrImpl searchResult, QueryResponse queryResponse, SolrDocument doc, String oldestUrl, String oldestTimestamp, String[] replyFields){
+        for (String field : replyFields) {
+            switch (field) {
+                case "title":
+                    searchResult.setTitle((String) coalesce(doc.getFieldValue("title"),""));
+                    break;
+                case "originalURL":
+                    searchResult.setOriginalURL(oldestUrl);
+                    break;
+                case "mimeType":
+                    searchResult.setMimeType((String) coalesce(doc.getFieldValue("type"), ""));
+                    break;
+                case "tstamp":
+                    searchResult.setTstamp(Long.parseLong(oldestTimestamp));
+                    break;
+                case "digest":
+                    searchResult.setDigest((String) coalesce(doc.getFieldValue("id"), ""));
+                    break;
+                case "collection":
+                    searchResult.setCollection((String) getFirstResult(doc, "collection", ""));
+                    break;
+                case "id":
+                    searchResult.setId((String) coalesce(doc.getFieldValue("id"), ""));
+                    break;
+                case "snippet":
+                    searchResult.setSnippet(getHighlightedText(queryResponse, "content", (String) doc.get("id")));
+                    break;
+                case "linkToArchive":
+                    searchResult.setLinkToArchive(waybackServiceEndpoint + "/" + oldestTimestamp + "/" + oldestUrl);
+                    break;
+                case "linkToNoFrame":
+                    searchResult.setLinkToNoFrame(
+                            waybackNoFrameServiceEndpoint + "/" + oldestTimestamp + "/" + oldestUrl);
+                    break;
+                case "linkToScreenshot":
+                    try {
+                        searchResult.setLinkToScreenshot(screenshotServiceEndpoint +
+                                "?url="
+                                + URLEncoder.encode(waybackNoFrameServiceEndpoint + "/" + oldestTimestamp + "/" + oldestUrl,
+                                        StandardCharsets.UTF_8.toString()));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case "linkToExtractedText":
+                    try {
+                        searchResult.setLinkToExtractedText(extractedTextServiceEndpoint.concat("?m=")
+                                .concat(URLEncoder.encode(oldestUrl.concat("/").concat(oldestTimestamp),
+                                        StandardCharsets.UTF_8.toString())));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case "linkToMetadata":
+                    try {
+                        searchResult.setLinkToMetadata(textSearchServiceEndpoint.concat("?metadata=")
+                                .concat(URLEncoder.encode(oldestUrl.concat("/").concat(oldestTimestamp),
+                                        StandardCharsets.UTF_8.toString())));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case "linkToOriginalFile":
+                    searchResult.setLinkToOriginalFile(
+                            waybackNoFrameServiceEndpoint + "/" + oldestTimestamp + "id_/" + oldestUrl);
+                    break;
+
+            }
+
+        }
+    }
     @Override
     public SearchResults query(SearchQuery searchQuery, boolean urlSearch) {
         if (urlSearch) {
