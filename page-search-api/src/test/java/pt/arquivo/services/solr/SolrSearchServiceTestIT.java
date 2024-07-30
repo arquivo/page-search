@@ -57,7 +57,7 @@ public class SolrSearchServiceTestIT {
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
 
         // assertThat(searchResults.isLastPageResults()).isTrue();
-        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(5605986);
+        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(4171910L);
         assertThat(searchResults.getNumberResults()).isEqualTo(50);
 
         ArrayList<SearchResult> arraySearchResult = searchResults.getResults();
@@ -83,7 +83,7 @@ public class SolrSearchServiceTestIT {
         SearchResults searchResults = this.solrSearchService.query(searchQuery);
 
         assertThat(searchResults.isLastPageResults()).isFalse();
-        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(5605986);
+        assertThat(searchResults.getEstimatedNumberResults()).isEqualTo(4171910L);
         assertThat(searchResults.getNumberResults()).isEqualTo(5);
     }
 

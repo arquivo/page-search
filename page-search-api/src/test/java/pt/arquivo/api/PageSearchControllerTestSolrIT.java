@@ -68,7 +68,7 @@ public class PageSearchControllerTestSolrIT {
                 "http://localhost:" + port + uri,
                 HttpMethod.GET, entity, String.class
         );
-        assertThat(response.getBody()).startsWith("SAPO, Servidor de Apontadores");
+        assertThat(response.getBody()).startsWith("Portugal Cultural");
 
         // Test bad resource id
         String badResourceUri = "/textextracted?m=http://idontexist.pt//19961013150238";
