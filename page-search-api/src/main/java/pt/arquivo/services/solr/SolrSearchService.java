@@ -78,11 +78,10 @@ public class SolrSearchService implements SearchService {
         final List<String> validDedupFields = Arrays.asList(new String[] {"site","surt","mimetype","type","collection","url"});
 
         // By default dedup by surt, if invalid dedupField then fallback to dedup by surt
-        if(!validDedupFields.contains(dedupField) || dedupField == "site"){
+        if(!validDedupFields.contains(dedupField) || dedupField.equals("site")){
             dedupField = "surt";
         }
-
-        if(dedupField == "mimetype"){
+        if(dedupField.equals("mimetype")){
             dedupField = "type";
         }
 
@@ -155,7 +154,7 @@ public class SolrSearchService implements SearchService {
                 dedupValue -= 1;
             }
 
-            if(!(dedupField == "surt" && searchQuery.isSearchBySite())) {
+            if(!(dedupField.equals("surt") && searchQuery.isSearchBySite())) {
                 StringBuilder stringBuilder = new StringBuilder();
                 stringBuilder.append("{!collapse field=")
                              .append(dedupField)
@@ -236,6 +235,7 @@ public class SolrSearchService implements SearchService {
             solrQuery.set("hl","false");
         }
 
+        LOG.info("Solr Query: "+solrQuery);
         return solrQuery;
     }
 
@@ -362,7 +362,7 @@ public class SolrSearchService implements SearchService {
 
             if (oldestTimestamp == null || Long.parseLong(oldestTimestamp) > Long.parseLong(currentTimestamp)) {
                 oldestTimestamp = currentTimestamp;
-                oldestUrlTimestamp = currentTimestamp;
+                oldestUrlTimestamp = currentUrlTimestamp;
             }
         }
         return oldestUrlTimestamp;
@@ -389,6 +389,7 @@ public class SolrSearchService implements SearchService {
             }
 
             String oldestUrlTimestamp = getOldestUrlTimestamp(urlstimestamps);
+
             oldestTimestamp = timestampSurtToTimestamp(oldestUrlTimestamp);
             oldestUrl = URLNormalizers.surtToUrl(timestampSurtToSurt(oldestUrlTimestamp));
             oldestCollection = timestampSurtToCollection(oldestUrlTimestamp);
