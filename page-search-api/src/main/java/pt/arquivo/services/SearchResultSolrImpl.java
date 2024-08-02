@@ -82,7 +82,7 @@ public class SearchResultSolrImpl implements SearchResult {
         return contentLength;
     }
 
-    public void setContentLength(Long contentLength) {
+    public void setContentLength(long contentLength) {
         this.contentLength = contentLength;
     }
 
@@ -170,7 +170,7 @@ public class SearchResultSolrImpl implements SearchResult {
         return offset;
     }
 
-    public void setOffset(Long offset) {
+    public void setOffset(long offset) {
         this.offset = offset;
     }
 
@@ -202,10 +202,13 @@ public class SearchResultSolrImpl implements SearchResult {
     @Override
     public String getExtractedText() {
         StringBuilder extractedText = new StringBuilder();
-        SolrQuery solQuery = new SolrQuery();
-        solQuery.setQuery("id:".concat(this.id));
+        SolrQuery solrQuery = new SolrQuery();
+        solrQuery.setQuery("id:".concat(this.id));
+        solrQuery.set("fl", "content,title");
+        solrQuery.set("hl","false");
+        LOG.info("ExtractedText Solr Query: " + solrQuery);
         try {
-            QueryResponse queryResponse = solrClient.query(solQuery);
+            QueryResponse queryResponse = solrClient.query(solrQuery);
             SolrDocument doc = queryResponse.getResults().get(0);
             extractedText.append(doc.getFieldValue("title"));
             extractedText.append(", ");
