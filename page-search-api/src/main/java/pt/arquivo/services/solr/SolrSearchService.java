@@ -190,7 +190,7 @@ public class SolrSearchService implements SearchService {
                 fieldsToInclude[fieldsIndexes.get("tstamp")] = true;
             }
 
-            //if we're deduping we'll need to get the dedup field to get the expand from solr 
+            // If we're deduping we'll need to get the dedup field to get the expand from solr 
             if (searchQuery.getDedupValue() > 1){
                 String dedupField = sanitizeDedupField(searchQuery.getDedupField());
                 fieldsToInclude[fieldsIndexes.get(dedupField)] = true;
@@ -230,7 +230,7 @@ public class SolrSearchService implements SearchService {
 
         solrQuery.setFields(stringBuilderFields.toString());
 
-        // If we don't need snippet we don't ask Solr for highligting (which is on by default)
+        // If we don't need snippet we don't ask Solr for highligting (which is on by default since v5)
         if(!needsSnippet){
             solrQuery.set("hl","false");
         }
@@ -253,6 +253,7 @@ public class SolrSearchService implements SearchService {
             }
         }
 
+        // If we don't get highlighted text on the content we display the first 500 chars of the content
         if (highlightedText.length() == 0) {
             SolrQuery solrQuery = new SolrQuery();
             solrQuery.set("q", "id:" + docId);
@@ -371,7 +372,7 @@ public class SolrSearchService implements SearchService {
     private SearchResultSolrImpl getSearchResultfromSolrDocument(SolrDocument doc, QueryResponse queryResponse, Long to, Long from, String[] siteSearchSurts, String[] collectionSearch, String[] replyFields ){
         String oldestUrl = null, oldestTimestamp = null, oldestCollection = null;
 
-        // User query doesn't care about time range or siteSearch, so we display the
+        // User query doesn't care about time range, siteSearch or collection, so we display the
         // oldest version available:
         if (from == null && to == null && siteSearchSurts == null && collectionSearch == null) {
             oldestUrl = (String) doc.getFieldValue("url");
@@ -396,8 +397,7 @@ public class SolrSearchService implements SearchService {
         }
 
         SearchResultSolrImpl searchResult = new SearchResultSolrImpl();
-        populateSearchResult(searchResult, queryResponse, doc, oldestUrl, oldestTimestamp, oldestCollection,
-                replyFields);
+        populateSearchResult(searchResult, queryResponse, doc, oldestUrl, oldestTimestamp, oldestCollection, replyFields);
         searchResult.setSolrClient(this.solrClient);
         return searchResult;
     }
@@ -414,6 +414,7 @@ public class SolrSearchService implements SearchService {
         final String[] replyFields;
         final Map<String, SolrDocumentList> expandedResults = queryResponse.getExpandedResults();
 
+        // Check which fields the user asked for
         if (searchQuery.getFields() == null) {
             // Default reply fields
             replyFields = new String[] { "title", "originalURL", "mimeType", "tstamp", "digest", "collection", "id",
@@ -423,6 +424,7 @@ public class SolrSearchService implements SearchService {
             replyFields = searchQuery.getFields();
         }
 
+        // Check if the user searched for one or more specific websites
         if (searchQuery.isSearchBySite()) {
             siteSearchSurts = Arrays.asList(searchQuery.getSite()).stream()
                     .map(s -> URLNormalizers.canocalizeSurtUrl(s))
@@ -432,22 +434,23 @@ public class SolrSearchService implements SearchService {
             siteSearchSurts = null;
         }
 
+        // Check if the request is time-bounded 
         if (searchQuery.getFrom() != null) {
             from = Long.parseLong(Utils.canocalizeTimestamp(searchQuery.getFrom()));
         } else {
             from = null;
         }
-
         if (searchQuery.getTo() != null) {
             to = Long.parseLong(Utils.canocalizeTimestamp(searchQuery.getTo()));
         } else {
             to = null;
         }
 
-        if (searchQuery.getCollection() == null || searchQuery.getCollection().length == 0) {
-            collectionSearch = null;
-        } else {
+        // Check if the user serched for one or more specific collections
+        if (searchQuery.isSearchByCollection()) {
             collectionSearch = searchQuery.getCollection();
+        } else {
+            collectionSearch = null;
         }
 
         for (SolrDocument doc : solrDocumentList) {
@@ -456,6 +459,8 @@ public class SolrSearchService implements SearchService {
             if(searchResult == null){
                 continue;
             }
+            searchResultArrayList.add(searchResult);
+            
             if (expandedResults != null && expandedResults.size() > 0) {
                 
                 String dedupField = sanitizeDedupField(searchQuery.getDedupField());
