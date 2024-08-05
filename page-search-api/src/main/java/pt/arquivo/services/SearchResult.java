@@ -17,5 +17,6 @@ public interface SearchResult {
     void setOffset(long offset);
     void setFileName(String fileName);
     void setContentLength(long contentLength);
+    void setDigest(String digest);
 }
 

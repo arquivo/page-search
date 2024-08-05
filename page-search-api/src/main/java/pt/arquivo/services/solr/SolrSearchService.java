@@ -154,72 +154,68 @@ public class SolrSearchService implements SearchService {
                 dedupValue -= 1;
             }
 
-            if(!(dedupField.equals("surt") && searchQuery.isSearchBySite())) {
-                StringBuilder stringBuilder = new StringBuilder();
-                stringBuilder.append("{!collapse field=")
-                             .append(dedupField)
-                             .append("}");
-                solrQuery.addFilterQuery(stringBuilder.toString());
-                if(dedupValue > 0){
-                    solrQuery.add("expand", "true");
-                    solrQuery.add("expand.rows", dedupValue.toString());
-                }
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("{!collapse field=")
+                            .append(dedupField)
+                            .append("}");
+            solrQuery.addFilterQuery(stringBuilder.toString());
+            if(dedupValue > 0){
+                solrQuery.add("expand", "true");
+                solrQuery.add("expand.rows", dedupValue.toString());
             }
         } 
 
         // Optimization: Make sure we only ask the fields we need.
         // At most we'll only need these fields from Solr:
         String[] fieldsArray = new String[] { "id", "type", "tstamp", "urlTimestamp", "surt", "title", "collection", "url" };
-        Boolean[] fieldsToInclude = new Boolean[fieldsArray.length];
+        Hashtable<String, Boolean> fieldInclusivity = new Hashtable<String, Boolean>();
         Boolean needsSnippet = true; // Snippet is different, we'll handle it separately
 
-        // If user only asks for certain fields, we only
+        // If user only asks for certain fields, we don't need to ask for every field
         if (searchQuery.getFields() != null) {
-            Hashtable<String, Integer> fieldsIndexes = new Hashtable<String, Integer>();
             for (int i = 0; i < fieldsArray.length; i++) {
-                fieldsIndexes.put(fieldsArray[i], i);
-                fieldsToInclude[i] = false;
+                fieldInclusivity.put(fieldsArray[i], false);
             }
 
             // Ask for the fields we'll need to answer the user's query
             if(searchQuery.isTimeBoundedQuery() || searchQuery.isSearchBySite() || searchQuery.isSearchByCollection()){
-                fieldsToInclude[fieldsIndexes.get("urlTimestamp")] = true;
+                fieldInclusivity.put("urlTimestamp", false);
             } else {
-                fieldsToInclude[fieldsIndexes.get("url")] = true;
-                fieldsToInclude[fieldsIndexes.get("collection")] = true;
-                fieldsToInclude[fieldsIndexes.get("tstamp")] = true;
+                fieldInclusivity.put("url", true);
+                fieldInclusivity.put("collection", true);
+                fieldInclusivity.put("tstamp", true);
             }
 
             // If we're deduping we'll need to get the dedup field to get the expand from solr 
             if (searchQuery.getDedupValue() > 1){
                 String dedupField = sanitizeDedupField(searchQuery.getDedupField());
-                fieldsToInclude[fieldsIndexes.get(dedupField)] = true;
+                fieldInclusivity.put(dedupField, true);
             }
 
             needsSnippet = false;
             for (String field : searchQuery.getFields()) {
                 switch (field) {
                     case "title":
-                        fieldsToInclude[fieldsIndexes.get(field)] = true;
+                        fieldInclusivity.put("title", true);
                         break;
                     case "mimeType":
-                        fieldsToInclude[fieldsIndexes.get("type")] = true;
+                        fieldInclusivity.put("type", true);
                         break;
                     case "snippet":
-                        fieldsToInclude[fieldsIndexes.get("id")] = true;
+                        fieldInclusivity.put("id", true);
                         needsSnippet = true;
                         break;
                 }
             }
         } else {
             for (int i = 0; i < fieldsArray.length; i++) {
-                fieldsToInclude[i] = true;
+                fieldInclusivity.put(fieldsArray[i], true);
             }
         }
         StringBuilder stringBuilderFields = new StringBuilder();
         boolean multipleFields = false;
         for (int i = 0; i < fieldsArray.length; i++) {
-            if (fieldsToInclude[i] == true) {
+            if (fieldInclusivity.get(fieldsArray[i]) == true) {
                 if (multipleFields) {
                     stringBuilderFields.append(",");
                 }
@@ -378,8 +374,8 @@ public class SolrSearchService implements SearchService {
             oldestUrl = (String) doc.getFieldValue("url");
             oldestTimestamp = (String) doc.getFieldValue("tstamp");
             oldestCollection = (String) doc.getFieldValue("collection");
-        } else // User query specifies dates or siteSearch, we need to go through the list of
-                // versions and find the oldest that matches user query:
+        } else // User query specifies dates, collections or siteSearch, we need to go through the list of
+               // versions and find the oldest that matches user query:
         {
             List<Object> urlstimestamps = new ArrayList<Object>(doc.getFieldValues("urlTimestamp"));
             urlstimestamps = filterUrlTimestamps(urlstimestamps, to, from, siteSearchSurts, collectionSearch);
@@ -567,14 +563,33 @@ public class SolrSearchService implements SearchService {
     public SearchResults query(SearchQuery searchQuery, boolean urlSearch) {
         if (urlSearch) {
             String queryTerms = searchQuery.getQueryTerms();
+            String tstamp = searchQuery.getFrom();
             List<String> solrQueryForSites = Arrays.asList(queryTerms.split(",")).stream()
                     .filter(url -> Utils.urlValidator(url))
                     .map(url -> URLNormalizers.canocalizeSurtUrl(url))
-                    .map(surt -> "surts:" + ClientUtils.escapeQueryChars(surt) + "*")
+                    .map(surt -> "urlTimestamp:" + "*/" + tstamp + "/" + ClientUtils.escapeQueryChars(surt))
                     .collect(Collectors.toList());
-            searchQuery.setQueryTerms(String.join(" OR ", solrQueryForSites));
+            SolrQuery solrQuery = new SolrQuery();
+            solrQuery.set("q", String.join(" OR ", solrQueryForSites));
+            solrQuery.set("fl","id,type,tstamp,urlTimestamp,surt,title,collection,url");
+            solrQuery.set("hl","false");
+
+            LOG.info("Solr Query (queryByUrl): "+solrQuery);
+            searchQuery.setFields(new String[] { "title", "originalURL", "mimeType", "tstamp", "digest", "collection", "id",
+            "linkToArchive", "linkToNoFrame", "linkToScreenshot", "linkToExtractedText",
+            "linkToMetadata", "linkToOriginalFile" }); // Everything except the snippet
+           
+            try {
+                QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
+                SearchResults searchResults = parseQueryResponse(queryResponse, searchQuery);
+                return searchResults;
+            } catch (SolrServerException | IOException e) {
+                LOG.error("Error querying Solr: ", e);
+                return null;
+            }
+        } else {    
+            return query(searchQuery);
         }
-        return query(searchQuery);
     }
 
     @Override
