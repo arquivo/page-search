@@ -68,7 +68,13 @@ public class SolrSearchService implements SearchService {
         return this.solrClient;
     }
 
-    // Makes sure that the requested dedupField is a valid solr field
+    /**
+     * Makes sure that the requested dedupField is a valid solr field. When the dedup field is "site" it gets converted into 
+     * "surt", and if it's "mimetype" it gets converted into "type" (because those are the Solr field names). When invalid
+     * or empty, the dedup field defaults to "surt" (which is the same as "site"). 
+     * @param dedupField
+     * @return
+     */
     private String sanitizeDedupField(String dedupField){
         if (dedupField == null) { 
             dedupField = "";
@@ -87,8 +93,12 @@ public class SolrSearchService implements SearchService {
 
         return dedupField;
     }  
-
-    // Converts the API request into an appropriate Solr query
+    
+    /**
+     * Converts the API request into an appropriate Solr query.
+     * @param searchQuery
+     * @return
+     */
     private SolrQuery convertSearchQuery(SearchQuery searchQuery) {
         SolrQuery solrQuery = new SolrQuery();
 
@@ -235,6 +245,15 @@ public class SolrSearchService implements SearchService {
         return solrQuery;
     }
 
+    /**
+     * Gets the highlighted text from the Solr "content" field to fill the API "snippet" field. If there was no text to be 
+     * hightlighted in the Solr "content" field, will use the first 500 chars of the "content" field instead.
+     * 
+     * @param queryResponse
+     * @param fieldName
+     * @param docId
+     * @return
+     */
     public String getHighlightedText(final QueryResponse queryResponse, final String fieldName, final String docId) {
         String highlightedText = "";
         Map<String, Map<String, List<String>>> highlights = queryResponse.getHighlighting();
@@ -283,6 +302,13 @@ public class SolrSearchService implements SearchService {
         return fragments.toString();
     }
 
+    /**
+     * If obj1 is not null returns obj1. Otherwise returns obj2.
+     *
+     * @param obj1
+     * @param obj2
+     * @return Object
+     */
     private Object coalesce(Object obj1, Object obj2) {
         if (obj1 == null) {
             return obj2;
@@ -290,30 +316,44 @@ public class SolrSearchService implements SearchService {
         return obj1;
     }
 
-    @SuppressWarnings("unchecked")
-    private Object getFirstResult(SolrDocument doc, String fieldName, Object defaultValue) {
-        Collection<Object> solrField = (Collection<Object>) coalesce(doc.getFieldValues(fieldName),
-                new HashSet<Object>());
-        if (solrField.size() == 0) {
-            return defaultValue;
-        }
-        return solrField.iterator().next();
-    }
-
+    /**
+     * Extracts the collection from a string in the format collection/timestamp/surt (as returned by the Solr field urlTimestamp)
+     *
+     * @param tu
+     * @return String
+     */
     private String timestampSurtToCollection(String tu) {
         return tu.substring(0, tu.indexOf("/"));
     }
 
+    /**
+     * Extracts the timestamp from a string in the format collection/timestamp/surt (as returned by the Solr field urlTimestamp)
+     *
+     * @param tu
+     * @return String
+     */
     private String timestampSurtToTimestamp(String tu) {
         String r = tu.substring(tu.indexOf("/") + 1);
         return r.substring(0, r.indexOf("/"));
     }
 
+    /**
+     * Extracts the surt from a string in the format collection/timestamp/surt (as returned by the Solr field urlTimestamp)
+     *
+     * @param tu
+     * @return String
+     */
     private String timestampSurtToSurt(String tu) {
         String r = tu.substring(tu.indexOf("/") + 1);
         return r.substring(r.indexOf("/") + 1);
     }
 
+    /**
+     * Given a list of strings in the format collection/timestamp/surt (as returned by the Solr field urlTimestamp),
+     * will filter out entries that do not match the user query, i.e., timestamp outside to/from range, surt doesn't match
+     * siteSearch or collection doesn't match collection search
+     *
+     */
     private List<Object> filterUrlTimestamps(List <Object> urlstimestamps, Long to, Long from, String[] siteSearchSurts, String[] collectionSearch){
                 urlstimestamps = urlstimestamps.stream()
                         .filter(u -> ((String) u).indexOf("/") >= 0)
@@ -349,6 +389,10 @@ public class SolrSearchService implements SearchService {
                 return urlstimestamps;
     }
 
+    /**
+     * Given a list of strings in the format collection/timestamp/surt (as returned by the Solr field urlTimestamp), will
+     * return the one with the oldest timestamp
+     */
     private String getOldestUrlTimestamp(List <Object> urlstimestamps){
         String oldestTimestamp = null;
         String oldestUrlTimestamp = null;
@@ -365,8 +409,23 @@ public class SolrSearchService implements SearchService {
         return oldestUrlTimestamp;
     }
 
+    /**
+     * Takes a SolrDocument object and converts it into a SearchResult, making sure the result matches the user query.  
+     * Will return null if the document doesn't match the user query.
+     * 
+     * @param doc
+     * @param queryResponse
+     * @param to
+     * @param from
+     * @param siteSearchSurts
+     * @param collectionSearch
+     * @param replyFields
+     * @return
+     */
     private SearchResultSolrImpl getSearchResultfromSolrDocument(SolrDocument doc, QueryResponse queryResponse, Long to, Long from, String[] siteSearchSurts, String[] collectionSearch, String[] replyFields ){
-        String oldestUrl = null, oldestTimestamp = null, oldestCollection = null;
+        String oldestUrl = null;
+        String oldestTimestamp = null;
+        String oldestCollection = null;
 
         // User query doesn't care about time range, siteSearch or collection, so we display the
         // oldest version available:
@@ -398,6 +457,13 @@ public class SolrSearchService implements SearchService {
         return searchResult;
     }
 
+    /**
+     * Parses the reply from Solr and populates the API search results, making sure every result mateches the user query.
+     * 
+     * @param queryResponse
+     * @param searchQuery
+     * @return
+     */
     private SearchResults parseQueryResponse(QueryResponse queryResponse, SearchQuery searchQuery) {
         SearchResults searchResults = new SearchResults();
         ArrayList<SearchResult> searchResultArrayList = new ArrayList<>();
@@ -485,6 +551,17 @@ public class SolrSearchService implements SearchService {
         return searchResults;
     }
 
+    /**
+     * Populates one API search result, making sure only to populate fields that the user asked for.
+     * 
+     * @param searchResult
+     * @param queryResponse
+     * @param doc
+     * @param oldestUrl
+     * @param oldestTimestamp
+     * @param oldestCollection
+     * @param replyFields
+     */
     private void populateSearchResult(SearchResultSolrImpl searchResult, QueryResponse queryResponse, SolrDocument doc,
             String oldestUrl, String oldestTimestamp, String oldestCollection, String[] replyFields) {
         for (String field : replyFields) {
@@ -559,6 +636,11 @@ public class SolrSearchService implements SearchService {
         }
     }
 
+    /**
+     * Implementation of the SearchService query by URL (used in queryByUrl). This is only used for metadata and
+     * textextracted to get a specific entry, so it will output at most one entry. Deduplication and snippet is 
+     * turned off for this query. Site search does not use this, it's handled by the other query function.
+     */
     @Override
     public SearchResults query(SearchQuery searchQuery, boolean urlSearch) {
         if (urlSearch) {
@@ -567,7 +649,7 @@ public class SolrSearchService implements SearchService {
             List<String> solrQueryForSites = Arrays.asList(queryTerms.split(",")).stream()
                     .filter(url -> Utils.urlValidator(url))
                     .map(url -> URLNormalizers.canocalizeSurtUrl(url))
-                    .map(surt -> "urlTimestamp:" + "*/" + tstamp + "/" + ClientUtils.escapeQueryChars(surt))
+                    .map(surt -> "urlTimestamp:" + "*/" + Utils.canocalizeTimestamp(tstamp) + "/" + ClientUtils.escapeQueryChars(surt))
                     .collect(Collectors.toList());
             SolrQuery solrQuery = new SolrQuery();
             solrQuery.set("q", String.join(" OR ", solrQueryForSites));
@@ -592,6 +674,9 @@ public class SolrSearchService implements SearchService {
         }
     }
 
+    /**
+     * Implementation of the SearchService query. This is the function that is used for most queries.
+     */
     @Override
     public SearchResults query(SearchQuery searchQuery) {
         SolrQuery solrQuery = convertSearchQuery(searchQuery);
