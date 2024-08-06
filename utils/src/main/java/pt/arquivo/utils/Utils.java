@@ -17,6 +17,14 @@ public class Utils {
     }
 
     public static String canocalizeTimestamp(String timestamp){
+        // Making sure the timestamp contains only digits
+        for (int i = 0 ; i < timestamp.length() ; i++) {
+            char c = timestamp.charAt(i);
+            if (c < '0' || c > '9'){
+                return "19960101000000";
+            }
+        }
+
         // YYYYMMDDhhmmss (length:14)
         String r = timestamp;
         if (timestamp.length() > 14){
