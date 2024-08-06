@@ -1,33 +1,36 @@
 package pt.arquivo.services.solr;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.util.ClientUtils;
-import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.HttpSolrClient;
-import org.apache.solr.client.solrj.response.QueryResponse;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import pt.arquivo.services.*;
-import pt.arquivo.utils.URLNormalizers;
-import pt.arquivo.utils.Utils;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.util.ClientUtils;
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrDocumentList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+
+import pt.arquivo.services.SearchQuery;
+import pt.arquivo.services.SearchResult;
+import pt.arquivo.services.SearchResultSolrImpl;
+import pt.arquivo.services.SearchResults;
+import pt.arquivo.services.SearchService;
+import pt.arquivo.utils.URLNormalizers;
+import pt.arquivo.utils.Utils;
 
 public class SolrSearchService implements SearchService {
 
@@ -174,6 +177,66 @@ public class SolrSearchService implements SearchService {
                 solrQuery.add("expand.rows", dedupValue.toString());
             }
         } 
+
+        // Handle type request
+        if (searchQuery.isSearchByType()) {
+            String[] types = searchQuery.getType();
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("type:");
+            boolean multipleType = false;
+            for (String type : types) {
+                if (multipleType)
+                    stringBuilder.append(" OR type:");
+
+                type = type.toLowerCase();
+                if (type.indexOf('/')<0){
+                    switch (type) {
+                        case "pdf":
+                            stringBuilder.append(ClientUtils.escapeQueryChars("application/pdf"));
+                            break;
+                        case "xls":
+                        case "xlsx":
+                            stringBuilder.append(ClientUtils.escapeQueryChars("application/vnd.ms-excel"));
+                            stringBuilder.append(" OR type:");
+                            stringBuilder.append(ClientUtils.escapeQueryChars("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+                            break;
+                        case "ppt":
+                        case "pptx":
+                            stringBuilder.append(ClientUtils.escapeQueryChars("application/vnd.ms-powerpoint"));
+                            stringBuilder.append(" OR type:");
+                            stringBuilder.append(ClientUtils.escapeQueryChars("application/vnd.openxmlformats-officedocument.presentationml.presentation"));
+                            break;
+                        case "doc":
+                        case "docx":
+                            stringBuilder.append(ClientUtils.escapeQueryChars("application/msword"));
+                            stringBuilder.append(" OR type:");
+                            stringBuilder.append(ClientUtils.escapeQueryChars("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+                            break;
+                        case "ps":
+                        case "ai":
+                        case "eps":
+                            stringBuilder.append(ClientUtils.escapeQueryChars("application/postscript"));
+                            break;
+                        case "htm":
+                        case "html":
+                            stringBuilder.append(ClientUtils.escapeQueryChars("text/html"));
+                            break;
+                        case "rtf":
+                            stringBuilder.append(ClientUtils.escapeQueryChars("application/rtf"));
+                            break;
+                        default:
+                            stringBuilder.append("*" + ClientUtils.escapeQueryChars(type) + "*");
+                            break;
+                    }
+                } else {
+                    stringBuilder.append(ClientUtils.escapeQueryChars(type));
+                }
+
+                multipleType = true;
+            }
+            solrQuery.addFilterQuery(stringBuilder.toString());
+        }
+
 
         // Optimization: Make sure we only ask the fields we need.
         // At most we'll only need these fields from Solr:
