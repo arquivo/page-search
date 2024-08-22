@@ -29,6 +29,7 @@ import pt.arquivo.services.SearchResult;
 import pt.arquivo.services.SearchResultSolrImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
+import pt.arquivo.services.SearchServiceConfiguration;
 import pt.arquivo.utils.URLNormalizers;
 import pt.arquivo.utils.Utils;
 
@@ -62,6 +63,20 @@ public class SolrSearchService implements SearchService {
 
     @Value("${searchpages.textsearch.service.link:http://localhost:8081/textsearch}")
     private String textSearchServiceEndpoint;
+
+    // For setting configs without autowired shanenigans
+    public SolrSearchService(SearchServiceConfiguration configuration){
+        this.startDate = configuration.getStartDate();
+        this.serviceName = configuration.getServiceName();
+        this.screenshotServiceEndpoint = configuration.getScreenshotServiceEndpoint();
+        this.waybackServiceEndpoint = configuration.getWaybackServiceEndpoint();
+        this.waybackNoFrameServiceEndpoint = configuration.getWaybackNoFrameServiceEndpoint();
+        this.extractedTextServiceEndpoint = configuration.getExtractedTextServiceEndpoint();
+        this.baseSolrUrl = configuration.getBaseSolrUrl();
+        this.textSearchServiceEndpoint = configuration.getTextSearchServiceEndpoint();
+    }
+
+    public SolrSearchService(){}
 
     public HttpSolrClient getSolrClient() {
         if (this.solrClient == null) {
