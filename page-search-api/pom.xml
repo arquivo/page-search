@@ -173,7 +173,7 @@
                                         </wait>
                                     </run>
                                 </image>
-                                <image>
+                                <!-- <image>
                                     <name>arquivo/pagesearch-solr-test</name>
                                     <run>
                                         <ports>
@@ -186,7 +186,7 @@
                                             <time>10000</time>
                                         </wait>
                                     </run>
-                                </image>
+                                </image> -->
                             </images>
                         </configuration>
                     </plugin>
