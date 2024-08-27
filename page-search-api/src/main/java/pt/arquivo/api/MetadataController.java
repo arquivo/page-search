@@ -65,6 +65,10 @@ public class MetadataController {
 
                         if (cdxResult.getCollection() != null && !cdxResult.getCollection().isEmpty())
                             textSearchResult.setCollection(cdxResult.getCollection());
+                        textSearchResult.setContentLength(cdxResult.getContentLength());
+                        textSearchResult.setOffset(cdxResult.getOffset());
+                        textSearchResult.setFileName(cdxResult.getFileName());
+                        textSearchResult.setDigest(cdxResult.getDigest());
                     }
                 }
                 metadataResponse.setLinkToService(linkToService);

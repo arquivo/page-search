@@ -21,7 +21,7 @@ public class SearchResultSolrImpl implements SearchResult {
     private String originalURL;
     private String linkToArchive;
     private String tstamp;
-    private long contentLength;
+    private Long contentLength;
     private String digest;
     private String mimeType;
     private String encoding;
@@ -34,7 +34,7 @@ public class SearchResultSolrImpl implements SearchResult {
     private String snippet;
     private String fileName;
     private String collection;
-    private long offset;
+    private Long offset;
     private Integer statusCode;
     private String id;
 
@@ -70,7 +70,7 @@ public class SearchResultSolrImpl implements SearchResult {
         return tstamp;
     }
 
-    public void setTstamp(long tstamp) {
+    public void setTstamp(Long tstamp) {
         this.tstamp = String.valueOf(tstamp);
     }
 
@@ -78,7 +78,7 @@ public class SearchResultSolrImpl implements SearchResult {
         this.tstamp = timeStamp;
     }
 
-    public long getContentLength() {
+    public Long getContentLength() {
         return contentLength;
     }
 
@@ -166,7 +166,7 @@ public class SearchResultSolrImpl implements SearchResult {
         this.fileName = fileName;
     }
 
-    public long getOffset() {
+    public Long getOffset() {
         return offset;
     }
 
@@ -202,10 +202,13 @@ public class SearchResultSolrImpl implements SearchResult {
     @Override
     public String getExtractedText() {
         StringBuilder extractedText = new StringBuilder();
-        SolrQuery solQuery = new SolrQuery();
-        solQuery.setQuery("id:".concat(this.id));
+        SolrQuery solrQuery = new SolrQuery();
+        solrQuery.setQuery("id:".concat(this.id));
+        solrQuery.set("fl", "content,title");
+        solrQuery.set("hl","false");
+        LOG.info("ExtractedText Solr Query: " + solrQuery);
         try {
-            QueryResponse queryResponse = solrClient.query(solQuery);
+            QueryResponse queryResponse = solrClient.query(solrQuery);
             SolrDocument doc = queryResponse.getResults().get(0);
             extractedText.append(doc.getFieldValue("title"));
             extractedText.append(", ");

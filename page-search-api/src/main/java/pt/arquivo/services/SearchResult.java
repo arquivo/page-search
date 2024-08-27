@@ -14,5 +14,9 @@ public interface SearchResult {
 
     void setStatusCode(Integer statusCode);
     void setCollection(String collection);
+    void setOffset(long offset);
+    void setFileName(String fileName);
+    void setContentLength(long contentLength);
+    void setDigest(String digest);
 }
 
