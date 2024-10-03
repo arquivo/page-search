@@ -2,6 +2,7 @@ package pt.arquivo.services.fusion;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,10 +13,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
 import pt.arquivo.services.SearchQuery;
+import pt.arquivo.services.SearchQueryImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchResult;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.SearchServiceConfiguration;
+import pt.arquivo.services.nutchwax.ExternalNutchWaxSearchService;
 import pt.arquivo.services.nutchwax.NutchWaxSearchService;
 import pt.arquivo.services.solr.SolrSearchService;
 
@@ -70,7 +73,7 @@ public class FusionSearchService implements SearchService {
 
     private SolrSearchService solrSearchService = null;
 
-    private NutchWaxSearchService nutchWaxSearchService = null;
+    private ExternalNutchWaxSearchService nutchWaxSearchService = null;
 
     private SolrSearchService getSolrSearchService(){
         if (solrSearchService == null){
@@ -79,14 +82,9 @@ public class FusionSearchService implements SearchService {
         return solrSearchService;
     }
 
-    private NutchWaxSearchService getNutchWaxSearchService(){
+    private ExternalNutchWaxSearchService getNutchWaxSearchService(){
         if(nutchWaxSearchService == null){
-            try {
-                nutchWaxSearchService = new NutchWaxSearchService();
-            } catch (IOException e) {
-                LOG.error("[FusionSearchService] - Failed to load NutchWax search service: " + e);
-                return null;
-            }
+            nutchWaxSearchService = new ExternalNutchWaxSearchService();
         }
         return nutchWaxSearchService;
     }
@@ -114,9 +112,67 @@ public class FusionSearchService implements SearchService {
 
     @Override
     public SearchResults query(SearchQuery searchQuery) {
-        SearchResults solrResults = getSolrSearchService().query(searchQuery);
-        SearchResults nutchResults = getNutchWaxSearchService().query(searchQuery);
+        int totalMaxItems = searchQuery.getMaxItems();
+        int totalOffset = searchQuery.getOffset();
+        int page = totalOffset/totalMaxItems;
+
+        int odd = totalMaxItems % 2;
+
+        int solrMaxItems = totalMaxItems / 2 + odd;
+        int solrOffset = page*solrMaxItems;
+        SearchQuery solrSearchQuery = cloneSearchQuery(searchQuery);
+        solrSearchQuery.setMaxItems(solrMaxItems);
+        solrSearchQuery.setOffset(solrOffset);
+
+        int nutchMaxItems = totalMaxItems / 2;
+        int nutchOffset = page*nutchMaxItems;
+        SearchQuery nutchSearchQuery = cloneSearchQuery(searchQuery);
+        nutchSearchQuery.setMaxItems(nutchMaxItems);
+        nutchSearchQuery.setOffset(nutchOffset);
+
+        final SearchResults[] results = new SearchResults[2];
+
+        Thread solrThread = new Thread(() -> {
+            results[0] = getSolrSearchService().query(solrSearchQuery);
+        });
+        Thread nutchThread = new Thread(() -> {
+            results[1] = getNutchWaxSearchService().query(nutchSearchQuery);
+        });
+
+        solrThread.start();
+        nutchThread.start();
+
+        try {
+            solrThread.join();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        try {
+            nutchThread.join();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        SearchResults solrResults = results[0];
+        SearchResults nutchResults = results[1];
 
         return mergeResults(solrResults, nutchResults);
+    }
+
+    private SearchQuery cloneSearchQuery(SearchQuery searchQuery){
+        SearchQuery r = new SearchQueryImpl(searchQuery.getQueryTerms());
+        if (searchQuery.getOffset() > 0) r.setOffset(searchQuery.getOffset());
+        if (searchQuery.getMaxItems() != 50) r.setMaxItems(searchQuery.getMaxItems());
+        if (searchQuery.getFrom() != null) r.setFrom(searchQuery.getFrom());
+        if (searchQuery.getTo() != null) r.setTo(searchQuery.getTo());
+        if (searchQuery.getType() != null) r.setType(searchQuery.getType());
+        if (searchQuery.getSite() != null) r.setSite(searchQuery.getSite());
+        if (searchQuery.getCollection() != null) r.setCollection(searchQuery.getCollection());
+        if (searchQuery.getDedupField() != null) r.setDedupField(searchQuery.getDedupField());
+        if (searchQuery.getDedupValue() != 2) r.setDedupValue(searchQuery.getDedupValue());
+        return r;
     }
 }
