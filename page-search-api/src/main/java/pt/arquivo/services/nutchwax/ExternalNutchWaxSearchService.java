@@ -1,5 +1,6 @@
 package pt.arquivo.services.nutchwax;
 
+import java.io.FileInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -7,6 +8,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Properties;
 import java.util.Scanner;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -27,13 +29,28 @@ public class ExternalNutchWaxSearchService implements SearchService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SolrSearchService.class);
 
-    @Value("${searchpages.textsearch.service.bean.fusion.nutchwax.textsearch.api.link:http://preprod.arquivo.pt/textsearch}")
+    @Value("${searchpages.textsearch.service.bean.fusion.nutchwax.textsearch.api.link:https://preprod.arquivo.pt/textsearch}")
     private String textSearchServiceEndpoint;
+
+    public ExternalNutchWaxSearchService() {
+        final Properties properties = new Properties();
+        if (textSearchServiceEndpoint == null){
+            try {
+                LOG.info("Failed to autowire the textSearchServiceEndpoint, attempting to manually load properties...");
+                properties.load(new FileInputStream("src/main/resources/application.properties"));
+                textSearchServiceEndpoint = properties.getProperty("searchpages.textsearch.service.bean.fusion.nutchwax.textsearch.api.link");
+            } catch (Exception e) {
+                LOG.error("ExternalNutchWaxSearchService - Failed to open application.properties file: ", e);
+                textSearchServiceEndpoint = "https://dev.arquivo.pt/textsearchnutchwax"; 
+            }
+        }
+        
+    }
 
     private URL searchQueryToUrl(SearchQuery searchQuery) throws MalformedURLException, UnsupportedEncodingException{
         StringBuilder stringBuilder = new StringBuilder();
         final String encoding = StandardCharsets.UTF_8.toString();
-        stringBuilder.append("https://preprod.arquivo.pt/textsearch");
+        stringBuilder.append(textSearchServiceEndpoint);
         stringBuilder.append("?q=").append(URLEncoder.encode(searchQuery.getQueryTerms(), encoding));
         if (searchQuery.getOffset() > 0){
             stringBuilder.append("&offset=").append(URLEncoder.encode(String.valueOf(searchQuery.getOffset()),encoding));
@@ -85,7 +102,7 @@ public class ExternalNutchWaxSearchService implements SearchService {
          if (searchUrl) {
 
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("https://preprod.arquivo.pt/textsearch");
+            stringBuilder.append(textSearchServiceEndpoint);
             stringBuilder.append("?metadata=");
             stringBuilder.append(searchQuery.getQueryTerms());
             stringBuilder.append("/");

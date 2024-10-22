@@ -1,16 +1,11 @@
 package pt.arquivo.services.fusion;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.CountDownLatch;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 
 import pt.arquivo.services.SearchQuery;
 import pt.arquivo.services.SearchQueryImpl;
@@ -19,7 +14,6 @@ import pt.arquivo.services.SearchResult;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.SearchServiceConfiguration;
 import pt.arquivo.services.nutchwax.ExternalNutchWaxSearchService;
-import pt.arquivo.services.nutchwax.NutchWaxSearchService;
 import pt.arquivo.services.solr.SolrSearchService;
 
 public class FusionSearchService implements SearchService {
@@ -75,16 +69,26 @@ public class FusionSearchService implements SearchService {
 
     private ExternalNutchWaxSearchService nutchWaxSearchService = null;
 
+    @Bean
+    SolrSearchService generateSolrService() {
+        return new SolrSearchService(this.getConfiguration());
+    }
+
+    @Bean
+    ExternalNutchWaxSearchService generateExternalNutchWaxService() {
+        return new ExternalNutchWaxSearchService();
+    }
+
     private SolrSearchService getSolrSearchService(){
         if (solrSearchService == null){
-            solrSearchService = new SolrSearchService(this.getConfiguration());
+            solrSearchService = generateSolrService();
         }
         return solrSearchService;
     }
 
     private ExternalNutchWaxSearchService getNutchWaxSearchService(){
         if(nutchWaxSearchService == null){
-            nutchWaxSearchService = new ExternalNutchWaxSearchService();
+            nutchWaxSearchService = generateExternalNutchWaxService();
         }
         return nutchWaxSearchService;
     }
@@ -118,12 +122,14 @@ public class FusionSearchService implements SearchService {
 
         int odd = totalMaxItems % 2;
 
+        // Half of the query will be made to Solr
         int solrMaxItems = totalMaxItems / 2 + odd;
         int solrOffset = page*solrMaxItems;
         SearchQuery solrSearchQuery = cloneSearchQuery(searchQuery);
         solrSearchQuery.setMaxItems(solrMaxItems);
         solrSearchQuery.setOffset(solrOffset);
 
+        // The other half to the external API using nutchwax
         int nutchMaxItems = totalMaxItems / 2;
         int nutchOffset = page*nutchMaxItems;
         SearchQuery nutchSearchQuery = cloneSearchQuery(searchQuery);
@@ -132,6 +138,7 @@ public class FusionSearchService implements SearchService {
 
         final SearchResults[] results = new SearchResults[2];
 
+        // Using threads to allow both requests to be made in parallel
         Thread solrThread = new Thread(() -> {
             results[0] = getSolrSearchService().query(solrSearchQuery);
         });
@@ -145,15 +152,13 @@ public class FusionSearchService implements SearchService {
         try {
             solrThread.join();
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOG.error("FusionSearchService - Something went wrong with the Solr request: ", e);
         }
 
         try {
             nutchThread.join();
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOG.error("FusionSearchService - Something went wrong with the Nutch request: ", e);
         }
         
         SearchResults solrResults = results[0];
