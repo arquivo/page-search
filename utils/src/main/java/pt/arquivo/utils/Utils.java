@@ -17,11 +17,12 @@ public class Utils {
     }
 
     public static String canocalizeTimestamp(String timestamp){
+        final String defaultTimestamp = "19910101000000";
         // Making sure the timestamp contains only digits
         for (int i = 0 ; i < timestamp.length() ; i++) {
             char c = timestamp.charAt(i);
             if (c < '0' || c > '9'){
-                return "19960101000000";
+                return defaultTimestamp;
             }
         }
 
@@ -30,7 +31,7 @@ public class Utils {
         if (timestamp.length() > 14){
             r = timestamp.substring(0, 14);
         } else if(timestamp.length() < 14) {
-            r = timestamp + "19960101000000".substring(timestamp.length());
+            r = timestamp + defaultTimestamp.substring(timestamp.length());
         }
         Integer year, month, day, hour, minute, second;
         
@@ -40,8 +41,8 @@ public class Utils {
         hour = Integer.parseInt(r.substring(8,10));
         minute = Integer.parseInt(r.substring(10,12));
         second = Integer.parseInt(r.substring(12,14));
-        if(year < 1996 || year > 9999){
-            year = 1996;
+        if(year < 1991 || year > 9999){
+            year = 1991;
         }
         if(month < 1 || month > 12){
             month = 1;
