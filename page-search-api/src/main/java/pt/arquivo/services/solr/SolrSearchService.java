@@ -10,6 +10,8 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
@@ -121,7 +123,7 @@ public class SolrSearchService implements SearchService {
     private SolrQuery convertSearchQuery(SearchQuery searchQuery) {
         SolrQuery solrQuery = new SolrQuery();
 
-        solrQuery.setQuery(ClientUtils.escapeQueryChars(searchQuery.getQueryTerms()));
+        solrQuery.setQuery(sanitizeQuery(searchQuery.getQueryTerms(),solrQuery));
         solrQuery.setStart(searchQuery.getOffset()); // No need to escape because offset and maxItems are integers
         solrQuery.setRows(searchQuery.getMaxItems());
 
@@ -317,6 +319,55 @@ public class SolrSearchService implements SearchService {
 
         LOG.info("Solr Query: "+solrQuery);
         return solrQuery;
+    }
+
+    /**
+     * Escapes special symbols, but not all of them to allow for "" (exact match) and - (excluding) searches
+     */
+    private String sanitizeQuery(String query, SolrQuery solrQuery){
+        
+        Pattern exactMatchPattern = Pattern.compile("(^|.*?\\s)\"([^\"]*)\"(\\s.*|$)");
+        String line = query;
+        Matcher m = exactMatchPattern.matcher(line);
+
+        ArrayList <String> outsideQuotes = new ArrayList <String>();
+        ArrayList <String> insideQuotes = new ArrayList <String>();
+        while (m.find()) {
+            outsideQuotes.add(m.group(1));
+            insideQuotes.add(m.group(2));
+            line = m.group(3);
+            m = exactMatchPattern.matcher(line);
+        }
+        outsideQuotes.add(line);
+
+        Pattern excludePattern = Pattern.compile("(^|.*?\\s)-([^\\s]+)(.*)");
+        ArrayList <String> excludeTerms = new ArrayList<>();
+        for (int i = 0; i < outsideQuotes.size(); i++){
+            line = outsideQuotes.get(i);
+            m = excludePattern.matcher(line);
+            String sanitized = "";
+            while(m.find()){
+                sanitized += ClientUtils.escapeQueryChars(m.group(1));
+                excludeTerms.add(ClientUtils.escapeQueryChars(m.group(2)));
+                line = m.group(3);
+                m = excludePattern.matcher(line);
+            }
+            sanitized += ClientUtils.escapeQueryChars(line);
+            outsideQuotes.set(i, sanitized);
+        }
+        
+        String sanitizedQuery = "";
+        for(int i = 0; i<insideQuotes.size();i++){
+            sanitizedQuery += outsideQuotes.get(i) + '"' + ClientUtils.escapeQueryChars(insideQuotes.get(i)) + '"';
+        }
+        sanitizedQuery += outsideQuotes.get(insideQuotes.size());
+
+        for(int i = 0; i<excludeTerms.size(); i++){
+            solrQuery.addFilterQuery("-content:"+excludeTerms.get(i));
+            solrQuery.addFilterQuery("-title:"+excludeTerms.get(i));
+        }
+
+        return sanitizedQuery;
     }
 
     /**
