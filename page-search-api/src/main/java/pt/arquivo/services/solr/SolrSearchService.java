@@ -258,7 +258,7 @@ public class SolrSearchService implements SearchService {
 
         // Optimization: Make sure we only ask the fields we need.
         // At most we'll only need these fields from Solr:
-        String[] fieldsArray = new String[] { "id", "type", "urlTimestamp", "title" };
+        String[] fieldsArray = new String[] { "id", "type", "urlTimestamp", "titleString" };
         Hashtable<String, Boolean> fieldInclusivity = new Hashtable<String, Boolean>();
         Boolean needsSnippet = true; // Snippet is different, we'll handle it separately
 
@@ -282,7 +282,7 @@ public class SolrSearchService implements SearchService {
             for (String field : searchQuery.getFields()) {
                 switch (field) {
                     case "title":
-                        fieldInclusivity.put("title", true);
+                        fieldInclusivity.put("titleString", true);
                         break;
                     case "mimeType":
                         fieldInclusivity.put("type", true);
@@ -684,7 +684,7 @@ public class SolrSearchService implements SearchService {
         for (String field : replyFields) {
             switch (field) {
                 case "title":
-                    searchResult.setTitle((String) coalesce(doc.getFieldValue("title"), ""));
+                    searchResult.setTitle((String) coalesce(doc.getFieldValue("titleString"), ""));
                     break;
                 case "originalURL":
                     searchResult.setOriginalURL(oldestUrl);
@@ -770,7 +770,7 @@ public class SolrSearchService implements SearchService {
                     .collect(Collectors.toList());
             SolrQuery solrQuery = new SolrQuery();
             solrQuery.set("q", String.join(" OR ", solrQueryForSites));
-            solrQuery.set("fl","id,type,tstamp,urlTimestamp,surt,title,collection,url");
+            solrQuery.set("fl","id,type,tstamp,urlTimestamp,surt,titleString,collection,url");
             solrQuery.set("hl","false");
 
             LOG.info("Solr Query (queryByUrl): "+solrQuery);
