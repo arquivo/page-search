@@ -55,15 +55,25 @@ public class URLNormalizers {
         int surtStartIdx,surtEndIdx;
         surtStartIdx = surt.indexOf("(");
         surtEndIdx = surt.indexOf(")");
-        if(surtEndIdx < 0){ //No surt to be found here
-            return canocalizeUrl(surt);
+        
+        // Surt is just the domain(+subdomains), no '/' on the URL
+        if(surtEndIdx < 0 && surt.indexOf("/") < 0){ 
+            String surtPrefix = surt.substring(surtStartIdx+1);
+            List<String> surtComponents = Arrays.asList( surtPrefix.split(",") ).stream().filter(s -> s.length() > 0 ).collect(Collectors.toList());
+            Collections.reverse(surtComponents);
+            return canocalizeUrl("https://"+ String.join(".", surtComponents));
         }
-        String surtPrefix = surt.substring(surtStartIdx+1, surtEndIdx);
-        String surtSuffix = surt.substring(surtEndIdx+1);
 
-        List<String> surtComponents = Arrays.asList( surtPrefix.split(",") ).stream().filter(s -> s.length() > 0 ).collect(Collectors.toList());
-        Collections.reverse(surtComponents);
-        return canocalizeUrl("https://"+ String.join(".", surtComponents) + surtSuffix);
+        // Surt has domain(+subdomains) and has '/' on the URL
+        if(surtStartIdx >=0 && surtEndIdx >=0){
+            String surtPrefix = surt.substring(surtStartIdx+1, surtEndIdx);
+            String surtSuffix = surt.substring(surtEndIdx+1);
+            List<String> surtComponents = Arrays.asList( surtPrefix.split(",") ).stream().filter(s -> s.length() > 0 ).collect(Collectors.toList());
+            Collections.reverse(surtComponents);
+            return canocalizeUrl("https://"+ String.join(".", surtComponents) + surtSuffix);
+        }
 
+        // Invalid surt, assuming URL was given
+        return canocalizeUrl(surt);
     }
 }
