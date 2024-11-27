@@ -106,10 +106,20 @@ public class FusionSearchService implements SearchService {
         return mergedResults;
     }
 
+    // TODO: do proper merging
     @Override
     public SearchResults query(SearchQuery searchQuery, boolean urlSearch) {
         SearchResults solrResults = getSolrSearchService().query(searchQuery, urlSearch);
         SearchResults nutchResults = getNutchWaxSearchService().query(searchQuery, urlSearch);
+
+        return mergeResults(solrResults, nutchResults);
+    }
+
+    // TODO: do proper merging
+    @Override
+    public SearchResults queryByTitle(SearchQuery searchQuery) {
+        SearchResults solrResults = getSolrSearchService().queryByTitle(searchQuery);
+        SearchResults nutchResults = getNutchWaxSearchService().queryByTitle(searchQuery);
 
         return mergeResults(solrResults, nutchResults);
     }

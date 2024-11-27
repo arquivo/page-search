@@ -32,6 +32,7 @@ import pt.arquivo.services.SearchResultSolrImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.SearchServiceConfiguration;
+import pt.arquivo.services.TitleSearchQuery;
 import pt.arquivo.utils.URLNormalizers;
 import pt.arquivo.utils.Utils;
 
@@ -123,7 +124,11 @@ public class SolrSearchService implements SearchService {
     private SolrQuery convertSearchQuery(SearchQuery searchQuery) {
         SolrQuery solrQuery = new SolrQuery();
 
-        solrQuery.setQuery(sanitizeQuery(searchQuery.getQueryTerms(),solrQuery));
+        if(searchQuery.getQueryTerms() == null){
+            solrQuery.setQuery("*:*");
+        } else {
+            solrQuery.setQuery(sanitizeQuery(searchQuery.getQueryTerms(),solrQuery));
+        }
         solrQuery.setStart(searchQuery.getOffset()); // No need to escape because offset and maxItems are integers
         solrQuery.setRows(searchQuery.getMaxItems());
 
@@ -177,7 +182,7 @@ public class SolrSearchService implements SearchService {
         }
 
         // Handle deduplication:
-        if (searchQuery.getDedupValue() >= 0){
+        if (searchQuery.getDedupValue() >= 0){ //deduplication disabled if dedupValue == -1
             Integer dedupValue = searchQuery.getDedupValue();
             String dedupField = sanitizeDedupField(searchQuery.getDedupField());
 
@@ -317,7 +322,6 @@ public class SolrSearchService implements SearchService {
             solrQuery.set("hl","false");
         }
 
-        LOG.info("Solr Query: "+solrQuery);
         return solrQuery;
     }
 
@@ -797,6 +801,7 @@ public class SolrSearchService implements SearchService {
     @Override
     public SearchResults query(SearchQuery searchQuery) {
         SolrQuery solrQuery = convertSearchQuery(searchQuery);
+        LOG.info("Solr Query: "+solrQuery);
         try {
             QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
             SearchResults searchResults = parseQueryResponse(queryResponse, searchQuery);
@@ -811,6 +816,34 @@ public class SolrSearchService implements SearchService {
         searchResults.setLastPageResults(false);
         searchResults.setNumberResults(0);
         return searchResults;
+    }
+
+    @Override
+    public SearchResults queryByTitle(SearchQuery searchQuery) {
+        TitleSearchQuery titleSearchQuery = (TitleSearchQuery) searchQuery;
+        searchQuery.setDedupValue(-1);
+        
+        SolrQuery solrQuery = convertSearchQuery(titleSearchQuery);
+        solrQuery.addFilterQuery("titleString:" + ClientUtils.escapeQueryChars(titleSearchQuery.getTitle()));
+
+        LOG.info("Solr Query (queryByTitle): "+solrQuery);
+
+        try {
+            QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
+            SearchResults searchResults = parseQueryResponse(queryResponse, searchQuery);
+            searchResults.setLastPageResults(isLastPage(searchResults.getEstimatedNumberResults(), searchQuery));
+            return searchResults;
+        } catch (SolrServerException | IOException e) {
+            LOG.error("Error querying Solr: ", e);
+        }
+
+        SearchResults searchResults = new SearchResults();
+        searchResults.setEstimatedNumberResults(0);
+        searchResults.setLastPageResults(false);
+        searchResults.setNumberResults(0);
+        return searchResults;
+
+
     }
 
     public static boolean isLastPage(long numberOfResults, SearchQuery searchQuery) {
