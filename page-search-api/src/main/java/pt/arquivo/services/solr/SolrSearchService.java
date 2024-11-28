@@ -32,7 +32,6 @@ import pt.arquivo.services.SearchResultSolrImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.SearchServiceConfiguration;
-import pt.arquivo.services.TitleSearchQuery;
 import pt.arquivo.utils.URLNormalizers;
 import pt.arquivo.utils.Utils;
 
@@ -158,7 +157,7 @@ public class SolrSearchService implements SearchService {
             }
         }
 
-        // Handle site request
+        // Handle siteSearch request
         if (searchQuery.isSearchBySite()) {
             String[] sites = searchQuery.getSite();
             StringBuilder stringBuilder = new StringBuilder();
@@ -178,6 +177,15 @@ public class SolrSearchService implements SearchService {
                 }
                 multipleSite = true;
             }
+            solrQuery.addFilterQuery(stringBuilder.toString());
+        }
+
+        // Handle titleSearch request
+        if (searchQuery.isSearchByTitle()) {
+            String title = searchQuery.getTitleSearch();
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("titleString:");
+            stringBuilder.append(ClientUtils.escapeQueryChars(title));
             solrQuery.addFilterQuery(stringBuilder.toString());
         }
 
@@ -816,34 +824,6 @@ public class SolrSearchService implements SearchService {
         searchResults.setLastPageResults(false);
         searchResults.setNumberResults(0);
         return searchResults;
-    }
-
-    @Override
-    public SearchResults queryByTitle(SearchQuery searchQuery) {
-        TitleSearchQuery titleSearchQuery = (TitleSearchQuery) searchQuery;
-        searchQuery.setDedupValue(-1);
-        
-        SolrQuery solrQuery = convertSearchQuery(titleSearchQuery);
-        solrQuery.addFilterQuery("titleString:" + ClientUtils.escapeQueryChars(titleSearchQuery.getTitle()));
-
-        LOG.info("Solr Query (queryByTitle): "+solrQuery);
-
-        try {
-            QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
-            SearchResults searchResults = parseQueryResponse(queryResponse, searchQuery);
-            searchResults.setLastPageResults(isLastPage(searchResults.getEstimatedNumberResults(), searchQuery));
-            return searchResults;
-        } catch (SolrServerException | IOException e) {
-            LOG.error("Error querying Solr: ", e);
-        }
-
-        SearchResults searchResults = new SearchResults();
-        searchResults.setEstimatedNumberResults(0);
-        searchResults.setLastPageResults(false);
-        searchResults.setNumberResults(0);
-        return searchResults;
-
-
     }
 
     public static boolean isLastPage(long numberOfResults, SearchQuery searchQuery) {

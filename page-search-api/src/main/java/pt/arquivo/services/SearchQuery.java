@@ -52,4 +52,18 @@ public interface SearchQuery {
     boolean isSearchByCollection();
 
     boolean isTimeBoundedQuery();
+
+    Integer getLimitPerSite();
+
+    void setLimitPerSite(Integer limitPerSite);
+
+    boolean getPrettyPrint();
+
+    void setPrettyPrint(boolean prettyPrint);
+
+    String getTitleSearch();
+
+    void setTitleSearch(String title);
+    
+    boolean isSearchByTitle();
 }

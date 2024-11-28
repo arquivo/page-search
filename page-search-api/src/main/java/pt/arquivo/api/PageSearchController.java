@@ -108,45 +108,6 @@ public class PageSearchController {
         return searchService.query(searchQuery, true);
     }
 
-    
-
-    @ApiOperation(value = "Search for webpages with the exact title")
-    @CrossOrigin
-    @GetMapping(value = "/titlesearch")
-    public @ResponseBody
-    ApiResponse queryByTitle(
-        @RequestParam(value = "title", required = true) String title,
-        @RequestParam(value = "q", required = false) String query,
-        @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
-        @RequestParam(value = "maxItems", required = false, defaultValue = "50") int maxItems,
-        @RequestParam(value = "from", required = false) String from,
-        @RequestParam(value = "to", required = false) String to,
-        @RequestParam(value = "type", required = false) String[] type,
-        @RequestParam(value = "collection", required = false) String[] collection,
-        @RequestParam(value = "fields", required = false) String[] fields,
-        @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
-        HttpServletRequest request
-    ) {
-        TitleSearchQuery searchQuery = new TitleSearchQueryImpl(title,query);
-        SearchResults titleSearchResults = searchService.queryByTitle(searchQuery);
-        TitleSearchResponse titleSearchResponse = new TitleSearchResponse();
-
-        titleSearchResponse.setServiceName(serviceName);
-        titleSearchResponse.setLinkToService(linkToService);
-
-        titleSearchResponse.setRequestParameters(searchQuery);
-        titleSearchResponse.setResponseItems(titleSearchResults.getResults());
-        titleSearchResponse.setEstimatedNumberResults(titleSearchResults.getEstimatedNumberResults());
-        titleSearchResponse.setTotalItems(titleSearchResults.getNumberResults());
-
-        boolean lastPage = titleSearchResults.isLastPageResults();
-        boolean firstPage = offset <= 0;
-
-        String queryString = request.getQueryString();
-        titleSearchResponse.setPagination(maxItems, offset, queryString, firstPage, lastPage);
-
-        return titleSearchResponse;    }
-
     @ApiOperation(value = "Search for Archived Pages that match the query parameters")
     @CrossOrigin
     @GetMapping(value = "/textsearch")
@@ -166,6 +127,7 @@ public class PageSearchController {
                            @RequestParam(value = "collection", required = false) String[] collection,
                            @RequestParam(value = "fields", required = false) String[] fields,
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
+                           @RequestParam(value = "titleSearch", required = false) String titleSearch,
                            HttpServletRequest request
     ) {
         long startTime;
@@ -183,7 +145,7 @@ public class PageSearchController {
             throw new ApiRequestException("Invalid API Request");
         }
 
-        SearchQueryImpl searchQuery = new SearchQueryImpl(query);
+        SearchQuery searchQuery = new SearchQueryImpl(query);
         searchQuery.setOffset(offset);
         searchQuery.setMaxItems(maxItems);
 
@@ -202,6 +164,7 @@ public class PageSearchController {
         searchQuery.setCollection(collection);
         searchQuery.setFields(fields);
         searchQuery.setPrettyPrint(prettyPrint);
+        searchQuery.setTitleSearch(titleSearch);
 
         searchQuery.setDedupValue(dedupValue);
         if (request.getParameter("dedupField") == null && searchQuery.isSearchBySite()) {

@@ -115,15 +115,6 @@ public class FusionSearchService implements SearchService {
         return mergeResults(solrResults, nutchResults);
     }
 
-    // TODO: do proper merging
-    @Override
-    public SearchResults queryByTitle(SearchQuery searchQuery) {
-        SearchResults solrResults = getSolrSearchService().queryByTitle(searchQuery);
-        SearchResults nutchResults = getNutchWaxSearchService().queryByTitle(searchQuery);
-
-        return mergeResults(solrResults, nutchResults);
-    }
-
     @Override
     public SearchResults query(SearchQuery searchQuery) {
         int totalMaxItems = searchQuery.getMaxItems();

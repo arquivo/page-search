@@ -98,11 +98,6 @@ public class NutchWaxSearchService implements SearchService {
         return searchResults;
     }
 
-    @Override
-    public SearchResults queryByTitle(SearchQuery searchQuery) {
-        return query(searchQuery);
-    }
-
     private String buildNutchwaxQueryString(SearchQuery searchQuery) {
         StringBuilder queryString = new StringBuilder();
 

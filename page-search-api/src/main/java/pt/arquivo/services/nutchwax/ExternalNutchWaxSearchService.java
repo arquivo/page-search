@@ -121,12 +121,6 @@ public class ExternalNutchWaxSearchService implements SearchService {
         }
     }
 
-    // TODO: implement title search
-    @Override
-    public SearchResults queryByTitle(SearchQuery searchQuery){
-        return query(searchQuery);
-    }
-
     private SearchResults getExternalResults (URL url){
         SearchResults searchResults = new SearchResults();
         try {
