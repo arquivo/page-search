@@ -18,6 +18,7 @@ import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 
 @Api(tags = "PageSearch")
@@ -134,7 +135,10 @@ public class PageSearchController {
         long endTime;
         long duration;
         startTime = System.currentTimeMillis();
-        // TODO need to do this verification since versionHistory is merged on the term search. Remove it on the next API version, when versionHistory is removed from here
+        
+        // Regex that recognizes URLs. The same regex is used on the front end to redirect to /url/search
+        final String urlRegEx = "^\\s*(((http|https):\\/\\/)?([a-zA-Z\\d][-\\w\\.]*)\\.([a-zA-Z\\.]{2,6})([-\\/\\w\\p{L}\\.~,;:%&=?!+$#*@\\(?\\)?]*)\\/?)\\s*$";
+        
         if (url != null) {
             return searchCdxURL(url, from, to, maxItems, offset, request);
         } else if (id != null) {
@@ -143,6 +147,13 @@ public class PageSearchController {
         } else if (query == null) {
             LOG.error("Invalid API Request " + request.getQueryString());
             throw new ApiRequestException("Invalid API Request");
+        } else if (query.matches(urlRegEx)) {
+            LOG.info("Blocked request due to URL in the q parameter: " + query);
+            throw new ApiRequestException(
+                "Please use the following Arquivo.pt APIs to search for URLs:\r\n" + //
+                "\tURL search: CDX server API: https://arquivo.pt/cdxserverapi\r\n" + //
+                "\tMemento API: https://arquivo.pt/memento"
+            );
         }
 
         SearchQuery searchQuery = new SearchQueryImpl(query);
