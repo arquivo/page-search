@@ -7,8 +7,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.util.List;
 
 public class SearchResultSerializer extends JsonSerializer {
 
@@ -68,4 +71,5 @@ public class SearchResultSerializer extends JsonSerializer {
             return true;
         }
     }
+
 }

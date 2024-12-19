@@ -12,6 +12,7 @@ import org.archive.util.Base32;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+
 import pt.arquivo.services.*;
 import pt.arquivo.utils.Utils;
 
@@ -144,6 +145,12 @@ public class NutchWaxSearchService implements SearchService {
                 String collection = " collection:".concat(searchQuery.getCollection()[i]);
                 queryString.append(collection);
             }
+        }
+
+        if (searchQuery.isSearchByTitle()) {
+            LOG.debug("title = " + searchQuery.getTitleSearch());
+            String titleSearch = " title:".concat(searchQuery.getTitleSearch());
+            queryString.append(titleSearch);
         }
 
         return queryString.toString();

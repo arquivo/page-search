@@ -18,6 +18,7 @@ import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 
 @Api(tags = "PageSearch")
@@ -108,7 +109,6 @@ public class PageSearchController {
         return searchService.query(searchQuery, true);
     }
 
-
     @ApiOperation(value = "Search for Archived Pages that match the query parameters")
     @CrossOrigin
     @GetMapping(value = "/textsearch")
@@ -119,7 +119,7 @@ public class PageSearchController {
                            @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
                            @RequestParam(value = "maxItems", required = false, defaultValue = "50") int maxItems,
                            @RequestParam(value = "siteSearch", required = false) String[] siteSearch,
-                           @RequestParam(value = "dedupField", required = false, defaultValue = "site") String dedupField,
+                           @RequestParam(value = "dedupField", required = false, defaultValue = "title") String dedupField,
                            @RequestParam(value = "itemsPerSite", required = false) Integer itemsPerSite,
                            @RequestParam(value = "dedupValue", required = false, defaultValue = "2") int dedupValue,
                            @RequestParam(value = "from", required = false) String from,
@@ -128,13 +128,17 @@ public class PageSearchController {
                            @RequestParam(value = "collection", required = false) String[] collection,
                            @RequestParam(value = "fields", required = false) String[] fields,
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
+                           @RequestParam(value = "titleSearch", required = false) String titleSearch,
                            HttpServletRequest request
     ) {
         long startTime;
         long endTime;
         long duration;
         startTime = System.currentTimeMillis();
-        // TODO need to do this verification since versionHistory is merged on the term search. Remove it on the next API version, when versionHistory is removed from here
+        
+        // Regex that recognizes URLs. The same regex is used on the front end to redirect to /url/search
+        final String urlRegEx = "^\\s*(((http|https):\\/\\/)?([a-zA-Z\\d][-\\w\\.]*)\\.([a-zA-Z\\.]{2,6})([-\\/\\w\\p{L}\\.~,;:%&=?!+$#*@\\(?\\)?]*)\\/?)\\s*$";
+        
         if (url != null) {
             return searchCdxURL(url, from, to, maxItems, offset, request);
         } else if (id != null) {
@@ -143,9 +147,16 @@ public class PageSearchController {
         } else if (query == null) {
             LOG.error("Invalid API Request " + request.getQueryString());
             throw new ApiRequestException("Invalid API Request");
+        } else if (query.matches(urlRegEx)) {
+            LOG.info("Blocked request due to URL in the q parameter: " + query);
+            throw new ApiRequestException(
+                "Please use the following Arquivo.pt APIs to search for URLs:\r\n" + //
+                "\tURL search: CDX server API: https://arquivo.pt/cdxserverapi\r\n" + //
+                "\tMemento API: https://arquivo.pt/memento"
+            );
         }
 
-        SearchQueryImpl searchQuery = new SearchQueryImpl(query);
+        SearchQuery searchQuery = new SearchQueryImpl(query);
         searchQuery.setOffset(offset);
         searchQuery.setMaxItems(maxItems);
 
@@ -164,6 +175,7 @@ public class PageSearchController {
         searchQuery.setCollection(collection);
         searchQuery.setFields(fields);
         searchQuery.setPrettyPrint(prettyPrint);
+        searchQuery.setTitleSearch(titleSearch);
 
         searchQuery.setDedupValue(dedupValue);
         if (request.getParameter("dedupField") == null && searchQuery.isSearchBySite()) {

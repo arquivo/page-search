@@ -70,12 +70,15 @@ public class CDXSearchService {
 
         try {
             List<JsonObject> jsonValues = readJsonFromUrl(urlCDX);
+
             if (jsonValues == null) {
                 LOG.error("Error while trying to get results from the CDX API.");
                 searchResultsResponse.setNumberResults(0);
                 searchResultsResponse.setEstimatedNumberResults(0);
                 return searchResultsResponse;
             }
+
+            // LOG.info("jsonValues Size: " + jsonValues.size());
 
             int limit = Math.min(jsonValues.size(), limitP + start);
             if (limit > 0) {
@@ -84,39 +87,16 @@ public class CDXSearchService {
                 }
             }
 
-            // searchResults.setResults(results);
-            // check if we can get more information through the TextSearch API
+            // LOG.info("cdxResults Size: " + cdxResults.size());
+            
             for (ItemCDX result : cdxResults) {
 
-                // text search api
-                SearchQuery urlSearchQuery = new SearchQueryImpl(result.getUrl());
-                urlSearchQuery.setMaxItems(1);
-                urlSearchQuery.setFrom(result.getTimestamp());
-                urlSearchQuery.setTo(result.getTimestamp());
-
-                SearchResults textSearchResults = searchService.query(urlSearchQuery, true);
-
                 SearchResultNutchImpl searchResult = getSearchResultNutch(result);
+                searchResult.setTitle(result.getUrl());
+                populateEndpointsLinks(searchResult, false);
 
-                if (textSearchResults.getNumberResults() > 0) {
-                    LOG.debug("CDX record matched with full-text index.." + result.getUrl());
-                    SearchResult searchResultText = textSearchResults.getResults().get(0);
-                    searchResult.setTitle(searchResultText.getTitle());
-                    if (result.getCollection() == null || result.getCollection().isEmpty()) {
-                        searchResult.setCollection(searchResultText.getCollection());
-                    }
-                    searchResult.setEncoding(searchResultText.getEncoding());
-
-                    if (showIds) {
-                        searchResult.setId(searchResultText.getId());
-                    }
-
-                    populateEndpointsLinks(searchResult, true);
-                } else {
-                    searchResult.setTitle(result.getUrl());
-                    populateEndpointsLinks(searchResult, false);
-                }
                 searchResults.add(searchResult);
+                
             }
             searchResultsResponse.setResults(searchResults);
             searchResultsResponse.setEstimatedNumberResults(jsonValues.size());
@@ -137,7 +117,6 @@ public class CDXSearchService {
         if (result.getLength() != null)
             searchResult.setContentLength(Long.parseLong(result.getLength()));
 
-        // TODO SANITY CHECK HERE with the digest (important)
         searchResult.setDigest(result.getDigest());
         searchResult.setMimeType(result.getMime());
         searchResult.setTimeStamp(result.getTimestamp());
@@ -222,6 +201,7 @@ public class CDXSearchService {
             is = con.getInputStream();
             BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
             jsonResponse = readAll(rd);
+            LOG.info("CDX Reply: "+jsonResponse);
             return jsonResponse;
         } catch (Exception e) {
             LOG.error("[readJsonFromUrl]" + e);

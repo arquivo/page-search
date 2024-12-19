@@ -40,6 +40,9 @@ public class SearchQueryImpl implements SearchQuery {
 
     private String dedupField = "site";
 
+    @JsonProperty("titleSearch")
+    private String titleSearch;
+
     public SearchQueryImpl(String queryTerms) {
         this.queryTerms = queryTerms;
     }
@@ -195,24 +198,45 @@ public class SearchQueryImpl implements SearchQuery {
         return (this.getTo() != null || this.getFrom() != null);
     }
 
+    public String getTitleSearch(){
+        return titleSearch;
+    }
+
+    public void setTitleSearch(String titleSearch){
+        this.titleSearch = titleSearch;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isSearchByTitle() {
+        return this.titleSearch != null;
+    }
+
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("q: ").append(this.queryTerms);
-        stringBuilder.append(" offset: ").append(this.offset);
-        stringBuilder.append(" maxItems: ").append(this.maxItems);
-        stringBuilder.append(" itemsPerSite: ").append(this.limitPerSite);
-        stringBuilder.append(" from: ").append(this.from);
-        stringBuilder.append(" to: ").append(this.to);
-        stringBuilder.append(" type: ").append(this.type);
-        if (this.site != null) {
+        stringBuilder.append("q: ").append(getQueryTerms());
+        stringBuilder.append(" offset: ").append(getOffset());
+        stringBuilder.append(" maxItems: ").append(getMaxItems());
+        stringBuilder.append(" itemsPerSite: ").append(getLimitPerSite());
+        stringBuilder.append(" from: ").append(getFrom());
+        stringBuilder.append(" to: ").append(getTo());
+        stringBuilder.append(" type: ").append(getType());
+        if (isSearchBySite()) {
             for (int i = 0; i < this.site.length; i++) {
-                stringBuilder.append(" site: ").append(this.site[i]);
+                stringBuilder.append(" siteSearch: ").append(this.site[i]);
             }
         } else {
-            stringBuilder.append(" site: ").append(this.site);
+            stringBuilder.append(" siteSearch: ").append(getSite());
         }
-        stringBuilder.append(" collection: ").append(this.collection);
-        stringBuilder.append(" prettyPrint: ").append(this.prettyPrint);
+        if (isSearchByCollection()) {
+            for (int i = 0; i < this.collection.length; i++) {
+                stringBuilder.append(" collection: ").append(this.collection[i]);
+            }
+        } else {
+            stringBuilder.append(" collection: ").append(getCollection());
+        }
+        stringBuilder.append(" titleSearch: ").append(getTitleSearch());
+        stringBuilder.append(" prettyPrint: ").append(getPrettyPrint());
         return stringBuilder.toString();
     }
 
