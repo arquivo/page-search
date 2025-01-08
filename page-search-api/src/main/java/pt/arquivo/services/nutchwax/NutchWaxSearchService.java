@@ -188,9 +188,14 @@ public class NutchWaxSearchService implements SearchService {
             if (searchQuery.getDedupValue() == 0) {
                 numberOfHits = numberOfHits + 1;
             }
+
+            String dedupField = searchQuery.getDedupField();
+            if(dedupField.equals("title")){
+                dedupField = "site";
+            }
             // don't get deceive by the maxHitsPerVersion, it doesn't work
             Hits hits = bean.search(query, numberOfHits, searcherMaxHits,
-                    searchQuery.getDedupValue(), searchQuery.getDedupField(), null, false,
+                    searchQuery.getDedupValue(), dedupField, null, false,
                     PwaFunctionsWritable.parse(conf.get(Global.RANKING_FUNCTIONS)), 1, urlSearchQuery);
             results.setLastPageResults(isLastPage(hits.getLength(), searchQuery));
             results.setEstimatedNumberResults(hits.getTotal());
