@@ -113,6 +113,12 @@
             <artifactId>json-simple</artifactId>
             <version>1.1.1</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency> 
     </dependencies>
 
     <properties>
@@ -178,20 +184,17 @@
                                         </wait>
                                     </run>
                                 </image>
-                                <!-- <image>
+                                <image>
                                     <name>arquivo/pagesearch-solr-test</name>
                                     <run>
                                         <ports>
                                             <port>8983:8983</port>
                                         </ports>
                                         <wait>
-                                            <http>
-                                                <url>http://localhost:8983</url>
-                                            </http>
                                             <time>10000</time>
                                         </wait>
                                     </run>
-                                </image> -->
+                                </image>
                             </images>
                         </configuration>
                     </plugin>
