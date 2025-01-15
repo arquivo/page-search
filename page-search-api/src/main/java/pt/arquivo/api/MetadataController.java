@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pt.arquivo.services.SearchResult;
-import pt.arquivo.services.SearchResultNutchImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.cdx.CDXSearchService;
@@ -60,7 +59,7 @@ public class MetadataController {
                     metadataSearchResults = textSearchResults;
                     if (cdxSearchResults.getResults().size() > 0) {
                         SearchResult textSearchResult = textSearchResults.getResults().get(0);
-                        SearchResultNutchImpl cdxResult = (SearchResultNutchImpl) cdxSearchResults.getResults().get(0);
+                        SearchResult cdxResult = (SearchResult) cdxSearchResults.getResults().get(0);
                         textSearchResult.setStatusCode(cdxResult.getStatusCode());
 
                         if (cdxResult.getCollection() != null && !cdxResult.getCollection().isEmpty())

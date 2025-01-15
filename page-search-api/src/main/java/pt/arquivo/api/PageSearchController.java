@@ -83,14 +83,9 @@ public class PageSearchController {
 
         int idx = id.lastIndexOf("/");
         if (idx > 0) {
-            String[] versionIdSplited = {id.substring(0, idx), id.substring(idx + 1)};
-            if (Utils.metadataValidator(versionIdSplited)) {
-                SearchResults searchResults = queryByUrl(versionIdSplited);
-                ArrayList<SearchResult> searchResultsArray = searchResults.getResults();
-                if (searchResultsArray.size() > 0) {
-                    extractedText = searchResultsArray.get(0).getExtractedText();
-                    return extractedText;
-                }
+            extractedText = searchService.getExtractedText(id);
+            if(extractedText.length() > 0){
+                return extractedText;
             }
         }
         throw new ApiNotFoundResourceException("Resource ID doesn't exist: " + id);

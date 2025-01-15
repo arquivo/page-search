@@ -28,7 +28,6 @@ import org.springframework.beans.factory.annotation.Value;
 
 import pt.arquivo.services.SearchQuery;
 import pt.arquivo.services.SearchResult;
-import pt.arquivo.services.SearchResultSolrImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.SearchServiceConfiguration;
@@ -67,7 +66,7 @@ public class SolrSearchService implements SearchService {
     private String textSearchServiceEndpoint;
 
     // For setting configs without autowired shanenigans
-    public SolrSearchService(SearchServiceConfiguration configuration){
+    public SolrSearchService(SearchServiceConfiguration configuration) {
         this.startDate = configuration.getStartDate();
         this.serviceName = configuration.getServiceName();
         this.screenshotServiceEndpoint = configuration.getScreenshotServiceEndpoint();
@@ -78,7 +77,8 @@ public class SolrSearchService implements SearchService {
         this.textSearchServiceEndpoint = configuration.getTextSearchServiceEndpoint();
     }
 
-    public SolrSearchService(){}
+    public SolrSearchService() {
+    }
 
     public HttpSolrClient getSolrClient() {
         if (this.solrClient == null) {
@@ -89,44 +89,50 @@ public class SolrSearchService implements SearchService {
     }
 
     /**
-     * Makes sure that the requested dedupField is a valid solr field. When the dedup field is "site" it gets converted into 
-     * "surt", and if it's "mimetype" it gets converted into "type" (because those are the Solr field names). When invalid
-     * or empty, the dedup field defaults to "surt" (which is the same as "site"). 
+     * Makes sure that the requested dedupField is a valid solr field. When the
+     * dedup field is "site" it gets converted into
+     * "surt", and if it's "mimetype" it gets converted into "type" (because those
+     * are the Solr field names). When invalid
+     * or empty, the dedup field defaults to "surt" (which is the same as "site").
+     * 
      * @param dedupField
      * @return
      */
-    private String sanitizeDedupField(String dedupField){
-        if (dedupField == null) { 
+    private String sanitizeDedupField(String dedupField) {
+        if (dedupField == null) {
             dedupField = "";
         }
         dedupField = dedupField.toLowerCase();
 
-        final List<String> validDedupFields = Arrays.asList(new String[] {"site","surt", "surtOldest", "mimetype","type","collection","collectionOldest","title","titleString"});
+        final List<String> validDedupFields = Arrays.asList(new String[] { "site", "surt", "surtOldest", "mimetype",
+                "type", "collection", "collectionOldest", "title", "titleString" });
 
-        // By default dedup by title, if invalid dedupField then fallback to dedup by title
-        if(!validDedupFields.contains(dedupField) || dedupField.equals("title") ){
+        // By default dedup by title, if invalid dedupField then fallback to dedup by
+        // title
+        if (!validDedupFields.contains(dedupField) || dedupField.equals("title")) {
             dedupField = "titleString";
-        } else if (dedupField.equals("site") || dedupField.equals("surt")){
+        } else if (dedupField.equals("site") || dedupField.equals("surt")) {
             dedupField = "surtOldest";
-        } else if(dedupField.equals("mimetype")){
+        } else if (dedupField.equals("mimetype")) {
             dedupField = "type";
         }
 
         return dedupField;
-    }  
-    
+    }
+
     /**
      * Converts the API request into an appropriate Solr query.
+     * 
      * @param searchQuery
      * @return
      */
     private SolrQuery convertSearchQuery(SearchQuery searchQuery) {
         SolrQuery solrQuery = new SolrQuery();
 
-        if(searchQuery.getQueryTerms() == null){
+        if (searchQuery.getQueryTerms() == null) {
             solrQuery.setQuery("*:*");
         } else {
-            solrQuery.setQuery(sanitizeQuery(searchQuery.getQueryTerms(),solrQuery));
+            solrQuery.setQuery(sanitizeQuery(searchQuery.getQueryTerms(), solrQuery));
         }
         solrQuery.setStart(searchQuery.getOffset()); // No need to escape because offset and maxItems are integers
         solrQuery.setRows(searchQuery.getMaxItems());
@@ -190,24 +196,24 @@ public class SolrSearchService implements SearchService {
         }
 
         // Handle deduplication:
-        if (searchQuery.getDedupValue() >= 0){ //deduplication disabled if dedupValue == -1
+        if (searchQuery.getDedupValue() >= 0) { // deduplication disabled if dedupValue == -1
             Integer dedupValue = searchQuery.getDedupValue();
             String dedupField = sanitizeDedupField(searchQuery.getDedupField());
 
-            if(dedupValue > 0){ 
+            if (dedupValue > 0) {
                 dedupValue -= 1;
             }
 
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("{!collapse field=")
-                            .append(dedupField)
-                            .append("}");
+                    .append(dedupField)
+                    .append("}");
             solrQuery.addFilterQuery(stringBuilder.toString());
-            if(dedupValue > 0){
+            if (dedupValue > 0) {
                 solrQuery.add("expand", "true");
                 solrQuery.add("expand.rows", dedupValue.toString());
             }
-        } 
+        }
 
         // Handle type request
         if (searchQuery.isSearchByType()) {
@@ -220,7 +226,7 @@ public class SolrSearchService implements SearchService {
                     stringBuilder.append(" OR type:");
 
                 type = type.toLowerCase();
-                if (type.indexOf('/')<0){
+                if (type.indexOf('/') < 0) {
                     switch (type) {
                         case "pdf":
                             stringBuilder.append(ClientUtils.escapeQueryChars("application/pdf"));
@@ -229,19 +235,22 @@ public class SolrSearchService implements SearchService {
                         case "xlsx":
                             stringBuilder.append(ClientUtils.escapeQueryChars("application/vnd.ms-excel"));
                             stringBuilder.append(" OR type:");
-                            stringBuilder.append(ClientUtils.escapeQueryChars("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+                            stringBuilder.append(ClientUtils.escapeQueryChars(
+                                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
                             break;
                         case "ppt":
                         case "pptx":
                             stringBuilder.append(ClientUtils.escapeQueryChars("application/vnd.ms-powerpoint"));
                             stringBuilder.append(" OR type:");
-                            stringBuilder.append(ClientUtils.escapeQueryChars("application/vnd.openxmlformats-officedocument.presentationml.presentation"));
+                            stringBuilder.append(ClientUtils.escapeQueryChars(
+                                    "application/vnd.openxmlformats-officedocument.presentationml.presentation"));
                             break;
                         case "doc":
                         case "docx":
                             stringBuilder.append(ClientUtils.escapeQueryChars("application/msword"));
                             stringBuilder.append(" OR type:");
-                            stringBuilder.append(ClientUtils.escapeQueryChars("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+                            stringBuilder.append(ClientUtils.escapeQueryChars(
+                                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
                             break;
                         case "ps":
                         case "ai":
@@ -268,7 +277,6 @@ public class SolrSearchService implements SearchService {
             solrQuery.addFilterQuery(stringBuilder.toString());
         }
 
-
         // Optimization: Make sure we only ask the fields we need.
         // At most we'll only need these fields from Solr:
         String[] fieldsArray = new String[] { "id", "type", "urlTimestamp", "titleString" };
@@ -281,12 +289,13 @@ public class SolrSearchService implements SearchService {
                 fieldInclusivity.put(fieldsArray[i], false);
             }
 
-            // We always need urlTimestamp, it's where we get the collection, url and timestamp
+            // We always need urlTimestamp, it's where we get the collection, url and
+            // timestamp
             fieldInclusivity.put("urlTimestamp", true);
 
-
-            // If we're deduping we'll need to get the dedup field to get the expand from solr 
-            if (searchQuery.getDedupValue() > 1){
+            // If we're deduping we'll need to get the dedup field to get the expand from
+            // solr
+            if (searchQuery.getDedupValue() > 1) {
                 String dedupField = sanitizeDedupField(searchQuery.getDedupField());
                 fieldInclusivity.put(dedupField, true);
             }
@@ -325,25 +334,27 @@ public class SolrSearchService implements SearchService {
 
         solrQuery.setFields(stringBuilderFields.toString());
 
-        // If we don't need snippet we don't ask Solr for highligting (which is on by default since v5)
-        if(!needsSnippet){
-            solrQuery.set("hl","false");
+        // If we don't need snippet we don't ask Solr for highligting (which is on by
+        // default since v5)
+        if (!needsSnippet) {
+            solrQuery.set("hl", "false");
         }
 
         return solrQuery;
     }
 
     /**
-     * Escapes special symbols, but not all of them to allow for "" (exact match) and - (excluding) searches
+     * Escapes special symbols, but not all of them to allow for "" (exact match)
+     * and - (excluding) searches
      */
-    private String sanitizeQuery(String query, SolrQuery solrQuery){
-        
+    private String sanitizeQuery(String query, SolrQuery solrQuery) {
+
         Pattern exactMatchPattern = Pattern.compile("(^|.*?\\s)\"([^\"]*)\"(\\s.*|$)");
         String line = query;
         Matcher m = exactMatchPattern.matcher(line);
 
-        ArrayList <String> outsideQuotes = new ArrayList <String>();
-        ArrayList <String> insideQuotes = new ArrayList <String>();
+        ArrayList<String> outsideQuotes = new ArrayList<String>();
+        ArrayList<String> insideQuotes = new ArrayList<String>();
         while (m.find()) {
             outsideQuotes.add(m.group(1));
             insideQuotes.add(m.group(2));
@@ -353,12 +364,12 @@ public class SolrSearchService implements SearchService {
         outsideQuotes.add(line);
 
         Pattern excludePattern = Pattern.compile("(^|.*?\\s)-([^\\s]+)(.*)");
-        ArrayList <String> excludeTerms = new ArrayList<>();
-        for (int i = 0; i < outsideQuotes.size(); i++){
+        ArrayList<String> excludeTerms = new ArrayList<>();
+        for (int i = 0; i < outsideQuotes.size(); i++) {
             line = outsideQuotes.get(i);
             m = excludePattern.matcher(line);
             String sanitized = "";
-            while(m.find()){
+            while (m.find()) {
                 sanitized += ClientUtils.escapeQueryChars(m.group(1));
                 excludeTerms.add(ClientUtils.escapeQueryChars(m.group(2)));
                 line = m.group(3);
@@ -367,24 +378,26 @@ public class SolrSearchService implements SearchService {
             sanitized += ClientUtils.escapeQueryChars(line);
             outsideQuotes.set(i, sanitized);
         }
-        
+
         String sanitizedQuery = "";
-        for(int i = 0; i<insideQuotes.size();i++){
+        for (int i = 0; i < insideQuotes.size(); i++) {
             sanitizedQuery += outsideQuotes.get(i) + '"' + ClientUtils.escapeQueryChars(insideQuotes.get(i)) + '"';
         }
         sanitizedQuery += outsideQuotes.get(insideQuotes.size());
 
-        for(int i = 0; i<excludeTerms.size(); i++){
-            solrQuery.addFilterQuery("-content:"+excludeTerms.get(i));
-            solrQuery.addFilterQuery("-title:"+excludeTerms.get(i));
+        for (int i = 0; i < excludeTerms.size(); i++) {
+            solrQuery.addFilterQuery("-content:" + excludeTerms.get(i));
+            solrQuery.addFilterQuery("-title:" + excludeTerms.get(i));
         }
 
         return sanitizedQuery;
     }
 
     /**
-     * Gets the highlighted text from the Solr "content" field to fill the API "snippet" field. If there was no text to be 
-     * hightlighted in the Solr "content" field, will use the first 500 chars of the "content" field instead.
+     * Gets the highlighted text from the Solr "content" field to fill the API
+     * "snippet" field. If there was no text to be
+     * hightlighted in the Solr "content" field, will use the first 500 chars of the
+     * "content" field instead.
      * 
      * @param queryResponse
      * @param fieldName
@@ -405,12 +418,13 @@ public class SolrSearchService implements SearchService {
             }
         }
 
-        // If we don't get highlighted text on the content we display the first 500 chars of the content
+        // If we don't get highlighted text on the content we display the first 500
+        // chars of the content
         if (highlightedText.length() == 0) {
             SolrQuery solrQuery = new SolrQuery();
             solrQuery.set("q", "id:" + docId);
             solrQuery.set("fl", "content");
-            solrQuery.set("hl","false");
+            solrQuery.set("hl", "false");
             try {
                 SolrDocumentList solrDocumentList = getSolrClient().query(solrQuery).getResults();
                 if (solrDocumentList.size() > 0) {
@@ -454,7 +468,8 @@ public class SolrSearchService implements SearchService {
     }
 
     /**
-     * Extracts the collection from a string in the format collection/timestamp/surt (as returned by the Solr field urlTimestamp)
+     * Extracts the collection from a string in the format collection/timestamp/surt
+     * (as returned by the Solr field urlTimestamp)
      *
      * @param tu
      * @return String
@@ -464,7 +479,8 @@ public class SolrSearchService implements SearchService {
     }
 
     /**
-     * Extracts the timestamp from a string in the format collection/timestamp/surt (as returned by the Solr field urlTimestamp)
+     * Extracts the timestamp from a string in the format collection/timestamp/surt
+     * (as returned by the Solr field urlTimestamp)
      *
      * @param tu
      * @return String
@@ -475,7 +491,8 @@ public class SolrSearchService implements SearchService {
     }
 
     /**
-     * Extracts the surt from a string in the format collection/timestamp/surt (as returned by the Solr field urlTimestamp)
+     * Extracts the surt from a string in the format collection/timestamp/surt (as
+     * returned by the Solr field urlTimestamp)
      *
      * @param tu
      * @return String
@@ -486,51 +503,55 @@ public class SolrSearchService implements SearchService {
     }
 
     /**
-     * Given a list of strings in the format collection/timestamp/surt (as returned by the Solr field urlTimestamp),
-     * will filter out entries that do not match the user query, i.e., timestamp outside to/from range, surt doesn't match
+     * Given a list of strings in the format collection/timestamp/surt (as returned
+     * by the Solr field urlTimestamp),
+     * will filter out entries that do not match the user query, i.e., timestamp
+     * outside to/from range, surt doesn't match
      * siteSearch or collection doesn't match collection search
      *
      */
-    private List<Object> filterUrlTimestamps(List <Object> urlstimestamps, Long to, Long from, String[] siteSearchSurts, String[] collectionSearch){
-                urlstimestamps = urlstimestamps.stream()
-                        .filter(u -> ((String) u).indexOf("/") >= 0)
-                        .collect(Collectors.toList());
+    private List<Object> filterUrlTimestamps(List<Object> urlstimestamps, Long to, Long from, String[] siteSearchSurts,
+            String[] collectionSearch) {
+        urlstimestamps = urlstimestamps.stream()
+                .filter(u -> ((String) u).indexOf("/") >= 0)
+                .collect(Collectors.toList());
 
-                // Filter out urltimestamps from wrong URLs if siteSearch was made
-                if (siteSearchSurts != null) {
-                    urlstimestamps = urlstimestamps.stream()
-                            .filter(tu -> StringUtils.startsWithAny(timestampSurtToSurt((String) tu), siteSearchSurts))
-                            .collect(Collectors.toList());
-                }
+        // Filter out urltimestamps from wrong URLs if siteSearch was made
+        if (siteSearchSurts != null) {
+            urlstimestamps = urlstimestamps.stream()
+                    .filter(tu -> StringUtils.startsWithAny(timestampSurtToSurt((String) tu), siteSearchSurts))
+                    .collect(Collectors.toList());
+        }
 
-                // Filter out urltimestamps from outside time-range if it's a time bounded query
-                if (from != null) {
-                    urlstimestamps = urlstimestamps.stream()
-                            .filter(u -> Long.parseLong(timestampSurtToTimestamp((String) u)) >= from)
-                            .collect(Collectors.toList());
-                }
-                if (to != null) {
-                    urlstimestamps = urlstimestamps.stream()
-                            .filter(u -> Long.parseLong(timestampSurtToTimestamp((String) u)) <= to)
-                            .collect(Collectors.toList());
-                }
+        // Filter out urltimestamps from outside time-range if it's a time bounded query
+        if (from != null) {
+            urlstimestamps = urlstimestamps.stream()
+                    .filter(u -> Long.parseLong(timestampSurtToTimestamp((String) u)) >= from)
+                    .collect(Collectors.toList());
+        }
+        if (to != null) {
+            urlstimestamps = urlstimestamps.stream()
+                    .filter(u -> Long.parseLong(timestampSurtToTimestamp((String) u)) <= to)
+                    .collect(Collectors.toList());
+        }
 
-                // Filter out collections if it's a collection bounded search
-                if (collectionSearch != null) {
-                    urlstimestamps = urlstimestamps.stream()
-                            .filter(tu -> Arrays.asList(collectionSearch)
-                                    .contains(timestampSurtToCollection((String) tu)))
-                            .collect(Collectors.toList());
-                }
+        // Filter out collections if it's a collection bounded search
+        if (collectionSearch != null) {
+            urlstimestamps = urlstimestamps.stream()
+                    .filter(tu -> Arrays.asList(collectionSearch)
+                            .contains(timestampSurtToCollection((String) tu)))
+                    .collect(Collectors.toList());
+        }
 
-                return urlstimestamps;
+        return urlstimestamps;
     }
 
     /**
-     * Given a list of strings in the format collection/timestamp/surt (as returned by the Solr field urlTimestamp), will
+     * Given a list of strings in the format collection/timestamp/surt (as returned
+     * by the Solr field urlTimestamp), will
      * return the one with the oldest timestamp
      */
-    private String getOldestUrlTimestamp(List <Object> urlstimestamps){
+    private String getOldestUrlTimestamp(List<Object> urlstimestamps) {
         String oldestTimestamp = null;
         String oldestUrlTimestamp = null;
         Iterator<Object> it = (Iterator<Object>) urlstimestamps.iterator();
@@ -547,7 +568,8 @@ public class SolrSearchService implements SearchService {
     }
 
     /**
-     * Takes a SolrDocument object and converts it into a SearchResult, making sure the result matches the user query.  
+     * Takes a SolrDocument object and converts it into a SearchResult, making sure
+     * the result matches the user query.
      * Will return null if the document doesn't match the user query.
      * 
      * @param doc
@@ -559,12 +581,12 @@ public class SolrSearchService implements SearchService {
      * @param replyFields
      * @return
      */
-    private SearchResultSolrImpl getSearchResultfromSolrDocument(SolrDocument doc, QueryResponse queryResponse, Long to, Long from, String[] siteSearchSurts, String[] collectionSearch, String[] replyFields ){
+    private SearchResult getSearchResultfromSolrDocument(SolrDocument doc, QueryResponse queryResponse, Long to,
+            Long from, String[] siteSearchSurts, String[] collectionSearch, String[] replyFields) {
         String oldestUrl = null;
         String oldestTimestamp = null;
         String oldestCollection = null;
 
-        
         List<Object> urlstimestamps = new ArrayList<Object>(doc.getFieldValues("urlTimestamp"));
         urlstimestamps = filterUrlTimestamps(urlstimestamps, to, from, siteSearchSurts, collectionSearch);
 
@@ -578,16 +600,16 @@ public class SolrSearchService implements SearchService {
         oldestTimestamp = timestampSurtToTimestamp(oldestUrlTimestamp);
         oldestUrl = URLNormalizers.surtToUrl(timestampSurtToSurt(oldestUrlTimestamp));
         oldestCollection = timestampSurtToCollection(oldestUrlTimestamp);
-        
 
-        SearchResultSolrImpl searchResult = new SearchResultSolrImpl();
-        populateSearchResult(searchResult, queryResponse, doc, oldestUrl, oldestTimestamp, oldestCollection, replyFields);
-        searchResult.setSolrClient(this.solrClient);
+        SearchResult searchResult = new SearchResult();
+        populateSearchResult(searchResult, queryResponse, doc, oldestUrl, oldestTimestamp, oldestCollection,
+                replyFields);
         return searchResult;
     }
 
     /**
-     * Parses the reply from Solr and populates the API search results, making sure every result mateches the user query.
+     * Parses the reply from Solr and populates the API search results, making sure
+     * every result mateches the user query.
      * 
      * @param queryResponse
      * @param searchQuery
@@ -625,7 +647,7 @@ public class SolrSearchService implements SearchService {
             siteSearchSurts = null;
         }
 
-        // Check if the request is time-bounded 
+        // Check if the request is time-bounded
         if (searchQuery.getFrom() != null) {
             from = Long.parseLong(Utils.canocalizeTimestamp(searchQuery.getFrom()));
         } else {
@@ -646,14 +668,15 @@ public class SolrSearchService implements SearchService {
 
         for (SolrDocument doc : solrDocumentList) {
 
-            SearchResultSolrImpl searchResult = getSearchResultfromSolrDocument(doc,queryResponse,to,from,siteSearchSurts,collectionSearch,replyFields);
-            if(searchResult == null){
+            SearchResult searchResult = getSearchResultfromSolrDocument(doc, queryResponse, to, from, siteSearchSurts,
+                    collectionSearch, replyFields);
+            if (searchResult == null) {
                 continue;
             }
             searchResultArrayList.add(searchResult);
-            
+
             if (expandedResults != null && expandedResults.size() > 0) {
-                
+
                 String dedupField = sanitizeDedupField(searchQuery.getDedupField());
                 String expandedDedupValue = (String) doc.getFieldValue(dedupField);
                 if (expandedDedupValue == null || !expandedResults.containsKey(expandedDedupValue)) {
@@ -661,11 +684,12 @@ public class SolrSearchService implements SearchService {
                 }
 
                 Iterator<SolrDocument> expandedDocumentIterator = expandedResults.get(expandedDedupValue).iterator();
-                while(expandedDocumentIterator.hasNext()){
+                while (expandedDocumentIterator.hasNext()) {
                     SolrDocument expandedDoc = expandedDocumentIterator.next();
 
-                    SearchResultSolrImpl expandedResult = getSearchResultfromSolrDocument(expandedDoc,queryResponse,to,from,siteSearchSurts,collectionSearch,replyFields);
-                    if(expandedResult == null){
+                    SearchResult expandedResult = getSearchResultfromSolrDocument(expandedDoc, queryResponse, to, from,
+                            siteSearchSurts, collectionSearch, replyFields);
+                    if (expandedResult == null) {
                         continue;
                     }
                     searchResultArrayList.add(expandedResult);
@@ -681,7 +705,8 @@ public class SolrSearchService implements SearchService {
     }
 
     /**
-     * Populates one API search result, making sure only to populate fields that the user asked for.
+     * Populates one API search result, making sure only to populate fields that the
+     * user asked for.
      * 
      * @param searchResult
      * @param queryResponse
@@ -691,7 +716,7 @@ public class SolrSearchService implements SearchService {
      * @param oldestCollection
      * @param replyFields
      */
-    private void populateSearchResult(SearchResultSolrImpl searchResult, QueryResponse queryResponse, SolrDocument doc,
+    private void populateSearchResult(SearchResult searchResult, QueryResponse queryResponse, SolrDocument doc,
             String oldestUrl, String oldestTimestamp, String oldestCollection, String[] replyFields) {
         for (String field : replyFields) {
             switch (field) {
@@ -766,9 +791,12 @@ public class SolrSearchService implements SearchService {
     }
 
     /**
-     * Implementation of the SearchService query by URL (used in queryByUrl). This is only used for metadata and
-     * textextracted to get a specific entry, so it will output at most one entry. Deduplication and snippet is 
-     * turned off for this query. Site search does not use this, it's handled by the other query function.
+     * Implementation of the SearchService query by URL (used in queryByUrl). This
+     * is only used for metadata and
+     * textextracted to get a specific entry, so it will output at most one entry.
+     * Deduplication and snippet is
+     * turned off for this query. Site search does not use this, it's handled by the
+     * other query function.
      */
     @Override
     public SearchResults query(SearchQuery searchQuery, boolean urlSearch) {
@@ -778,18 +806,20 @@ public class SolrSearchService implements SearchService {
             List<String> solrQueryForSites = Arrays.asList(queryTerms.split(",")).stream()
                     .filter(url -> Utils.urlValidator(url))
                     .map(url -> URLNormalizers.canocalizeSurtUrl(url))
-                    .map(surt -> "urlTimestamp:" + "*/" + Utils.canocalizeTimestamp(tstamp) + "/" + ClientUtils.escapeQueryChars(surt))
+                    .map(surt -> "urlTimestamp:" + "*/" + Utils.canocalizeTimestamp(tstamp) + "/"
+                            + ClientUtils.escapeQueryChars(surt))
                     .collect(Collectors.toList());
             SolrQuery solrQuery = new SolrQuery();
             solrQuery.set("q", String.join(" OR ", solrQueryForSites));
-            solrQuery.set("fl","id,type,tstamp,urlTimestamp,surt,titleString,collection,url");
-            solrQuery.set("hl","false");
+            solrQuery.set("fl", "id,type,tstamp,urlTimestamp,surt,titleString,collection,url");
+            solrQuery.set("hl", "false");
 
-            LOG.info("Solr Query (queryByUrl): "+solrQuery);
-            searchQuery.setFields(new String[] { "title", "originalURL", "mimeType", "tstamp", "digest", "collection", "id",
-            "linkToArchive", "linkToNoFrame", "linkToScreenshot", "linkToExtractedText",
-            "linkToMetadata", "linkToOriginalFile" }); // Everything except the snippet
-           
+            LOG.info("Solr Query (queryByUrl): " + solrQuery);
+            searchQuery.setFields(
+                    new String[] { "title", "originalURL", "mimeType", "tstamp", "digest", "collection", "id",
+                            "linkToArchive", "linkToNoFrame", "linkToScreenshot", "linkToExtractedText",
+                            "linkToMetadata", "linkToOriginalFile" }); // Everything except the snippet
+
             try {
                 QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
                 SearchResults searchResults = parseQueryResponse(queryResponse, searchQuery);
@@ -798,18 +828,19 @@ public class SolrSearchService implements SearchService {
                 LOG.error("Error querying Solr: ", e);
                 return null;
             }
-        } else {    
+        } else {
             return query(searchQuery);
         }
     }
 
     /**
-     * Implementation of the SearchService query. This is the function that is used for most queries.
+     * Implementation of the SearchService query. This is the function that is used
+     * for most queries.
      */
     @Override
     public SearchResults query(SearchQuery searchQuery) {
         SolrQuery solrQuery = convertSearchQuery(searchQuery);
-        LOG.info("Solr Query: "+solrQuery);
+        LOG.info("Solr Query: " + solrQuery);
         try {
             QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
             SearchResults searchResults = parseQueryResponse(queryResponse, searchQuery);
@@ -848,5 +879,42 @@ public class SolrSearchService implements SearchService {
 
     public String getTextSearchServiceEndpoint() {
         return textSearchServiceEndpoint;
+    }
+
+    public String getExtractedText(String urlTimestamp) {
+        int idx = urlTimestamp.lastIndexOf("/");
+        String url = urlTimestamp.substring(0, idx);
+        String tstamp = urlTimestamp.substring(idx + 1);
+
+        String[] versionIdSplited = { url, tstamp };
+        if (Utils.metadataValidator(versionIdSplited) && Utils.urlValidator(url)) {
+            String surt = URLNormalizers.canocalizeSurtUrl(url);
+            StringBuilder extractedText = new StringBuilder();
+            SolrQuery solrQuery = new SolrQuery();
+            solrQuery.set("q", "urlTimestamp:" + "*/" + Utils.canocalizeTimestamp(tstamp) + "/"
+                    + ClientUtils.escapeQueryChars(surt));
+            solrQuery.set("fl", "content,title");
+            solrQuery.set("hl", "false");
+            LOG.info("ExtractedText Solr Query: " + solrQuery);
+            try {
+                QueryResponse queryResponse = solrClient.query(solrQuery);
+                if(queryResponse.getResults().size() <= 0){
+                    return "";
+                }
+                SolrDocument doc = queryResponse.getResults().get(0);
+                extractedText.append(doc.getFieldValue("title"));
+                extractedText.append(", ");
+                extractedText.append(doc.getFieldValue("content"));
+            } catch (SolrServerException | IOException  e) {
+                LOG.error("Error while querying Solr: ", e);
+                return "";
+            }
+            return extractedText.toString();
+        } else {
+            LOG.error("ExtractedText - Invalid url/timestamp : " + urlTimestamp);
+        }
+
+        return "";
+
     }
 }

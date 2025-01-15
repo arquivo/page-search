@@ -16,7 +16,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import pt.arquivo.services.SearchResult;
-import pt.arquivo.services.SearchResultNutchImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.cdx.ItemCDX;
@@ -24,7 +23,7 @@ import pt.arquivo.services.cdx.ItemCDX;
 import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pt.arquivo.services.cdx.CDXSearchService.getSearchResultNutch;
+import static pt.arquivo.services.cdx.CDXSearchService.getSearchResult;
 
 
 @SpringBootTest(classes = PageSearchApplication.class)
@@ -40,7 +39,7 @@ public class PageSearchControllerTest {
 
     @Test
     public void testSearchBySiteDefaultDedup() throws Exception {
-        SearchResultNutchImpl mockSearchResult1 = new SearchResultNutchImpl();
+        SearchResult mockSearchResult1 = new SearchResult();
         SearchResults mockSearchResults = new SearchResults();
 
         ArrayList<SearchResult> searchResults = new ArrayList<>();
@@ -83,9 +82,9 @@ public class PageSearchControllerTest {
 
     @Test
     public void pageSearchOffset() throws Exception {
-        SearchResultNutchImpl mockSearchResult1 = new SearchResultNutchImpl();
-        SearchResultNutchImpl mockSearchResult2 = new SearchResultNutchImpl();
-        SearchResultNutchImpl mockSearchResult3 = new SearchResultNutchImpl();
+        SearchResult mockSearchResult1 = new SearchResult();
+        SearchResult mockSearchResult2 = new SearchResult();
+        SearchResult mockSearchResult3 = new SearchResult();
 
         mockSearchResult1.setTitle("test result 1");
         mockSearchResult2.setTitle("test result 2");
@@ -118,7 +117,7 @@ public class PageSearchControllerTest {
     public void pageSearch() throws Exception {
         /* Mainly verify API specification */
 
-        SearchResultNutchImpl mockSearchResult1 = new SearchResultNutchImpl();
+        SearchResult mockSearchResult1 = new SearchResult();
         mockSearchResult1.setTitle("test result 1");
 
         // just to force result spec verification below
@@ -140,7 +139,7 @@ public class PageSearchControllerTest {
         mockSearchResult1.setDate("some epocho number");
         mockSearchResult1.setEncoding("utf-8");
 
-        SearchResultNutchImpl mockSearchResult2 = new SearchResultNutchImpl();
+        SearchResult mockSearchResult2 = new SearchResult();
         mockSearchResult2.setTitle("test result 2");
 
         // just to force result spec verification below
@@ -221,6 +220,6 @@ public class PageSearchControllerTest {
     public void pageSearchNutch() throws Exception {
         ItemCDX item = new ItemCDX("URL", "123456789", "", "", null, "",
                 null, "0", "");
-        getSearchResultNutch(item);
+        getSearchResult(item);
     }
 }

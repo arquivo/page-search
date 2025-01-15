@@ -91,7 +91,7 @@ public class CDXSearchService {
             
             for (ItemCDX result : cdxResults) {
 
-                SearchResultNutchImpl searchResult = getSearchResultNutch(result);
+                SearchResult searchResult = getSearchResult(result);
                 searchResult.setTitle(result.getUrl());
                 populateEndpointsLinks(searchResult, false);
 
@@ -109,8 +109,8 @@ public class CDXSearchService {
         }
     }
 
-    public static SearchResultNutchImpl getSearchResultNutch(ItemCDX result) {
-        SearchResultNutchImpl searchResult = new SearchResultNutchImpl();
+    public static SearchResult getSearchResult(ItemCDX result) {
+        SearchResult searchResult = new SearchResult();
         searchResult.setFileName(result.getFilename());
         searchResult.setOffset(Long.parseLong(result.getOffset()));
 
@@ -238,7 +238,7 @@ public class CDXSearchService {
     }
 
 
-    private void populateEndpointsLinks(SearchResultNutchImpl searchResult, boolean textMatch) throws UnsupportedEncodingException {
+    private void populateEndpointsLinks(SearchResult searchResult, boolean textMatch) throws UnsupportedEncodingException {
 
         searchResult.setLinkToArchive(waybackServiceEndpoint.concat("/")
                 .concat(searchResult.getTstamp().concat("/").concat(searchResult.getOriginalURL())));

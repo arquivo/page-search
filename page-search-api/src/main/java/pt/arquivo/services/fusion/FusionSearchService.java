@@ -1,7 +1,13 @@
 package pt.arquivo.services.fusion;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.util.ClientUtils;
+import org.apache.solr.common.SolrDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +21,8 @@ import pt.arquivo.services.SearchService;
 import pt.arquivo.services.SearchServiceConfiguration;
 import pt.arquivo.services.nutchwax.ExternalNutchWaxSearchService;
 import pt.arquivo.services.solr.SolrSearchService;
+import pt.arquivo.utils.URLNormalizers;
+import pt.arquivo.utils.Utils;
 
 public class FusionSearchService implements SearchService {
 
@@ -180,5 +188,11 @@ public class FusionSearchService implements SearchService {
         if (searchQuery.getDedupField() != null) r.setDedupField(searchQuery.getDedupField());
         if (searchQuery.getDedupValue() != 2) r.setDedupValue(searchQuery.getDedupValue());
         return r;
+    }
+
+    // TODO: implement this
+    public String getExtractedText(String urlTimestamp) {
+        return "";
+
     }
 }

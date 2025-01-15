@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pt.arquivo.services.SearchQuery;
 import pt.arquivo.services.SearchResult;
+import pt.arquivo.services.SearchResult;
 
 import java.util.ArrayList;
 

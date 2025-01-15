@@ -1,6 +1,7 @@
 package pt.arquivo.services.nutchwax;
 
 import java.io.FileInputStream;
+
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -14,7 +15,6 @@ import org.springframework.beans.factory.annotation.Value;
 
 import pt.arquivo.services.SearchQuery;
 import pt.arquivo.services.SearchResult;
-import pt.arquivo.services.SearchResultNutchImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.solr.SolrSearchService;
@@ -154,7 +154,7 @@ public class ExternalNutchWaxSearchService implements SearchService {
                 ArrayList<SearchResult> searchResultArrayList = new ArrayList<>();
 
                 for (Object obj : response_items){
-                    SearchResultNutchImpl searchResult = new SearchResultNutchImpl();
+                    SearchResult searchResult = new SearchResult();
                     JSONObject json = (JSONObject) obj;
 
                     ArrayList<String> fields = new ArrayList<String> (json.keySet());
@@ -219,6 +219,11 @@ public class ExternalNutchWaxSearchService implements SearchService {
         }
 
         return searchResults;
+    }
+
+    // TODO: implement this
+    public String getExtractedText(String urlTimestamp) {
+        return "";
     }
     
 }
