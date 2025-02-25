@@ -21,6 +21,7 @@ public class ItemCDXTest {
     @Test
     public void testToString() {
         assertThat(itemCDX1.toString()).isEqualTo("ItemCDX [url=http://example.com, timestamp=201901010101203401, digest=DHAJKWDAK, mime=text/html, statusCode=200, filename=something, length=80, offset=80]");
+        assertThat(itemCDX1.hashCode()).isEqualTo(-1970849035);
     }
 
     @Test

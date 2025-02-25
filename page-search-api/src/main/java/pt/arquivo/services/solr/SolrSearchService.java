@@ -830,23 +830,4 @@ public class SolrSearchService implements SearchService {
         return numberOfResults <= searchQuery.getOffset() + searchQuery.getMaxItems();
     }
 
-    public String getScreenshotServiceEndpoint() {
-        return screenshotServiceEndpoint;
-    }
-
-    public String getWaybackServiceEndpoint() {
-        return waybackServiceEndpoint;
-    }
-
-    public String getWaybackNoFrameServiceEndpoint() {
-        return waybackNoFrameServiceEndpoint;
-    }
-
-    public String getExtractedTextServiceEndpoint() {
-        return extractedTextServiceEndpoint;
-    }
-
-    public String getTextSearchServiceEndpoint() {
-        return textSearchServiceEndpoint;
-    }
 }

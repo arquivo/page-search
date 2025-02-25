@@ -14,15 +14,15 @@ public class ItemCDX {
 
     public ItemCDX(String url, String timestamp, String digest, String mime, String status, String filename,
                    String length, String offset, String collection) {
-        this.url = url;
-        this.timestamp = timestamp;
-        this.digest = digest;
-        this.mime = mime;
-        this.status = status;
-        this.filename = filename;
-        this.length = length;
-        this.offset = offset;
-        this.collection = collection;
+        this.setUrl(url);
+        this.setTimestamp(timestamp);
+        this.setDigest(digest);
+        this.setMime(mime);
+        this.setStatus(status);
+        this.setFilename(filename);
+        this.setLength(length);
+        this.setOffset(offset);
+        this.setCollection(collection);
     }
 
     public String getUrl() {
