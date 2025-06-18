@@ -27,12 +27,6 @@ public class PageSearchControllerTestSolrIT {
     private int port;
 
     @Test
-    public void TestTest() {
-        int i = 5;
-        assertThat(i).isEqualTo(5);
-    }
-
-    @Test
     public void TestTextSearchEndpoint() throws JSONException {
         HttpEntity<String> entity = new HttpEntity<>(null, headers);
         String uri = "/textsearch?q=sapo";
@@ -47,6 +41,93 @@ public class PageSearchControllerTestSolrIT {
         JSONArray jsonArray = jsonResponse.getJSONArray("response_items");
         // TODO this differ from the nutchwax search service. The ranking is different. We would need to adjust this later
         assertThat(jsonArray.getJSONObject(0).getString("title")).isEqualTo("E-Mails Lusofonos");
+    }
+
+    @Test
+    public void TestSearchByCollection() throws JSONException {
+        HttpEntity<String> entity = new HttpEntity<>(null, headers);
+        String uri = "/textsearch?q=sapo&collection=Roteiro";
+
+        ResponseEntity<String> response = testRestTemplate.exchange(
+                "http://localhost:" + port + uri,
+                HttpMethod.GET, entity, String.class
+        );
+
+        JSONObject jsonResponse = new JSONObject(response.getBody());
+        
+        JSONArray jsonArray = jsonResponse.getJSONArray("response_items");
+        // TODO this differ from the nutchwax search service. The ranking is different. We would need to adjust this later
+        assertThat(jsonArray.getJSONObject(0).getString("title")).isEqualTo("E-Mails Lusofonos");
+    }
+
+    @Test
+    public void TestSearchWithTimeRange() throws JSONException {
+        HttpEntity<String> entity = new HttpEntity<>(null, headers);
+        String uri = "/textsearch?q=sapo&from=19961012&to=19961014";
+
+        ResponseEntity<String> response = testRestTemplate.exchange(
+                "http://localhost:" + port + uri,
+                HttpMethod.GET, entity, String.class
+        );
+
+        JSONObject jsonResponse = new JSONObject(response.getBody());
+        
+        JSONArray jsonArray = jsonResponse.getJSONArray("response_items");
+        // TODO this differ from the nutchwax search service. The ranking is different. We would need to adjust this later
+        assertThat(jsonArray.getJSONObject(0).getString("title")).isEqualTo("E-Mails Lusofonos");
+    }
+
+    @Test
+    public void TestSearchWithType() throws JSONException {
+        HttpEntity<String> entity = new HttpEntity<>(null, headers);
+        String uri = "/textsearch?q=sapo&type=html,pdf,xls,ppt,doc,ps,rtf,batatafrita,batata/frita";
+
+        ResponseEntity<String> response = testRestTemplate.exchange(
+                "http://localhost:" + port + uri,
+                HttpMethod.GET, entity, String.class
+        );
+
+        JSONObject jsonResponse = new JSONObject(response.getBody());
+        
+        JSONArray jsonArray = jsonResponse.getJSONArray("response_items");
+        // TODO this differ from the nutchwax search service. The ranking is different. We would need to adjust this later
+        assertThat(jsonArray.getJSONObject(0).getString("title")).isEqualTo("E-Mails Lusofonos");
+    }
+
+    @Test
+    public void TestSearchWithFields() throws JSONException {
+        HttpEntity<String> entity = new HttpEntity<>(null, headers);
+        String uri = "/textsearch?q=sapo&fields=title,mimeType,snippet";
+
+        ResponseEntity<String> response = testRestTemplate.exchange(
+                "http://localhost:" + port + uri,
+                HttpMethod.GET, entity, String.class
+        );
+
+        JSONObject jsonResponse = new JSONObject(response.getBody());
+        
+        JSONArray jsonArray = jsonResponse.getJSONArray("response_items");
+        // TODO this differ from the nutchwax search service. The ranking is different. We would need to adjust this later
+        assertThat(jsonArray.getJSONObject(0).getString("title")).isEqualTo("E-Mails Lusofonos");
+        assertThat(jsonArray.getJSONObject(0).getString("mimeType")).isEqualTo("text/html");
+        assertThat(jsonArray.getJSONObject(0).getString("snippet")).isNotEmpty();
+    }
+
+    @Test
+    public void TestSiteSearch() throws JSONException {
+        HttpEntity<String> entity = new HttpEntity<>(null, headers);
+        String uri = "/textsearch?q=sapo&siteSearch=sapo.ua.pt";
+
+        ResponseEntity<String> response = testRestTemplate.exchange(
+                "http://localhost:" + port + uri,
+                HttpMethod.GET, entity, String.class
+        );
+
+        JSONObject jsonResponse = new JSONObject(response.getBody());
+        
+        JSONArray jsonArray = jsonResponse.getJSONArray("response_items");
+        // TODO this differ from the nutchwax search service. The ranking is different. We would need to adjust this later
+        assertThat(jsonArray.getJSONObject(0).getString("title")).isEqualTo("SAPO, Servidor de Apontadores Portugueses");
     }
 
     @Test
@@ -83,6 +164,18 @@ public class PageSearchControllerTestSolrIT {
                 HttpMethod.GET, entity, String.class
         );
         assertThat(notFoundResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    public void TestBadRequest() {
+        HttpEntity<String> entity = new HttpEntity<>(null, headers);
+        String uri = "/textsearch?bad=request";
+
+        ResponseEntity<String> notFoundResponse = testRestTemplate.exchange(
+                "http://localhost:" + port + uri,
+                HttpMethod.GET, entity, String.class
+        );
+        assertThat(notFoundResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test

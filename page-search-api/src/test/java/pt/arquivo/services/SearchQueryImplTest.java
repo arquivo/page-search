@@ -156,4 +156,12 @@ public class SearchQueryImplTest {
     public void setFields() {
         searchQuery.setFields(new String[]{"encoding", "type"});
     }
+
+    @Test
+    public void testToString() {
+        assertTrue(searchQuery.toString().length() > 0);
+        searchQuery.setSite(null);
+        searchQuery.setCollection(null);
+        assertTrue(searchQuery.toString().length() > 0);
+    }
 }
