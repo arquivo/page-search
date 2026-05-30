@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import pt.arquivo.services.*;
 import pt.arquivo.utils.Utils;
+import pt.arquivo.services.nutchwax.SearchResultNutchWaxImpl;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -215,7 +216,7 @@ public class NutchWaxSearchService implements SearchService {
                 results.setNumberResults(hits.getLength());
 
                 for (int i = 0; i < end; i++) {
-                    SearchResultNutchImpl searchResult = new SearchResultNutchImpl();
+                    SearchResultNutchWaxImpl searchResult = new SearchResultNutchWaxImpl();
                     populateSearchResult(searchResult, details[i], summaries[i]);
                     populateEndpointsLinks(searchResult);
 
@@ -236,7 +237,7 @@ public class NutchWaxSearchService implements SearchService {
         return results;
     }
 
-    private void populateSearchResult(SearchResultNutchImpl searchResult, HitDetails detail, Summary summary) {
+    private void populateSearchResult(SearchResultNutchWaxImpl searchResult, HitDetails detail, Summary summary) {
         searchResult.setTitle(detail.getValue("title"));
         searchResult.setOriginalURL(detail.getValue("url"));
         searchResult.setTstamp(Long.parseLong(this.parseTimeStamp(detail.getValue("tstamp").substring(0, 14))));
