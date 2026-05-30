@@ -13,12 +13,12 @@ import pt.arquivo.api.exceptions.ApiNotFoundResourceException;
 import pt.arquivo.api.exceptions.ApiRequestException;
 import pt.arquivo.services.*;
 import pt.arquivo.services.cdx.CDXSearchService;
+import pt.arquivo.services.solr.SolrSearchService;
 import pt.arquivo.utils.Utils;
 import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 
 @Api(tags = "PageSearch")
@@ -109,6 +109,22 @@ public class PageSearchController {
         return searchService.query(searchQuery, true);
     }
 
+    @ApiOperation(value = "Get spelling suggestions for a query using Solr spellcheck")
+    @CrossOrigin
+    @GetMapping(value = "/spellcheck")
+    public @ResponseBody PageSearchResponse spellcheck(
+            @RequestParam(value = "q") String query,
+            HttpServletRequest request) {
+        LOG.info(String.format("Request to /spellcheck for q=%s", query));
+        PageSearchResponse response = new PageSearchResponse();
+        response.setServiceName(serviceName);
+        response.setLinkToService(linkToService);
+        if (searchService instanceof SolrSearchService) {
+            response.setSuggestedQuery(((SolrSearchService) searchService).spellcheck(query));
+        }
+        return response;
+    }
+
     @ApiOperation(value = "Search for Archived Pages that match the query parameters")
     @CrossOrigin
     @GetMapping(value = "/textsearch")
@@ -129,6 +145,7 @@ public class PageSearchController {
                            @RequestParam(value = "fields", required = false) String[] fields,
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
                            @RequestParam(value = "titleSearch", required = false) String titleSearch,
+                           @RequestParam(value = "spellcheck", required = false, defaultValue = "false") boolean spellcheck,
                            HttpServletRequest request
     ) {
         long startTime;
@@ -188,6 +205,9 @@ public class PageSearchController {
         searchResults = searchService.query(searchQuery);
 
         PageSearchResponse pageSearchResponse = new PageSearchResponse();
+        if (spellcheck && searchService instanceof SolrSearchService) {
+            pageSearchResponse.setSuggestedQuery(((SolrSearchService) searchService).spellcheck(query));
+        }
 
         pageSearchResponse.setServiceName(serviceName);
         pageSearchResponse.setLinkToService(linkToService);
