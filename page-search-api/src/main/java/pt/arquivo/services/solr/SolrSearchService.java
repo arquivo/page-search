@@ -662,9 +662,13 @@ public class SolrSearchService implements SearchService {
                     continue;
                 }
 
-                Iterator<SolrDocument> expandedDocumentIterator = expandedResults.get(expandedDedupValue).iterator();
+                Iterator<?> expandedDocumentIterator = expandedResults.get(expandedDedupValue).iterator();
                 while(expandedDocumentIterator.hasNext()){
-                    SolrDocument expandedDoc = expandedDocumentIterator.next();
+                    Object next = expandedDocumentIterator.next();
+                    if (!(next instanceof SolrDocument)) {
+                        continue;
+                    }
+                    SolrDocument expandedDoc = (SolrDocument) next;
 
                     SearchResultSolrImpl expandedResult = getSearchResultfromSolrDocument(expandedDoc,queryResponse,to,from,siteSearchSurts,collectionSearch,replyFields);
                     if(expandedResult == null){
