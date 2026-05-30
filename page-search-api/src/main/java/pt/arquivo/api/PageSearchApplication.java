@@ -10,7 +10,6 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 import org.springframework.context.annotation.Bean;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.cdx.CDXSearchService;
-import pt.arquivo.services.nutchwax.NutchWaxSearchService;
 import pt.arquivo.services.solr.SolrSearchService;
 
 import java.io.IOException;
@@ -29,16 +28,14 @@ public class PageSearchApplication extends SpringBootServletInitializer {
     }
 
     @Bean
-    SearchService generateService() throws IOException {
+    SearchService generateService() throws Exception {
         if (searchServiceBackend.equalsIgnoreCase("nutchwax")) {
             LOG.info("Loading Nutchwax Search Service backend...");
-            return new NutchWaxSearchService();
+            Class<?> clazz = Class.forName("pt.arquivo.services.nutchwax.NutchWaxSearchService");
+            return (SearchService) clazz.getDeclaredConstructor().newInstance();
         }
-        if (searchServiceBackend.equalsIgnoreCase("solr")) {
-            LOG.info("Loading Solr Search Service backend...");
-            return new SolrSearchService();
-        }
-        return new NutchWaxSearchService();
+        LOG.info("Loading Solr Search Service backend...");
+        return new SolrSearchService();
     }
 
     public static void main(String[] args) {

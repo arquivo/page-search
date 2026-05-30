@@ -3,30 +3,13 @@ package pt.arquivo.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import org.apache.nutch.searcher.HitDetails;
-import org.archive.access.nutch.NutchwaxBean;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-import java.io.IOException;
 import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 public class SearchResultNutchImplTest {
-
-    @Test
-    public void getExtractedText() throws IOException {
-        NutchwaxBean bean = mock(NutchwaxBean.class);
-        Mockito.when(bean.getParseText((HitDetails) Mockito.any())).thenThrow(new IOException());
-
-        SearchResultNutchImpl searchResult = new SearchResultNutchImpl();
-        searchResult.setBean(bean);
-
-        String extractedText = searchResult.getExtractedText();
-        assertThat(extractedText.equalsIgnoreCase(""));
-    }
 
     @Test
     public void testCustomSerialization() throws JsonProcessingException {
