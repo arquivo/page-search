@@ -18,7 +18,9 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.request.QueryRequest;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.response.SpellCheckResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -660,9 +662,13 @@ public class SolrSearchService implements SearchService {
                     continue;
                 }
 
-                Iterator<SolrDocument> expandedDocumentIterator = expandedResults.get(expandedDedupValue).iterator();
+                Iterator<?> expandedDocumentIterator = expandedResults.get(expandedDedupValue).iterator();
                 while(expandedDocumentIterator.hasNext()){
-                    SolrDocument expandedDoc = expandedDocumentIterator.next();
+                    Object next = expandedDocumentIterator.next();
+                    if (!(next instanceof SolrDocument)) {
+                        continue;
+                    }
+                    SolrDocument expandedDoc = (SolrDocument) next;
 
                     SearchResultSolrImpl expandedResult = getSearchResultfromSolrDocument(expandedDoc,queryResponse,to,from,siteSearchSurts,collectionSearch,replyFields);
                     if(expandedResult == null){
@@ -828,6 +834,32 @@ public class SolrSearchService implements SearchService {
 
     public static boolean isLastPage(long numberOfResults, SearchQuery searchQuery) {
         return numberOfResults <= searchQuery.getOffset() + searchQuery.getMaxItems();
+    }
+
+    public String spellcheck(String query) {
+        SolrQuery solrQuery = new SolrQuery();
+        solrQuery.setQuery(query);
+        solrQuery.setRows(0);
+        solrQuery.set("q.op", "OR");
+        solrQuery.set("spellcheck", "true");
+        solrQuery.set("spellcheck.collate", "true");
+        solrQuery.set("spellcheck.maxCollations", "1");
+
+        QueryRequest request = new QueryRequest(solrQuery);
+        request.setPath("/spell");
+        try {
+            QueryResponse response = request.process(getSolrClient());
+            SpellCheckResponse spellCheckResponse = response.getSpellCheckResponse();
+            if (spellCheckResponse != null) {
+                String collation = spellCheckResponse.getCollatedResult();
+                if (collation != null && !collation.equalsIgnoreCase(query)) {
+                    return collation;
+                }
+            }
+        } catch (SolrServerException | IOException e) {
+            LOG.error("Error in spellcheck query: ", e);
+        }
+        return null;
     }
 
 }

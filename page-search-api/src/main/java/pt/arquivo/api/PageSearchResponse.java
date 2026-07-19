@@ -35,6 +35,9 @@ public class PageSearchResponse implements ApiResponse {
     @JsonProperty("request_parameters")
     private SearchQuery requestParameters;
 
+    @JsonProperty("suggested_query")
+    private String suggestedQuery;
+
     @JsonProperty("response_items")
     private ArrayList<SearchResult> responseItems;
 
@@ -92,6 +95,14 @@ public class PageSearchResponse implements ApiResponse {
 
     public void setRequestParameters(SearchQuery requestParameters) {
         this.requestParameters = requestParameters;
+    }
+
+    public String getSuggestedQuery() {
+        return suggestedQuery;
+    }
+
+    public void setSuggestedQuery(String suggestedQuery) {
+        this.suggestedQuery = suggestedQuery;
     }
 
     public ArrayList<SearchResult> getResponseItems() {
