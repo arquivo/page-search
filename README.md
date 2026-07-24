@@ -61,6 +61,47 @@ $ cd pagesearch/scripts
 $ ./build-solr-test-image.sh
 ```
 
+## Run Page Search API Locally
+
+`page-search-api` is a Spring Boot app packaged as a WAR (deployed onto Tomcat in
+production, see `page-search-api/Dockerfile`), but for local development you don't
+need to package or deploy it at all — run it directly with the Spring Boot Maven
+plugin, which boots an embedded Tomcat:
+
+```
+$ JAVA_HOME=/usr/lib/jvm/temurin-8-jdk-amd64 mvn -f page-search-api/pom.xml spring-boot:run
+```
+
+By default this listens on port `8081` (see `server.port` in
+`page-search-api/src/main/resources/application.properties`).
+
+### Pointing at a Solr backend
+
+`searchpages.textsearch.service.bean` selects the search backend: any value other
+than `nutchwax` loads `SolrSearchService` (see
+`PageSearchApplication#generateService()`), which in turn only reads
+`searchpages.textsearch.service.bean.solr.link` for the Solr base URL — e.g.
+`http://<host>:<port>/solr/<collection>`.
+
+To point at a different Solr instance/collection without editing the committed
+`application.properties`, pass both properties as Spring Boot run arguments:
+
+```
+$ JAVA_HOME=/usr/lib/jvm/temurin-8-jdk-amd64 mvn -f page-search-api/pom.xml spring-boot:run \
+    -Dspring-boot.run.arguments="--searchpages.textsearch.service.bean=solr --searchpages.textsearch.service.bean.solr.link=http://<host>:<port>/solr/<collection>"
+```
+
+Once running, verify it's serving real results:
+
+```
+$ curl "http://localhost:8081/textsearch?q=test&maxItems=1"
+```
+
+Note: other deployed environments (dev/preprod/prod) may point at different Solr
+hosts/collections than the one committed in `application.properties` — that
+per-environment configuration lives in each environment's own deployment setup,
+not in this repository.
+
 ## Page Search API Architecture 
 
 ![](docs/img/PageSearchArchitecture.png)
