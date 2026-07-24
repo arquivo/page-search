@@ -4,45 +4,46 @@ This project aims to replace the legacy search system. The legacy search system,
 
 ## Compile Page Search
 
-To be able to compile the project we need in the machine's maven repository the Arquivo.pt Nutchwax Project libraries.
-In order for Page Search API to use NutchWaxSearchService as the full-text backend (In the future we can remove these libraries).
+`page-search-api` uses NutchWaxSearchService as a legacy full-text backend, which depends on
+`pt.arquivo:pwalucene` and `org.archive.nutchwax:nutchwax-plugins` (and their own transitive
+legacy dependencies). These have never been published to a public Maven repository, so their
+jars are vendored in `page-search-api/maven-local-repository` and resolved via a `<repository>`
+entry in `page-search-api/pom.xml` — no manual local install step is required.
 
 **NOTE: Do not try to compile with other Java than Java 8**, because of the nutchwax dependecies
-
-a) Satisfy the following page-search-api/pom.xml requirements for NutchWaxSearchService (legacy backend):
-```
-<dependency>
-    <groupId>pt.arquivo</groupId>
-    <artifactId>pwalucene</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-</dependency>
-
-<dependency>
-    <groupId>org.archive.nutchwax</groupId>
-    <artifactId>nutchwax-plugins</artifactId>
-    <version>0.11.0-SNAPSHOT</version>
-</dependency>
-```
-
-You will need the following to satisfy these dependencies:
-
-**hadoop-common (0.14)**
-```shell script
-$ git clone -b branch-0.14 https://github.com/arquivo/hadoop-common.git
-$ mvn clean install -f hadoop-common/pom.xml
-```
-**PwaLucene and PwaArchive-access**
-```shell script
-$ git clone https://github.com/arquivo/pwa-technologies.git
-$ mvn clean install -f pwa-technologies/PwaLucene/pom.xml
-$ mvn clean install -f pwa-technologies/PwaArchive-access/pom.xml
-```
-
-b) Clone and compile Page Search
 
 ```
 $ git clone https://github.com/arquivo/pagesearch.git
 $ mvn clean install -f pagesearch/pom.xml
+```
+
+### Installing Java 8
+
+On Ubuntu, `openjdk-8-jdk` is no longer available in the default repositories.
+Install it from the Eclipse Temurin (Adoptium) repository instead:
+
+```
+$ sudo apt update && sudo apt install -y wget apt-transport-https gpg
+$ wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo gpg --dearmor -o /usr/share/keyrings/adoptium.gpg
+$ echo "deb [signed-by=/usr/share/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb $(awk -F= '/VERSION_CODENAME/{print$2}' /etc/os-release) main" | sudo tee /etc/apt/sources.list.d/adoptium.list
+$ sudo apt update
+$ sudo apt install -y temurin-8-jdk
+```
+
+### Building with Java 8 without changing your system default
+
+If you have other JDKs installed, set `JAVA_HOME` for the build instead of
+switching the system-wide default:
+
+```
+$ JAVA_HOME=/usr/lib/jvm/temurin-8-jdk-amd64 mvn clean install -f pagesearch/pom.xml
+```
+
+Alternatively, switch the default JVM for your whole session with:
+
+```
+$ sudo update-alternatives --config java
+$ sudo update-alternatives --config javac
 ```
 
 ### Run without integration Tests
