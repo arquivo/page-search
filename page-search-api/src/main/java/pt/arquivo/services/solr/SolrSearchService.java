@@ -18,7 +18,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
-import org.apache.solr.client.solrj.request.QueryRequest;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SpellCheckResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
@@ -117,6 +116,27 @@ public class SolrSearchService implements SearchService {
         return dedupField;
     }  
     
+    /**
+     * The fields the user asked to have on each result. The spellcheck field asks for the query to be spellchecked,
+     * it isn't a result field, so it doesn't count here.
+     *
+     * @param searchQuery
+     * @return the requested result fields, or null when the default fields should be returned
+     */
+    private String[] resultFields(SearchQuery searchQuery) {
+        if (searchQuery.getFields() == null) {
+            return null;
+        }
+        List<String> fields = Arrays.stream(searchQuery.getFields())
+                .filter(field -> !SearchQuery.SPELLCHECK_FIELD.equalsIgnoreCase(field))
+                .collect(Collectors.toList());
+
+        if (fields.isEmpty()) {
+            return null;
+        }
+        return fields.toArray(new String[0]);
+    }
+
     /**
      * Converts the API request into an appropriate Solr query.
      * @param searchQuery
@@ -278,7 +298,8 @@ public class SolrSearchService implements SearchService {
         Boolean needsSnippet = true; // Snippet is different, we'll handle it separately
 
         // If user only asks for certain fields, we don't need to ask for every field
-        if (searchQuery.getFields() != null) {
+        String[] requestedFields = resultFields(searchQuery);
+        if (requestedFields != null) {
             for (int i = 0; i < fieldsArray.length; i++) {
                 fieldInclusivity.put(fieldsArray[i], false);
             }
@@ -294,7 +315,7 @@ public class SolrSearchService implements SearchService {
             }
 
             needsSnippet = false;
-            for (String field : searchQuery.getFields()) {
+            for (String field : requestedFields) {
                 switch (field) {
                     case "title":
                         fieldInclusivity.put("titleString", true);
@@ -327,9 +348,27 @@ public class SolrSearchService implements SearchService {
 
         solrQuery.setFields(stringBuilderFields.toString());
 
-        // If we don't need snippet we don't ask Solr for highligting (which is on by default since v5)
-        if(!needsSnippet){
+        // If we don't need snippet we don't ask Solr for highligting (which is on by default since v5), and a query
+        // asking for no results at all has nothing to highlight either
+        if(!needsSnippet || searchQuery.getMaxItems() == 0){
             solrQuery.set("hl","false");
+        }
+
+        // Every spellcheck parameter is sent explicitly, so the reply doesn't depend on the request handler defaults
+        if (searchQuery.isSpellcheck()) {
+            solrQuery.set("spellcheck.dictionary", "default");
+            solrQuery.set("spellcheck", "true");
+            solrQuery.set("spellcheck.extendedResults", "true");
+            solrQuery.set("spellcheck.count", "1");
+            solrQuery.set("spellcheck.alternativeTermCount", "5");
+            solrQuery.set("spellcheck.collate", "true");
+            solrQuery.set("spellcheck.collateExtendedResults", "true");
+            solrQuery.set("spellcheck.maxCollationTries", "10");
+            solrQuery.set("spellcheck.maxCollations", "1");
+            // Quoted so collations are only kept when the corrected terms match as a phrase
+            solrQuery.set("spellcheck.q", searchQuery.getQuotedQueryTerms());
+        } else {
+            solrQuery.set("spellcheck", "false");
         }
 
         return solrQuery;
@@ -413,6 +452,7 @@ public class SolrSearchService implements SearchService {
             solrQuery.set("q", "id:" + docId);
             solrQuery.set("fl", "content");
             solrQuery.set("hl","false");
+            solrQuery.set("spellcheck","false");
             try {
                 SolrDocumentList solrDocumentList = getSolrClient().query(solrQuery).getResults();
                 if (solrDocumentList.size() > 0) {
@@ -608,13 +648,14 @@ public class SolrSearchService implements SearchService {
         final Map<String, SolrDocumentList> expandedResults = queryResponse.getExpandedResults();
 
         // Check which fields the user asked for
-        if (searchQuery.getFields() == null) {
+        String[] requestedFields = resultFields(searchQuery);
+        if (requestedFields == null) {
             // Default reply fields
             replyFields = new String[] { "title", "originalURL", "mimeType", "tstamp", "digest", "collection", "id",
                     "snippet", "linkToArchive", "linkToNoFrame", "linkToScreenshot", "linkToExtractedText",
                     "linkToMetadata", "linkToOriginalFile" };
         } else {
-            replyFields = searchQuery.getFields();
+            replyFields = requestedFields;
         }
 
         // Check if the user searched for one or more specific websites
@@ -683,7 +724,39 @@ public class SolrSearchService implements SearchService {
         searchResults.setEstimatedNumberResults(queryResponse.getResults().getNumFound());
         searchResults.setNumberResults(queryResponse.getResults().size());
 
+        if (searchQuery.isSpellcheck()) {
+            searchResults.setSuggestedQuery(parseSuggestedQuery(queryResponse, searchQuery));
+        }
+
         return searchResults;
+    }
+
+    /**
+     * Extracts the spelling suggestion (collation) from a query response. Returns null when Solr had nothing to
+     * suggest or when the suggestion is just the query the user already made.
+     *
+     * @param queryResponse
+     * @param searchQuery
+     * @return
+     */
+    private String parseSuggestedQuery(QueryResponse queryResponse, SearchQuery searchQuery) {
+        SpellCheckResponse spellCheckResponse = queryResponse.getSpellCheckResponse();
+        if (spellCheckResponse == null) {
+            return null;
+        }
+        String collation = spellCheckResponse.getCollatedResult();
+        if (collation == null) {
+            return null;
+        }
+        // The suggestion is quoted like the spellcheck.q we sent, so take back the quotes we added ourselves
+        boolean quotedByUs = !searchQuery.getQueryTerms().equals(searchQuery.getQuotedQueryTerms());
+        if (quotedByUs && collation.length() > 1 && collation.startsWith("\"") && collation.endsWith("\"")) {
+            collation = collation.substring(1, collation.length() - 1);
+        }
+        if (collation.equalsIgnoreCase(searchQuery.getQueryTerms())) {
+            return null;
+        }
+        return collation;
     }
 
     /**
@@ -790,6 +863,7 @@ public class SolrSearchService implements SearchService {
             solrQuery.set("q", String.join(" OR ", solrQueryForSites));
             solrQuery.set("fl","id,type,tstamp,urlTimestamp,surt,titleString,collection,url");
             solrQuery.set("hl","false");
+            solrQuery.set("spellcheck","false");
 
             LOG.info("Solr Query (queryByUrl): "+solrQuery);
             searchQuery.setFields(new String[] { "title", "originalURL", "mimeType", "tstamp", "digest", "collection", "id",
@@ -834,32 +908,6 @@ public class SolrSearchService implements SearchService {
 
     public static boolean isLastPage(long numberOfResults, SearchQuery searchQuery) {
         return numberOfResults <= searchQuery.getOffset() + searchQuery.getMaxItems();
-    }
-
-    public String spellcheck(String query) {
-        SolrQuery solrQuery = new SolrQuery();
-        solrQuery.setQuery(query);
-        solrQuery.setRows(0);
-        solrQuery.set("q.op", "OR");
-        solrQuery.set("spellcheck", "true");
-        solrQuery.set("spellcheck.collate", "true");
-        solrQuery.set("spellcheck.maxCollations", "1");
-
-        QueryRequest request = new QueryRequest(solrQuery);
-        request.setPath("/spell");
-        try {
-            QueryResponse response = request.process(getSolrClient());
-            SpellCheckResponse spellCheckResponse = response.getSpellCheckResponse();
-            if (spellCheckResponse != null) {
-                String collation = spellCheckResponse.getCollatedResult();
-                if (collation != null && !collation.equalsIgnoreCase(query)) {
-                    return collation;
-                }
-            }
-        } catch (SolrServerException | IOException e) {
-            LOG.error("Error in spellcheck query: ", e);
-        }
-        return null;
     }
 
 }
