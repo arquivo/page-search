@@ -218,6 +218,45 @@ public class PageSearchControllerTest {
     }
 
     @Test
+    public void pageSearchSpellcheck() throws Exception {
+        SearchResults mockSearchResults = new SearchResults();
+        mockSearchResults.setResults(new ArrayList<>());
+        mockSearchResults.setSuggestedQuery("torres novas");
+
+        Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
+
+        // spellcheck field requested and the query is misspelled: reply with the suggestion
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=torrse%20novsa&fields=spellcheck&maxItems=0")).andReturn();
+        JSONObject jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.getString("suggested_query")).isEqualTo("torres novas");
+
+        // spellcheck field requested and the query is well spelled: reply with an empty suggestion
+        mockSearchResults.setSuggestedQuery(null);
+        result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=torres%20novas&fields=spellcheck&maxItems=0")).andReturn();
+        jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.getString("suggested_query")).isEqualTo("");
+
+        // spellcheck field requested along with regular result fields
+        mockSearchResults.setSuggestedQuery("torres novas");
+        result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=torrse%20novsa&fields=title,snippet,spellcheck")).andReturn();
+        jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.getString("suggested_query")).isEqualTo("torres novas");
+
+        // spellcheck field not requested: no suggestion field at all
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=torrse%20novsa")).andReturn();
+        jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.has("suggested_query")).isFalse();
+
+        result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=torrse%20novsa&fields=title,snippet")).andReturn();
+        jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.has("suggested_query")).isFalse();
+    }
+
+    @Test
     public void pageSearchNutch() throws Exception {
         ItemCDX item = new ItemCDX("URL", "123456789", "", "", null, "",
                 null, "0", "");

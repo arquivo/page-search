@@ -51,6 +51,21 @@ public class SearchQueryImpl implements SearchQuery {
         return queryTerms;
     }
 
+    @JsonIgnore
+    public String getQuotedQueryTerms() {
+        if (queryTerms == null) {
+            return null;
+        }
+        // if the query is already quoted, don't quote it again
+        if (queryTerms.startsWith("\"") && queryTerms.endsWith("\"")) {
+            return queryTerms;
+        }
+        if (queryTerms.startsWith("'") && queryTerms.endsWith("'")) {
+            return queryTerms;
+        }
+        return "\"" + queryTerms + "\"";
+    }
+
     public void setQueryTerms(String queryTerms) {
         this.queryTerms = queryTerms;
     }
@@ -210,6 +225,23 @@ public class SearchQueryImpl implements SearchQuery {
     @JsonIgnore
     public boolean isSearchByTitle() {
         return this.titleSearch != null;
+    }
+
+    /**
+     * The query is spellchecked when the user asks for the spellcheck field, e.g. fields=title,spellcheck
+     */
+    @Override
+    @JsonIgnore
+    public boolean isSpellcheck() {
+        if (this.fields == null) {
+            return false;
+        }
+        for (String field : this.fields) {
+            if (SPELLCHECK_FIELD.equalsIgnoreCase(field)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public String toString() {

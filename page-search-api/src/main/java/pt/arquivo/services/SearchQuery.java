@@ -1,7 +1,13 @@
 package pt.arquivo.services;
 
 public interface SearchQuery {
+
+    /** Value of the fields parameter that asks for the query to be spellchecked. Not a field of the results. */
+    String SPELLCHECK_FIELD = "spellcheck";
+
     String getQueryTerms();
+
+    String getQuotedQueryTerms();
 
     void setQueryTerms(String queryTerms);
 
@@ -66,4 +72,6 @@ public interface SearchQuery {
     void setTitleSearch(String title);
     
     boolean isSearchByTitle();
+
+    boolean isSpellcheck();
 }
