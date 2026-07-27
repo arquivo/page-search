@@ -1,19 +1,26 @@
-version: '3.7'
+version: '3.8'
 
 services:
-  solr:
-    # image: solr:8.4.1
-    ports:
-      - "8983:8983"
-    build: ./solr
-    container_name: pagesearch-solr-test
-    volumes:
-      - ./solr/pagesearch-solr:/var/solr/data/pagesearch
-
-  api:
-    build: ./page-search-api
-    container_name: pagesearch
-    ports:
-      - "8081:8081"
-
-
+  page-search-api:
+    build:
+      context: .
+      dockerfile: page-search-api/Dockerfile
+    container_name: page-search-api
+    network_mode: host
+    environment:
+      NUTCHWAX_SEARCH_FILE: /app/
+      SOLR_URL: http://p44DDDD.arquivo.pt:2200/solr
+      SERVER_PORT: 8080
+      JAVA_OPTS: -Xmx2g -Xms512m
+    restart: unless-stopped
+    # Shallow TCP liveness check: confirms the JVM/Tomcat is accepting
+    # connections without exercising business logic or Solr. A deep check
+    # (e.g. hitting /textsearch) risks cascading restarts if Solr is merely
+    # slow rather than broken. Override in an environment-specific compose
+    # file if a deployment needs different semantics.
+    healthcheck:
+      test: ["CMD-SHELL", "cat < /dev/null > /dev/tcp/127.0.0.1/8080 || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
