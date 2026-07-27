@@ -8,3 +8,4 @@
 /output_*
 **/target/
 /solr/test-data/
+docker-compose.override.yml
