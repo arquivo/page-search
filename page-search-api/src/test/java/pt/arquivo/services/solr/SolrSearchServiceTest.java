@@ -1,20 +1,33 @@
 package pt.arquivo.services.solr;
 
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SpellCheckResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.util.NamedList;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import pt.arquivo.services.SearchQuery;
 import pt.arquivo.services.SearchQueryImpl;
+import pt.arquivo.services.SearchResultSolrImpl;
+import pt.arquivo.services.SearchResults;
+import pt.arquivo.services.SearchServiceConfiguration;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class SolrSearchServiceTest {
 
@@ -22,7 +35,16 @@ public class SolrSearchServiceTest {
 
     @Before
     public void setUp() {
-        service = new SolrSearchService();
+        SearchServiceConfiguration configuration = new SearchServiceConfiguration();
+        configuration.setStartDate("19960101000000");
+        configuration.setServiceName("http://localhost:8081");
+        configuration.setScreenshotServiceEndpoint("http://screenshot.example.com");
+        configuration.setWaybackServiceEndpoint("http://wayback.example.com/wayback");
+        configuration.setWaybackNoFrameServiceEndpoint("http://wayback.example.com/noFrame");
+        configuration.setExtractedTextServiceEndpoint("http://extractedtext.example.com");
+        configuration.setBaseSolrUrl("http://solr.example.com/solr/searchpages");
+        configuration.setTextSearchServiceEndpoint("http://textsearch.example.com");
+        service = new SolrSearchService(configuration);
     }
 
     @Test
@@ -230,5 +252,151 @@ public class SolrSearchServiceTest {
         SearchQueryImpl searchQuery = new SearchQueryImpl("\"origanal query\"");
         QueryResponse queryResponse = queryResponseWithCollation("\"original query\"");
         assertThat(service.parseSuggestedQuery(queryResponse, searchQuery)).isEqualTo("\"original query\"");
+    }
+
+    private static SolrDocument docWithUrlTimestamp(String id, String urlTimestamp) {
+        SolrDocument doc = new SolrDocument();
+        doc.addField("id", id);
+        doc.addField("urlTimestamp", urlTimestamp);
+        return doc;
+    }
+
+    private static QueryResponse queryResponseWithResults(SolrDocument... docs) {
+        SolrDocumentList docList = new SolrDocumentList();
+        docList.addAll(Arrays.asList(docs));
+        docList.setNumFound(docs.length);
+
+        NamedList<Object> response = new NamedList<>();
+        response.add("response", docList);
+        // Highlighting is on by default in Solr whenever snippets are requested (see convertSearchQuery),
+        // so a real response always carries a "highlighting" key, even if empty for every doc.
+        response.add("highlighting", new NamedList<>());
+
+        QueryResponse queryResponse = new QueryResponse();
+        queryResponse.setResponse(response);
+        return queryResponse;
+    }
+
+    private static QueryResponse queryResponseWithHighlighting(SolrDocument doc, String fieldName, String snippet) {
+        NamedList<List<String>> docHighlight = new NamedList<>();
+        docHighlight.add(fieldName, Arrays.asList(snippet));
+        NamedList<Object> highlighting = new NamedList<>();
+        highlighting.add((String) doc.getFieldValue("id"), docHighlight);
+
+        SolrDocumentList docList = new SolrDocumentList();
+        docList.add(doc);
+        docList.setNumFound(1);
+
+        NamedList<Object> response = new NamedList<>();
+        response.add("response", docList);
+        response.add("highlighting", highlighting);
+
+        QueryResponse queryResponse = new QueryResponse();
+        queryResponse.setResponse(response);
+        return queryResponse;
+    }
+
+    @Test
+    public void query_happyPath_mapsSolrDocumentToSearchResult() throws Exception {
+        SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101010101/(com,example,)/path");
+        QueryResponse queryResponse = queryResponseWithResults(doc);
+
+        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        when(solrClient.query(any(SolrQuery.class))).thenReturn(queryResponse);
+        service.solrClient = solrClient;
+
+        SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
+        SearchResults results = service.query(searchQuery);
+
+        assertThat(results.getEstimatedNumberResults()).isEqualTo(1);
+        assertThat(results.getNumberResults()).isEqualTo(1);
+        assertThat(results.isLastPageResults()).isTrue();
+        assertThat(results.getResults()).hasSize(1);
+        assertThat(results.getResults().get(0).getId()).isEqualTo("doc-1");
+        assertThat(results.getResults().get(0).getCollection()).isEqualTo("COLLECTION1");
+        assertThat(results.getResults().get(0).getTstamp()).isEqualTo("20190101010101");
+    }
+
+    @Test
+    public void query_solrServerException_returnsEmptyFallbackResults() throws Exception {
+        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        when(solrClient.query(any(SolrQuery.class))).thenThrow(new SolrServerException("boom"));
+        service.solrClient = solrClient;
+
+        SearchResults results = service.query(new SearchQueryImpl("sapo"));
+
+        assertThat(results.getEstimatedNumberResults()).isEqualTo(0);
+        assertThat(results.getNumberResults()).isEqualTo(0);
+        assertThat(results.isLastPageResults()).isFalse();
+        assertThat(results.getResults()).isNull();
+    }
+
+    @Test
+    public void getHighlightedText_usesHighlightSnippetWhenPresent() {
+        SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101010101/(com,example,)/path");
+        QueryResponse queryResponse = queryResponseWithHighlighting(doc, "content", "hi <em>there</em>");
+
+        String highlighted = service.getHighlightedText(queryResponse, "content", "doc-1");
+
+        assertThat(highlighted).isEqualTo("hi <em>there</em><span class=\"ellipsis\"> ... </span>");
+    }
+
+    @Test
+    public void getHighlightedText_fallsBackToContentFieldWhenNoHighlight() throws Exception {
+        SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101010101/(com,example,)/path");
+        QueryResponse queryResponse = queryResponseWithResults(doc);
+
+        SolrDocument contentDoc = new SolrDocument();
+        contentDoc.addField("content", "short content");
+        QueryResponse contentResponse = queryResponseWithResults(contentDoc);
+
+        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        when(solrClient.query(any(SolrQuery.class))).thenReturn(contentResponse);
+        service.solrClient = solrClient;
+
+        String highlighted = service.getHighlightedText(queryResponse, "content", "doc-1");
+
+        assertThat(highlighted).isEqualTo("short content");
+    }
+
+    @Test
+    public void getHighlightedText_truncatesLongContentFallbackWithEllipsis() throws Exception {
+        SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101010101/(com,example,)/path");
+        QueryResponse queryResponse = queryResponseWithResults(doc);
+
+        String longContent = String.join("", java.util.Collections.nCopies(600, "a"));
+        SolrDocument contentDoc = new SolrDocument();
+        contentDoc.addField("content", longContent);
+        QueryResponse contentResponse = queryResponseWithResults(contentDoc);
+
+        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        when(solrClient.query(any(SolrQuery.class))).thenReturn(contentResponse);
+        service.solrClient = solrClient;
+
+        String highlighted = service.getHighlightedText(queryResponse, "content", "doc-1");
+
+        assertThat(highlighted).isEqualTo(longContent.substring(0, 500) + "<span class=\"ellipsis\"> ... </span>");
+    }
+
+    @Test
+    public void query_urlSearch_true_queriesByUrlTimestampAndExcludesSnippet() throws Exception {
+        SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101000000/(com,example,)/path");
+        QueryResponse queryResponse = queryResponseWithResults(doc);
+
+        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        when(solrClient.query(any(SolrQuery.class))).thenReturn(queryResponse);
+        service.solrClient = solrClient;
+
+        SearchQueryImpl searchQuery = new SearchQueryImpl("http://example.com");
+        searchQuery.setFrom("20190101000000");
+
+        SearchResults results = service.query(searchQuery, true);
+
+        ArgumentCaptor<SolrQuery> solrQueryCaptor = ArgumentCaptor.forClass(SolrQuery.class);
+        verify(solrClient).query(solrQueryCaptor.capture());
+        assertThat(solrQueryCaptor.getValue().getQuery()).startsWith("urlTimestamp:*/20190101000000/");
+
+        assertThat(results.getResults()).hasSize(1);
+        assertThat(((SearchResultSolrImpl) results.getResults().get(0)).getSnippet()).isNull();
     }
 }
