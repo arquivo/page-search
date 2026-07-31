@@ -186,18 +186,7 @@ public class CDXSearchService {
 
         try {
             LOG.debug("[OPEN Connection]: " + strurl);
-            URL url = new URL(strurl);
-            URLConnection con;
-            if (strurl.startsWith("https")) {
-                con = (HttpsURLConnection) url.openConnection();
-            } else {
-                con = url.openConnection();
-            }
-            con.setConnectTimeout(timeoutConn);
-
-            // set this to a globaltimeout equal to all services
-            con.setReadTimeout(timeoutreadConn);
-
+            URLConnection con = openCdxConnection(strurl);
             is = con.getInputStream();
             BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
             jsonResponse = readAll(rd);
@@ -215,6 +204,21 @@ public class CDXSearchService {
                 }
             }
         }
+    }
+
+    /**
+     * Opens a connection to the CDX server. Extracted as its own method so tests can stub it out via
+     * {@code Mockito.spy(...)} instead of hitting the network.
+     */
+    URLConnection openCdxConnection(String strurl) throws IOException {
+        URL url = new URL(strurl);
+        URLConnection con = strurl.startsWith("https")
+                ? (HttpsURLConnection) url.openConnection()
+                : url.openConnection();
+        con.setConnectTimeout(timeoutConn);
+        // set this to a globaltimeout equal to all services
+        con.setReadTimeout(timeoutreadConn);
+        return con;
     }
 
     /**

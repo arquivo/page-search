@@ -3,9 +3,21 @@ package pt.arquivo.services.cdx;
 import org.junit.Before;
 import org.junit.Test;
 import pt.arquivo.services.SearchResultNutchImpl;
+import pt.arquivo.services.SearchResults;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 public class CDXSearchServiceTest {
 
@@ -105,5 +117,45 @@ public class CDXSearchServiceTest {
 
         assertThat(result.getLinkToExtractedText()).isEqualTo("http://extractedtext.example.com?m="
                 + "http%3A%2F%2Fexample.com%2F201901010101203401");
+    }
+
+    private static URLConnection connectionReturning(String body) throws IOException {
+        URLConnection connection = mock(URLConnection.class);
+        when(connection.getInputStream()).thenReturn(
+                new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
+        return connection;
+    }
+
+    @Test
+    public void getResults_happyPath_mapsCdxJsonToSearchResults() throws Exception {
+        String cdxJson = "{\"url\":\"http://example.com\",\"timestamp\":\"20190101010101\","
+                + "\"digest\":\"DIGEST123\",\"mime\":\"text/html\",\"status\":\"200\","
+                + "\"filename\":\"some-file.warc.gz\",\"length\":\"80\",\"offset\":\"1234\","
+                + "\"collection\":\"COLLECTION1\"}\n";
+
+        CDXSearchService spy = spy(cdxSearchService);
+        doReturn(connectionReturning(cdxJson)).when(spy).openCdxConnection(anyString());
+
+        SearchResults results = spy.getResults("http://example.com", null, null, 10, 0);
+
+        assertThat(results.getEstimatedNumberResults()).isEqualTo(1);
+        assertThat(results.getResults()).hasSize(1);
+        SearchResultNutchImpl result = (SearchResultNutchImpl) results.getResults().get(0);
+        assertThat(result.getOriginalURL()).isEqualTo("http://example.com");
+        assertThat(result.getTitle()).isEqualTo("http://example.com");
+        assertThat(result.getTstamp()).isEqualTo("20190101010101");
+        assertThat(result.getCollection()).isEqualTo("COLLECTION1");
+        assertThat(result.getLinkToArchive()).isEqualTo("http://wayback.example.com/wayback/20190101010101/http://example.com");
+    }
+
+    @Test
+    public void getResults_connectionThrows_returnsZeroResults() throws Exception {
+        CDXSearchService spy = spy(cdxSearchService);
+        doThrow(new IOException("boom")).when(spy).openCdxConnection(anyString());
+
+        SearchResults results = spy.getResults("http://example.com", null, null, 10, 0);
+
+        assertThat(results.getEstimatedNumberResults()).isEqualTo(0);
+        assertThat(results.getResults()).isNull();
     }
 }
