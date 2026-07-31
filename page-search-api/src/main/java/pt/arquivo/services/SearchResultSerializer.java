@@ -18,7 +18,7 @@ public class SearchResultSerializer extends JsonSerializer {
     private static final Logger LOG = LoggerFactory.getLogger(SearchResultSerializer.class);
 
     @Value("${searchpages.api.show.ids}")
-    private boolean showIds;
+    boolean showIds;
 
     @Override
     public void serialize(Object o, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {

@@ -38,22 +38,22 @@ public class CDXSearchService {
     private int timeoutConn;
 
     @Value("${wayback.service.cdx.endpoint}")
-    private String waybackCdxEndpoint;
+    String waybackCdxEndpoint;
 
     @Value("${screenshot.service.endpoint}")
-    private String screenshotServiceEndpoint;
+    String screenshotServiceEndpoint;
 
     @Value("${wayback.service.endpoint}")
-    private String waybackServiceEndpoint;
+    String waybackServiceEndpoint;
 
     @Value("${wayback.noframe.service.endpoint}")
-    private String waybackNoFrameServiceEndpoint;
+    String waybackNoFrameServiceEndpoint;
 
     @Value("${searchpages.extractedtext.service.link}")
-    private String extractedTextServiceEndpoint;
+    String extractedTextServiceEndpoint;
 
     @Value("${searchpages.textsearch.service.link}")
-    private String textSearchServiceEndpoint;
+    String textSearchServiceEndpoint;
 
     @Value("${searchpages.api.show.ids}")
     private boolean showIds;
@@ -130,7 +130,7 @@ public class CDXSearchService {
         return searchResult;
     }
 
-    private String generateCdxQuery(String url, String from, String to) {
+    String generateCdxQuery(String url, String from, String to) {
         if (from == null) {
             from = "";
         }
@@ -238,7 +238,7 @@ public class CDXSearchService {
     }
 
 
-    private void populateEndpointsLinks(SearchResultNutchImpl searchResult, boolean textMatch) throws UnsupportedEncodingException {
+    void populateEndpointsLinks(SearchResultNutchImpl searchResult, boolean textMatch) throws UnsupportedEncodingException {
 
         searchResult.setLinkToArchive(waybackServiceEndpoint.concat("/")
                 .concat(searchResult.getTstamp().concat("/").concat(searchResult.getOriginalURL())));
