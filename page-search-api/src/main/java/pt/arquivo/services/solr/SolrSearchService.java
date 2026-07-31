@@ -41,7 +41,7 @@ public class SolrSearchService implements SearchService {
     private static final Logger LOG = LoggerFactory.getLogger(SolrSearchService.class);
 
     // TODO should upgrade this for the SolrCloudClient
-    private HttpSolrClient solrClient;
+    HttpSolrClient solrClient;
 
     @Value("${searchpages.api.startdate:19960101000000}")
     private String startDate;
