@@ -8,7 +8,12 @@ import org.apache.commons.lang.StringUtils;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SearchQueryImpl implements SearchQuery {
 
-    private static final int MAX_ALLOWED_ITEMS = 500; 
+    private static final int MAX_ALLOWED_ITEMS = 500;
+
+    /** The ranking is either left as it is (0) or has the years normalized at most all the way (1) */
+    public static final double MIN_YEAR_BALANCE = 0.0;
+    public static final double MAX_YEAR_BALANCE = 1.0;
+
 
     @JsonProperty("q")
     private String queryTerms;
@@ -47,6 +52,11 @@ public class SearchQueryImpl implements SearchQuery {
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @JsonProperty("timeline")
     private boolean timeline;
+
+    /** How strongly the thin years of the archive are lifted in the ranking, 0 (the default) leaves it untouched. */
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonProperty("yearBalance")
+    private double yearBalance;
 
     public SearchQueryImpl(String queryTerms) {
         this.queryTerms = queryTerms;
@@ -246,6 +256,26 @@ public class SearchQueryImpl implements SearchQuery {
     }
 
     /**
+     * How strongly the ranking lifts the documents of the thin years of the archive, from 0 (untouched) to 1 (the
+     * years are normalized all the way).
+     */
+    @Override
+    public double getYearBalance() {
+        return yearBalance;
+    }
+
+    @Override
+    public void setYearBalance(double yearBalance) {
+        if (yearBalance < MIN_YEAR_BALANCE) {
+            this.yearBalance = MIN_YEAR_BALANCE;
+        } else if (yearBalance > MAX_YEAR_BALANCE) {
+            this.yearBalance = MAX_YEAR_BALANCE;
+        } else {
+            this.yearBalance = yearBalance;
+        }
+    }
+
+    /**
      * The query is spellchecked when the user asks for the spellcheck field, e.g. fields=title,spellcheck
      */
     @Override
@@ -287,6 +317,7 @@ public class SearchQueryImpl implements SearchQuery {
         }
         stringBuilder.append(" titleSearch: ").append(getTitleSearch());
         stringBuilder.append(" timeline: ").append(isTimeline());
+        stringBuilder.append(" yearBalance: ").append(getYearBalance());
         stringBuilder.append(" prettyPrint: ").append(getPrettyPrint());
         return stringBuilder.toString();
     }

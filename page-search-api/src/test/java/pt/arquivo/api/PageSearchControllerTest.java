@@ -299,6 +299,46 @@ public class PageSearchControllerTest {
     }
 
     @Test
+    public void pageSearchYearBalance() throws Exception {
+        SearchResults mockSearchResults = new SearchResults();
+        mockSearchResults.setResults(new ArrayList<>());
+
+        Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
+
+        // asked for without a strength: the ranking is balanced by the default amount
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=eleicoes&yearBalance=true")).andReturn();
+        JSONObject jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.getDouble("yearBalance")).isEqualTo(0.5);
+
+        // asked for with a strength of its own
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=0.25")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.getDouble("yearBalance")).isEqualTo(0.25);
+
+        // not asked for, or turned down: the reply is the one it always was
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.has("yearBalance")).isFalse();
+
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=false")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.has("yearBalance")).isFalse();
+
+        // out of range, or not a number at all
+        assertThat(mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=2"))
+                .andReturn().getResponse().getStatus()).isEqualTo(400);
+        assertThat(mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=-1"))
+                .andReturn().getResponse().getStatus()).isEqualTo(400);
+        assertThat(mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=lots"))
+                .andReturn().getResponse().getStatus()).isEqualTo(400);
+    }
+
+    @Test
     public void pageSearchNutch() throws Exception {
         ItemCDX item = new ItemCDX("URL", "123456789", "", "", null, "",
                 null, "0", "");

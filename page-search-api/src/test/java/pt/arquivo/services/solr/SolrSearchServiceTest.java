@@ -7,6 +7,8 @@ import pt.arquivo.services.SearchQueryImpl;
 import pt.arquivo.services.SearchServiceConfiguration;
 
 import java.time.Year;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,7 +24,17 @@ public class SolrSearchServiceTest {
         SearchServiceConfiguration configuration = new SearchServiceConfiguration();
         configuration.setStartDate("19960101000000");
         configuration.setBaseSolrUrl("http://localhost:8983/solr/pages");
-        return new SolrSearchService(configuration);
+        SolrSearchService solrSearchService = new SolrSearchService(configuration);
+
+        // An archive starting on 1996 and holding ten times more documents on 2008 than on 1997, so that the volumes
+        // are known without a Solr to ask
+        Map<String, Long> volumesPerYear = new LinkedHashMap<>();
+        volumesPerYear.put("1996", 50000L);
+        volumesPerYear.put("1997", 100000L);
+        volumesPerYear.put("2008", 1000000L);
+        solrSearchService.setYearVolumes(new YearVolumes(volumesPerYear));
+
+        return solrSearchService;
     }
 
     private static SearchQuery timelineQuery() {
@@ -95,6 +107,31 @@ public class SolrSearchServiceTest {
         assertThat(timelineQuery.getFilterQueries())
                 .contains("type:application\\/pdf", "collections:AWP1")
                 .noneMatch(filterQuery -> filterQuery.startsWith("{!collapse"));
+    }
+
+    @Test
+    public void yearBalanceBoostsTheThinYears() {
+        SearchQuery searchQuery = new SearchQueryImpl("eleições");
+        searchQuery.setYearBalance(1.0);
+
+        SolrQuery solrQuery = solrSearchService.convertSearchQuery(searchQuery);
+
+        // 1997 holds a tenth of what 2008 does, so its documents are multiplied by ten
+        assertThat(solrQuery.get("boost")).contains("ms(dateOldest)").contains("10.0000");
+    }
+
+    @Test
+    public void searchQueryIsNotBoostedWhenYearBalanceIsntAskedFor() {
+        assertThat(solrSearchService.convertSearchQuery(new SearchQueryImpl("eleições")).get("boost")).isNull();
+    }
+
+    @Test
+    public void timelineQueryIsNotBoosted() {
+        SearchQuery searchQuery = timelineQuery();
+        searchQuery.setYearBalance(1.0);
+
+        // Counting the documents of each year has no use for how they are scored
+        assertThat(solrSearchService.convertTimelineQuery(searchQuery).get("boost")).isNull();
     }
 
     @Test
