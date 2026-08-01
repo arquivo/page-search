@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -39,6 +40,20 @@ import pt.arquivo.utils.Utils;
 public class SolrSearchService implements SearchService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SolrSearchService.class);
+
+    /** Result fields that are only returned when the user asks for them through the fields parameter. */
+    private static final List<String> OPT_IN_FIELDS = Arrays.asList("language", "languageConfidence");
+
+    /**
+     * The minLanguageConfidence tiers, from the most to the least confident, and the value each one has in the
+     * indexed languageConfidence field. The least confident tier is indexed as NONE.
+     */
+    private static final Map<String, String> LANGUAGE_CONFIDENCE_TIERS = new LinkedHashMap<String, String>();
+    static {
+        LANGUAGE_CONFIDENCE_TIERS.put(SearchQuery.LANGUAGE_CONFIDENCE_HIGH, "HIGH");
+        LANGUAGE_CONFIDENCE_TIERS.put(SearchQuery.LANGUAGE_CONFIDENCE_MEDIUM, "MEDIUM");
+        LANGUAGE_CONFIDENCE_TIERS.put(SearchQuery.LANGUAGE_CONFIDENCE_LOW, "NONE");
+    }
 
     // TODO should upgrade this for the SolrCloudClient
     private HttpSolrClient solrClient;
@@ -142,7 +157,7 @@ public class SolrSearchService implements SearchService {
      * @param searchQuery
      * @return
      */
-    private SolrQuery convertSearchQuery(SearchQuery searchQuery) {
+    SolrQuery convertSearchQuery(SearchQuery searchQuery) { // package private so it can be tested
         SolrQuery solrQuery = new SolrQuery();
 
         if(searchQuery.getQueryTerms() == null){
@@ -208,6 +223,31 @@ public class SolrSearchService implements SearchService {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("titleString:");
             stringBuilder.append(ClientUtils.escapeQueryChars(title));
+            solrQuery.addFilterQuery(stringBuilder.toString());
+        }
+
+        // Handle language request
+        if (searchQuery.isSearchByLanguage()) {
+            solrQuery.addFilterQuery("language:" + ClientUtils.escapeQueryChars(searchQuery.getLanguage()));
+        }
+
+        // Handle minLanguageConfidence request. The tiers are ordinal, so a request takes every tier down to the
+        // one it asked for, e.g. MEDIUM also takes the HIGH documents
+        String minLanguageConfidence = searchQuery.getMinLanguageConfidence();
+        if (minLanguageConfidence != null) {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("languageConfidence:(");
+            boolean multipleTiers = false;
+            for (Map.Entry<String, String> tier : LANGUAGE_CONFIDENCE_TIERS.entrySet()) {
+                if (multipleTiers)
+                    stringBuilder.append(" OR ");
+                stringBuilder.append(tier.getValue());
+                multipleTiers = true;
+
+                if (tier.getKey().equals(minLanguageConfidence))
+                    break;
+            }
+            stringBuilder.append(")");
             solrQuery.addFilterQuery(stringBuilder.toString());
         }
 
@@ -293,7 +333,8 @@ public class SolrSearchService implements SearchService {
 
         // Optimization: Make sure we only ask the fields we need.
         // At most we'll only need these fields from Solr:
-        String[] fieldsArray = new String[] { "id", "type", "urlTimestamp", "titleString" };
+        String[] fieldsArray = new String[] { "id", "type", "urlTimestamp", "titleString", "language",
+                "languageConfidence" };
         Hashtable<String, Boolean> fieldInclusivity = new Hashtable<String, Boolean>();
         Boolean needsSnippet = true; // Snippet is different, we'll handle it separately
 
@@ -327,11 +368,17 @@ public class SolrSearchService implements SearchService {
                         fieldInclusivity.put("id", true);
                         needsSnippet = true;
                         break;
+                    case "language":
+                        fieldInclusivity.put("language", true);
+                        break;
+                    case "languageConfidence":
+                        fieldInclusivity.put("languageConfidence", true);
+                        break;
                 }
             }
         } else {
             for (int i = 0; i < fieldsArray.length; i++) {
-                fieldInclusivity.put(fieldsArray[i], true);
+                fieldInclusivity.put(fieldsArray[i], !OPT_IN_FIELDS.contains(fieldsArray[i]));
             }
         }
         StringBuilder stringBuilderFields = new StringBuilder();
@@ -837,6 +884,13 @@ public class SolrSearchService implements SearchService {
                 case "linkToOriginalFile":
                     searchResult.setLinkToOriginalFile(
                             waybackNoFrameServiceEndpoint + "/" + oldestTimestamp + "id_/" + oldestUrl);
+                    break;
+                // Left out of the reply when the document has no detected language, there is no empty value for it
+                case "language":
+                    searchResult.setLanguage((String) doc.getFieldValue("language"));
+                    break;
+                case "languageConfidence":
+                    searchResult.setLanguageConfidence((String) doc.getFieldValue("languageConfidence"));
                     break;
 
             }

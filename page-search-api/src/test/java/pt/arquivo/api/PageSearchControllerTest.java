@@ -257,6 +257,45 @@ public class PageSearchControllerTest {
     }
 
     @Test
+    public void pageSearchLanguage() throws Exception {
+        SearchResults mockSearchResults = new SearchResults();
+        mockSearchResults.setResults(new ArrayList<>());
+
+        Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
+
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=sapo&language=PT")).andReturn();
+        JSONObject jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.getString("language")).isEqualTo("pt");
+        assertThat(jsonRequests.getString("minLanguageConfidence")).isEqualTo("HIGH");
+
+        result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=sapo&language=pt&minLanguageConfidence=medium")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.getString("minLanguageConfidence")).isEqualTo("MEDIUM");
+
+        // no language filtering, so no confidence filtering either
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=sapo")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.has("language")).isFalse();
+        assertThat(jsonRequests.has("minLanguageConfidence")).isFalse();
+
+        result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=sapo&language=pt&minLanguageConfidence=low")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.getString("minLanguageConfidence")).isEqualTo("LOW");
+
+        // NONE is how the least confident tier is indexed, the API asks for it as LOW
+        result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=sapo&language=pt&minLanguageConfidence=NONE")).andReturn();
+        assertThat(result.getResponse().getStatus()).isEqualTo(400);
+    }
+
+    @Test
     public void pageSearchNutch() throws Exception {
         ItemCDX item = new ItemCDX("URL", "123456789", "", "", null, "",
                 null, "0", "");
