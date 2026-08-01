@@ -33,6 +33,7 @@ import pt.arquivo.services.SearchResultSolrImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.SearchServiceConfiguration;
+import pt.arquivo.services.Timeline;
 import pt.arquivo.utils.URLNormalizers;
 import pt.arquivo.utils.Utils;
 
@@ -67,6 +68,12 @@ public class SolrSearchService implements SearchService {
     @Value("${searchpages.textsearch.service.link:http://localhost:8081/textsearch}")
     private String textSearchServiceEndpoint;
 
+    /** How long the number of documents the archive holds per year is reused for, it only moves when indexing does. */
+    @Value("${searchpages.api.timeline.baseline.ttl.ms:86400000}")
+    private long timelineBaselineTtlMillis = 86400000L;
+
+    private TimelineService timelineService;
+
     // For setting configs without autowired shanenigans
     public SolrSearchService(SearchServiceConfiguration configuration){
         this.startDate = configuration.getStartDate();
@@ -87,6 +94,24 @@ public class SolrSearchService implements SearchService {
             this.solrClient = new HttpSolrClient.Builder(this.baseSolrUrl).build();
         }
         return this.solrClient;
+    }
+
+    /**
+     * The timeline is only built for the queries that ask for it, so its service (and the archive baseline it caches)
+     * is only created when the first of those queries arrives.
+     */
+    TimelineService getTimelineService() {
+        if (this.timelineService == null) {
+            this.timelineService = new TimelineService(getSolrClient(), startYear(), timelineBaselineTtlMillis);
+        }
+        return this.timelineService;
+    }
+
+    /**
+     * The first year the archive has documents for, taken from the configured start date (e.g. 19960101000000).
+     */
+    private int startYear() {
+        return Integer.parseInt(this.startDate.trim().substring(0, 4));
     }
 
     /**
@@ -142,7 +167,7 @@ public class SolrSearchService implements SearchService {
      * @param searchQuery
      * @return
      */
-    private SolrQuery convertSearchQuery(SearchQuery searchQuery) {
+    SolrQuery convertSearchQuery(SearchQuery searchQuery) {
         SolrQuery solrQuery = new SolrQuery();
 
         if(searchQuery.getQueryTerms() == null){
@@ -372,6 +397,61 @@ public class SolrSearchService implements SearchService {
         }
 
         return solrQuery;
+    }
+
+    /**
+     * Converts the API request into the query that counts the matching documents per year. It carries the same filters
+     * as the search itself, but not the deduplication: collapsing is a costly post filter (it multiplies the time of
+     * the facet by an order of magnitude) and it would leave the counts of the query no longer comparable with the
+     * counts of the whole archive that normalize them into the impact.
+     *
+     * @param searchQuery
+     * @return
+     */
+    SolrQuery convertTimelineQuery(SearchQuery searchQuery) {
+        SolrQuery solrQuery = convertSearchQuery(searchQuery);
+
+        String[] filterQueries = solrQuery.getFilterQueries();
+        if (filterQueries != null) {
+            String[] withoutCollapse = Arrays.stream(filterQueries)
+                    .filter(filterQuery -> !filterQuery.startsWith("{!collapse"))
+                    .toArray(String[]::new);
+            if (withoutCollapse.length == 0) {
+                solrQuery.remove("fq");
+            } else {
+                solrQuery.setFilterQueries(withoutCollapse);
+            }
+        }
+        solrQuery.remove("expand");
+        solrQuery.remove("expand.rows");
+
+        // Only the counts are needed, no documents come back from this query
+        solrQuery.setStart(0);
+        solrQuery.setRows(0);
+        solrQuery.setFields("id");
+        solrQuery.set("hl", "false");
+        solrQuery.set("spellcheck", "false");
+
+        getTimelineService().addYearRangeFacet(solrQuery);
+        return solrQuery;
+    }
+
+    /**
+     * Runs the query that counts the matching documents per year and normalizes it against the size of the archive on
+     * each year. A failure here doesn't fail the search, the reply just comes without the timeline.
+     *
+     * @param searchQuery
+     * @return the timeline of the query, or null when Solr couldn't be asked for it
+     */
+    private Timeline queryTimeline(SearchQuery searchQuery) {
+        SolrQuery timelineQuery = convertTimelineQuery(searchQuery);
+        LOG.info("Solr Query (timeline): " + timelineQuery);
+        try {
+            return getTimelineService().buildTimeline(getSolrClient().query(timelineQuery));
+        } catch (SolrServerException | IOException e) {
+            LOG.error("Error querying Solr for the timeline: ", e);
+            return null;
+        }
     }
 
     /**
@@ -894,6 +974,9 @@ public class SolrSearchService implements SearchService {
             QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
             SearchResults searchResults = parseQueryResponse(queryResponse, searchQuery);
             searchResults.setLastPageResults(isLastPage(searchResults.getEstimatedNumberResults(), searchQuery));
+            if (searchQuery.isTimeline()) {
+                searchResults.setTimeline(queryTimeline(searchQuery));
+            }
             return searchResults;
         } catch (SolrServerException | IOException e) {
             LOG.error("Error querying Solr: ", e);

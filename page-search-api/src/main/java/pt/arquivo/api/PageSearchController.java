@@ -128,6 +128,7 @@ public class PageSearchController {
                            @RequestParam(value = "fields", required = false) String[] fields,
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
                            @RequestParam(value = "titleSearch", required = false) String titleSearch,
+                           @RequestParam(value = "timeline", required = false, defaultValue = "false") boolean timeline,
                            HttpServletRequest request
     ) {
         long startTime;
@@ -175,6 +176,7 @@ public class PageSearchController {
         searchQuery.setFields(fields);
         searchQuery.setPrettyPrint(prettyPrint);
         searchQuery.setTitleSearch(titleSearch);
+        searchQuery.setTimeline(timeline);
 
         searchQuery.setDedupValue(dedupValue);
         if (request.getParameter("dedupField") == null && searchQuery.isSearchBySite()) {
@@ -191,6 +193,11 @@ public class PageSearchController {
         if (searchQuery.isSpellcheck()) {
             String suggestedQuery = searchResults.getSuggestedQuery();
             pageSearchResponse.setSuggestedQuery(suggestedQuery == null ? "" : suggestedQuery);
+        }
+
+        // The timeline is only replied to the queries that asked for it, and only when the backend could compute it
+        if (searchQuery.isTimeline()) {
+            pageSearchResponse.setTimeline(searchResults.getTimeline());
         }
 
         pageSearchResponse.setServiceName(serviceName);

@@ -43,6 +43,11 @@ public class SearchQueryImpl implements SearchQuery {
     @JsonProperty("titleSearch")
     private String titleSearch;
 
+    /** Only echoed back when it was asked for, so the replies of every other query stay as they were. */
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @JsonProperty("timeline")
+    private boolean timeline;
+
     public SearchQueryImpl(String queryTerms) {
         this.queryTerms = queryTerms;
     }
@@ -228,6 +233,19 @@ public class SearchQueryImpl implements SearchQuery {
     }
 
     /**
+     * Whether the reply should carry the yearly breakdown of the matching documents.
+     */
+    @Override
+    public boolean isTimeline() {
+        return timeline;
+    }
+
+    @Override
+    public void setTimeline(boolean timeline) {
+        this.timeline = timeline;
+    }
+
+    /**
      * The query is spellchecked when the user asks for the spellcheck field, e.g. fields=title,spellcheck
      */
     @Override
@@ -268,6 +286,7 @@ public class SearchQueryImpl implements SearchQuery {
             stringBuilder.append(" collection: ").append(getCollection());
         }
         stringBuilder.append(" titleSearch: ").append(getTitleSearch());
+        stringBuilder.append(" timeline: ").append(isTimeline());
         stringBuilder.append(" prettyPrint: ").append(getPrettyPrint());
         return stringBuilder.toString();
     }

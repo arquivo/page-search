@@ -74,4 +74,8 @@ public interface SearchQuery {
     boolean isSearchByTitle();
 
     boolean isSpellcheck();
+
+    boolean isTimeline();
+
+    void setTimeline(boolean timeline);
 }
