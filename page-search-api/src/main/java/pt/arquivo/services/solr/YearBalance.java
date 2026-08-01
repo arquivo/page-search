@@ -14,11 +14,17 @@ import java.util.Map;
  * fills its first page with whichever years were crawled the most, not with the pages that matter the most on each
  * year. This gives every document a multiplier that grows the thinner its year is:
  *
- * <pre>weight(year) = (documents of the densest year / documents of that year) ^ strength</pre>
+ * <pre>weight(year) = (documents of the densest year / documents of that year) ^ exponent</pre>
  *
- * <p>The strength is what the user asks for: 0 leaves the ranking exactly as it is, 1 normalizes the years all the
- * way (on an archive whose densest year holds 700 times more documents than its thinnest, that is a 700x multiplier,
- * which is closer to sorting by year than to ranking). The middle of the range is where this is meant to be used.
+ * <p>How large that exponent may be is set by how close together the scores of a query are. Measured against the
+ * index of 96M documents, the 50 best scoring documents of a common query sat between 29.85 and 26.78, a spread of
+ * 1.11x, most of them tied. A multiplier of 1.4x on the thinnest year is already enough to fill the whole first page
+ * with that year, and normalizing the volumes all the way (a 995x multiplier there) isn't ranking at all, it is
+ * sorting by year.
+ *
+ * <p>So the strength the user asks for, 0 to 1, is spread over the multipliers that are actually usable: 0 leaves the
+ * ranking exactly as it is, and 1 lifts the thinnest year of the archive by {@link #MAX_LIFT}, which on that index
+ * keeps 8 different years on the first page where a heavier hand leaves 3.
  *
  * <p>The multiplier is sent to Solr as a function over the year field, and it is the same for every query, so it is
  * built out of the cached {@link YearVolumes} without asking Solr anything else.
@@ -30,6 +36,13 @@ public final class YearBalance {
 
     /** Weights are never below this, a year is either lifted or left alone, never pushed down. */
     private static final double NEUTRAL_WEIGHT = 1.0;
+
+    /**
+     * How much the thinnest year of the archive is lifted at full strength. Kept just above the spread the scores of
+     * a query have among themselves, so that the strongest setting still ranks by relevance inside each year instead
+     * of turning the first page into a single year.
+     */
+    static final double MAX_LIFT = 1.25;
 
     /**
      * Anything above this is still an epoch value that no year matched, e.g. a document dated outside the archive.
@@ -46,7 +59,7 @@ public final class YearBalance {
      * The multiplier of each year of the archive, keyed by year.
      *
      * @param volumesPerYear how many documents the archive holds per year
-     * @param strength 0 leaves every year at 1, 1 normalizes the volumes fully
+     * @param strength 0 leaves every year at 1, 1 lifts the thinnest year of the archive by {@link #MAX_LIFT}
      * @return the weight per year, empty when there is nothing to tell the years apart
      */
     static Map<String, Double> weights(Map<String, Long> volumesPerYear, double strength) {
@@ -55,9 +68,20 @@ public final class YearBalance {
         }
 
         long densestYear = volumesPerYear.values().stream().mapToLong(Long::longValue).max().orElse(0);
-        if (densestYear <= 0) {
+        long thinnestYear = volumesPerYear.values().stream().mapToLong(Long::longValue).filter(v -> v > 0).min()
+                .orElse(0);
+        if (densestYear <= 0 || thinnestYear <= 0) {
             return Collections.emptyMap();
         }
+
+        // The years of an archive that are all the same size have nothing to balance
+        double widestRatio = (double) densestYear / thinnestYear;
+        if (widestRatio <= 1) {
+            return Collections.emptyMap();
+        }
+
+        // The exponent that lifts the thinnest year of this archive by MAX_LIFT when the strength is at its highest
+        double exponent = strength * Math.log(MAX_LIFT) / Math.log(widestRatio);
 
         Map<String, Double> weights = new LinkedHashMap<>();
         for (Map.Entry<String, Long> yearVolume : volumesPerYear.entrySet()) {
@@ -67,7 +91,7 @@ public final class YearBalance {
                 continue;
             }
             double ratio = (double) densestYear / yearVolume.getValue();
-            weights.put(yearVolume.getKey(), Math.max(Math.pow(ratio, strength), NEUTRAL_WEIGHT));
+            weights.put(yearVolume.getKey(), Math.max(Math.pow(ratio, exponent), NEUTRAL_WEIGHT));
         }
         return weights;
     }

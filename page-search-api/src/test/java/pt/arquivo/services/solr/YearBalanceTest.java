@@ -23,17 +23,37 @@ public class YearBalanceTest {
     public void thinYearsAreLiftedAndDenseYearsAreLeftAlone() {
         Map<String, Double> weights = YearBalance.weights(archive(), 1.0);
 
-        // Normalized all the way, the thin year is lifted by exactly the ratio between the two
-        assertThat(weights.get("1997")).isCloseTo(10.0, within(0.0001));
+        // At full strength the thinnest year of the archive is lifted by exactly MAX_LIFT, which is as far as a
+        // multiplier can go before it stops ranking and starts sorting by year
+        assertThat(weights.get("1997")).isCloseTo(YearBalance.MAX_LIFT, within(0.0001));
         // The densest year is the one every other is measured against, so it stays where it is
         assertThat(weights.get("2008")).isCloseTo(1.0, within(0.0001));
     }
 
     @Test
     public void strengthDampensTheLift() {
-        // Half strength is the square root of the ratio, a lift instead of a full normalization
-        assertThat(YearBalance.weights(archive(), 0.5).get("1997")).isCloseTo(3.1623, within(0.0001));
-        assertThat(YearBalance.weights(archive(), 0.25).get("1997")).isCloseTo(1.7783, within(0.0001));
+        // Half the strength is half the exponent, so the lift is the square root of the one at full strength
+        assertThat(YearBalance.weights(archive(), 0.5).get("1997")).isCloseTo(1.1180, within(0.0001));
+        assertThat(YearBalance.weights(archive(), 0.25).get("1997")).isCloseTo(1.0574, within(0.0001));
+    }
+
+    @Test
+    public void middleYearsAreLiftedLessThanTheThinnestOne() {
+        Map<String, Long> volumes = archive();
+        volumes.put("2002", 316228L); // the geometric middle between the two
+
+        Map<String, Double> weights = YearBalance.weights(volumes, 1.0);
+        assertThat(weights.get("2002")).isLessThan(weights.get("1997")).isGreaterThan(weights.get("2008"));
+    }
+
+    @Test
+    public void anArchiveOfEvenYearsHasNothingToBalance() {
+        Map<String, Long> even = new LinkedHashMap<>();
+        even.put("1997", 100000L);
+        even.put("2008", 100000L);
+
+        assertThat(YearBalance.weights(even, 1.0)).isEmpty();
+        assertThat(YearBalance.boostFunction(even, 1.0)).isNull();
     }
 
     @Test
@@ -69,7 +89,7 @@ public class YearBalanceTest {
 
         // 1997 is the only year worth mapping, from the first millisecond of the year to its last
         assertThat(boostFunction).isEqualTo(
-                "max(map(map(ms(dateOldest),852076800000,883612799999,10.0000),1000000000,100000000000000,1.0000),1.0000)");
+                "max(map(map(ms(dateOldest),852076800000,883612799999,1.2500),1000000000,100000000000000,1.0000),1.0000)");
     }
 
     @Test
@@ -86,9 +106,9 @@ public class YearBalanceTest {
     public void weightsAreWrittenWithADecimalPointWhateverTheLocale() {
         Locale defaultLocale = Locale.getDefault();
         try {
-            // Portugal writes 3,1623, which Solr would read as two arguments
+            // Portugal writes 1,1180, which Solr would read as two arguments
             Locale.setDefault(new Locale("pt", "PT"));
-            assertThat(YearBalance.boostFunction(archive(), 0.5)).contains("3.1623").doesNotContain(",3,1623");
+            assertThat(YearBalance.boostFunction(archive(), 0.5)).contains("1.1180").doesNotContain(",1,1180");
         } finally {
             Locale.setDefault(defaultLocale);
         }

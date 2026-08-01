@@ -116,8 +116,8 @@ public class SolrSearchServiceTest {
 
         SolrQuery solrQuery = solrSearchService.convertSearchQuery(searchQuery);
 
-        // 1997 holds a tenth of what 2008 does, so its documents are multiplied by ten
-        assertThat(solrQuery.get("boost")).contains("ms(dateOldest)").contains("10.0000");
+        // 1996 is the thinnest year of this archive, so at full strength it is lifted by MAX_LIFT
+        assertThat(solrQuery.get("boost")).contains("ms(dateOldest)").contains("1.2500");
     }
 
     @Test
