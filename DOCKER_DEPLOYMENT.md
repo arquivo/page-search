@@ -56,18 +56,18 @@ docker build -f page-search-api/Dockerfile -t arquivo/page-search-api:local .
 
 ### Run with Docker Compose
 
-The API requires a Solr instance to connect to. Configure the `SOLR_URL` environment variable to point to your Solr instance.
+The API requires a Solr instance to connect to. Configure the `SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK` environment variable to point to your Solr instance. The name looks verbose, but it's deliberate: it's Spring's relaxed-binding form of the `searchpages.textsearch.service.bean.solr.link` property, so it must be spelled exactly like this to actually take effect — a shorter alias like `SOLR_URL` would silently be ignored.
 
 #### Option 1: Export environment variable (quick testing)
 
 ```bash
-export SOLR_URL=http://solr-dev-host:8983/solr
+export SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK=http://solr-dev-host:8983/solr
 docker-compose up -d
 ```
 
 Or as a one-liner:
 ```bash
-SOLR_URL=http://solr-dev-host:8983/solr docker-compose up -d
+SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK=http://solr-dev-host:8983/solr docker-compose up -d
 ```
 
 #### Option 2: Use `docker-compose.override.yml` (recommended for local development)
@@ -78,7 +78,7 @@ Create `docker-compose.override.yml` in the repo root:
 services:
   page-search-api:
     environment:
-      SOLR_URL: http://solr-dev-host:8983/solr
+      SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK: http://solr-dev-host:8983/solr
       JAVA_OPTS: -Xmx4g -Xms2g
 ```
 
@@ -98,7 +98,7 @@ Docker Compose automatically merges this file with `docker-compose.yml`.
 
 Create `.env.local`:
 ```
-SOLR_URL=http://solr-dev-host:8983/solr
+SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK=http://solr-dev-host:8983/solr
 JAVA_OPTS=-Xmx4g -Xms2g
 ```
 
@@ -132,7 +132,7 @@ API will be available at `http://localhost:8080`
 The `docker-compose.yml` is a generic template for local validation. For environment-specific deployments:
 
 1. Manage environment-specific `docker-compose.yml` files in your Ansible repository
-2. Configure `SOLR_URL` to point to your environment's Solr instance
+2. Configure `SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK` to point to your environment's Solr instance
 3. Override environment variables as needed for each environment
 4. Use the same Docker image across all environments
 
@@ -149,7 +149,7 @@ services:
   page-search-api:
     image: arquivo/page-search-api:v1.2.3
     environment:
-      SOLR_URL: http://solr-preprod:8983/solr
+      SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK: http://solr-preprod:8983/solr
       JAVA_OPTS: -Xmx4g -Xms2g
     # ... rest of config
 ```
@@ -163,7 +163,7 @@ services:
   page-search-api:
     image: arquivo/page-search-api:v1.2.3
     environment:
-      SOLR_URL: http://solr-prod:8983/solr
+      SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK: http://solr-prod:8983/solr
       JAVA_OPTS: -Xmx8g -Xms4g
     # ... rest of config
 ```
@@ -199,7 +199,7 @@ All configuration is done via environment variables passed to the container at r
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `NUTCHWAX_SEARCH_FILE` | `/app/` | Path to search servers configuration |
-| `SOLR_URL` | `http://solr:8983/solr` | Solr server URL |
+| `SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK` | `http://localhost:8983/solr/searchpages` | Solr server URL. Spring's relaxed-binding form of the `searchpages.textsearch.service.bean.solr.link` property — the var name must match exactly, a plain `SOLR_URL` will not bind to it |
 | `SERVER_PORT` | `8080` | API server port |
 | `JAVA_OPTS` | `-Xmx2g -Xms512m` | JVM memory and options |
 
@@ -285,7 +285,7 @@ docker inspect <container_id> | grep -A 20 Health
 
 ```bash
 # Verify connectivity from inside the container
-docker-compose exec page-search-api curl $SOLR_URL/admin/cores
+docker-compose exec page-search-api curl $SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK/admin/cores
 ```
 
 ### Out of memory errors
@@ -311,6 +311,6 @@ docker-compose up -d
 ### Using External Solr Instance
 
 ```bash
-export SOLR_URL=http://external-solr-host:8983/solr
+export SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK=http://external-solr-host:8983/solr
 docker-compose up -d
 ```

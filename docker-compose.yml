@@ -9,7 +9,10 @@ services:
     network_mode: host
     environment:
       NUTCHWAX_SEARCH_FILE: /app/
-      SOLR_URL: http://p44.arquivo.pt:2200/solr
+      # Spring relaxed-binding form of searchpages.textsearch.service.bean.solr.link
+      # (a plain SOLR_URL var does *not* bind to this property, so it must be spelled
+      # out exactly like this to actually override it).
+      SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK: http://p44.arquivo.pt:2200/solr/pages
       SERVER_PORT: 8080
       JAVA_OPTS: -Xmx2g -Xms512m
     restart: unless-stopped
