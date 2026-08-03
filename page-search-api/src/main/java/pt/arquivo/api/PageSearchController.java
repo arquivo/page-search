@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -128,6 +129,10 @@ public class PageSearchController {
                            @RequestParam(value = "fields", required = false) String[] fields,
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
                            @RequestParam(value = "titleSearch", required = false) String titleSearch,
+                           @ApiParam(value = "Only return pages detected as being written in this language, e.g. pt")
+                           @RequestParam(value = "language", required = false) String language,
+                           @ApiParam(value = "Lowest language detection confidence the results may have: HIGH (default), MEDIUM or LOW. The tiers are ordinal, so MEDIUM also includes the HIGH results and LOW includes every result. Only applies when filtering by language, unless explicitly requested.", allowableValues = "HIGH,MEDIUM,LOW")
+                           @RequestParam(value = "minLanguageConfidence", required = false) String minLanguageConfidence,
                            HttpServletRequest request
     ) {
         long startTime;
@@ -175,6 +180,13 @@ public class PageSearchController {
         searchQuery.setFields(fields);
         searchQuery.setPrettyPrint(prettyPrint);
         searchQuery.setTitleSearch(titleSearch);
+        searchQuery.setLanguage(language);
+        try {
+            searchQuery.setMinLanguageConfidence(minLanguageConfidence);
+        } catch (IllegalArgumentException e) {
+            LOG.error("Invalid API Request " + request.getQueryString());
+            throw new ApiRequestException(e.getMessage());
+        }
 
         searchQuery.setDedupValue(dedupValue);
         if (request.getParameter("dedupField") == null && searchQuery.isSearchBySite()) {
