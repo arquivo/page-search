@@ -225,6 +225,49 @@ public class SolrSearchServiceTest {
     }
 
     @Test
+    public void convertSearchQuery_filtersByLanguageAndConfidentDetectionsByDefault() {
+        SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
+        searchQuery.setLanguage("pt");
+        SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
+        assertThat(solrQuery.getFilterQueries()).contains("language:pt", "languageConfidence:(HIGH)");
+    }
+
+    @Test
+    public void convertSearchQuery_minLanguageConfidenceTakesEveryTierDownToTheOneAskedFor() {
+        SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
+        searchQuery.setLanguage("pt");
+
+        searchQuery.setMinLanguageConfidence("MEDIUM");
+        assertThat(service.convertSearchQuery(searchQuery).getFilterQueries())
+                .contains("language:pt", "languageConfidence:(HIGH OR MEDIUM)");
+
+        // the least confident tier is indexed as NONE
+        searchQuery.setMinLanguageConfidence("LOW");
+        assertThat(service.convertSearchQuery(searchQuery).getFilterQueries())
+                .contains("languageConfidence:(HIGH OR MEDIUM OR NONE)");
+    }
+
+    @Test
+    public void convertSearchQuery_isNotFilteredByConfidenceWhenItDoesNotAskAboutTheLanguage() {
+        SolrQuery solrQuery = service.convertSearchQuery(new SearchQueryImpl("sapo"));
+        assertThat(solrQuery.getFilterQueries()).noneMatch(filterQuery -> filterQuery.startsWith("language"));
+    }
+
+    @Test
+    public void convertSearchQuery_asksSolrForTheLanguageFieldsOnlyWhenRequested() {
+        SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
+        assertThat(service.convertSearchQuery(searchQuery).getFields()).doesNotContain("language");
+
+        searchQuery.setFields(new String[] { "title", "language" });
+        assertThat(service.convertSearchQuery(searchQuery).getFields())
+                .contains("language")
+                .doesNotContain("languageConfidence");
+
+        searchQuery.setFields(new String[] { "title", "language", "languageConfidence" });
+        assertThat(service.convertSearchQuery(searchQuery).getFields()).contains("languageConfidence");
+    }
+
+    @Test
     public void timestampSurtTo_extractsCollectionTimestampAndSurt() {
         String urlTimestamp = "COLLECTION1/20190101000000/(com,example,)/path";
         assertThat(service.timestampSurtToCollection(urlTimestamp)).isEqualTo("COLLECTION1");
