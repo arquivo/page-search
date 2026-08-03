@@ -9,7 +9,7 @@ services:
     network_mode: host
     environment:
       NUTCHWAX_SEARCH_FILE: /app/
-      SOLR_URL: http://p44DDDD.arquivo.pt:2200/solr
+      SOLR_URL: http://p44.arquivo.pt:2200/solr
       SERVER_PORT: 8080
       JAVA_OPTS: -Xmx2g -Xms512m
     restart: unless-stopped
