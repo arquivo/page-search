@@ -14,7 +14,12 @@ services:
       # out exactly like this to actually override it).
       SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK: http://p44.arquivo.pt:2200/solr/pages
       SERVER_PORT: 8080
-      JAVA_OPTS: -Xmx2g -Xms512m
+      # Matches the Dockerfile's default JAVA_OPTS (this fully replaces it,
+      # not merges) — see DOCKER_DEPLOYMENT.md for the flag rationale and
+      # why production deployments need an explicit memory limit for these
+      # percentage-based flags to size the heap correctly (this dev compose
+      # file intentionally has none, so they size off the host's memory).
+      JAVA_OPTS: -XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+ExitOnOutOfMemoryError
     restart: unless-stopped
     # Shallow TCP liveness check: confirms the JVM/Tomcat is accepting
     # connections without exercising business logic or Solr. A deep check
