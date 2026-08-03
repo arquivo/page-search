@@ -42,7 +42,7 @@ public class SolrSearchService implements SearchService {
     private static final Logger LOG = LoggerFactory.getLogger(SolrSearchService.class);
 
     // TODO should upgrade this for the SolrCloudClient
-    private HttpSolrClient solrClient;
+    HttpSolrClient solrClient;
 
     @Value("${searchpages.api.startdate:19960101000000}")
     private String startDate;
@@ -121,7 +121,7 @@ public class SolrSearchService implements SearchService {
      * @param dedupField
      * @return
      */
-    private String sanitizeDedupField(String dedupField){
+    String sanitizeDedupField(String dedupField){
         if (dedupField == null) { 
             dedupField = "";
         }
@@ -457,7 +457,7 @@ public class SolrSearchService implements SearchService {
     /**
      * Escapes special symbols, but not all of them to allow for "" (exact match) and - (excluding) searches
      */
-    private String sanitizeQuery(String query, SolrQuery solrQuery){
+    String sanitizeQuery(String query, SolrQuery solrQuery){
         
         Pattern exactMatchPattern = Pattern.compile("(^|.*?\\s)\"([^\"]*)\"(\\s.*|$)");
         String line = query;
@@ -581,7 +581,7 @@ public class SolrSearchService implements SearchService {
      * @param tu
      * @return String
      */
-    private String timestampSurtToCollection(String tu) {
+    String timestampSurtToCollection(String tu) {
         return tu.substring(0, tu.indexOf("/"));
     }
 
@@ -591,7 +591,7 @@ public class SolrSearchService implements SearchService {
      * @param tu
      * @return String
      */
-    private String timestampSurtToTimestamp(String tu) {
+    String timestampSurtToTimestamp(String tu) {
         String r = tu.substring(tu.indexOf("/") + 1);
         return r.substring(0, r.indexOf("/"));
     }
@@ -602,7 +602,7 @@ public class SolrSearchService implements SearchService {
      * @param tu
      * @return String
      */
-    private String timestampSurtToSurt(String tu) {
+    String timestampSurtToSurt(String tu) {
         String r = tu.substring(tu.indexOf("/") + 1);
         return r.substring(r.indexOf("/") + 1);
     }
@@ -613,7 +613,7 @@ public class SolrSearchService implements SearchService {
      * siteSearch or collection doesn't match collection search
      *
      */
-    private List<Object> filterUrlTimestamps(List <Object> urlstimestamps, Long to, Long from, String[] siteSearchSurts, String[] collectionSearch){
+    List<Object> filterUrlTimestamps(List <Object> urlstimestamps, Long to, Long from, String[] siteSearchSurts, String[] collectionSearch){
                 urlstimestamps = urlstimestamps.stream()
                         .filter(u -> ((String) u).indexOf("/") >= 0)
                         .collect(Collectors.toList());
@@ -652,7 +652,7 @@ public class SolrSearchService implements SearchService {
      * Given a list of strings in the format collection/timestamp/surt (as returned by the Solr field urlTimestamp), will
      * return the one with the oldest timestamp
      */
-    private String getOldestUrlTimestamp(List <Object> urlstimestamps){
+    String getOldestUrlTimestamp(List <Object> urlstimestamps){
         String oldestTimestamp = null;
         String oldestUrlTimestamp = null;
         Iterator<Object> it = (Iterator<Object>) urlstimestamps.iterator();
@@ -819,7 +819,7 @@ public class SolrSearchService implements SearchService {
      * @param searchQuery
      * @return
      */
-    private String parseSuggestedQuery(QueryResponse queryResponse, SearchQuery searchQuery) {
+    String parseSuggestedQuery(QueryResponse queryResponse, SearchQuery searchQuery) {
         SpellCheckResponse spellCheckResponse = queryResponse.getSpellCheckResponse();
         if (spellCheckResponse == null) {
             return null;
