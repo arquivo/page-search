@@ -27,7 +27,14 @@ COPY page-search-api/search-servers.txt .
 
 ENV NUTCHWAX_SEARCH_FILE=/app/
 ENV SERVER_PORT=8080
-ENV JAVA_OPTS="-Xms512m -Xmx2g"
+# Size the heap off the container's memory limit (not the host's) so behavior
+# stays consistent across environments, use G1 for more predictable pause
+# times than JDK 8's default Parallel GC, and fail fast on OOM so the
+# container exits and can be restarted by the orchestrator instead of
+# limping along. Requires an explicit --memory/resources.limits.memory on
+# the container to work correctly (see DOCKER_DEPLOYMENT.md). Override
+# JAVA_OPTS entirely when running the image (it replaces this default).
+ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+ExitOnOutOfMemoryError"
 
 EXPOSE 8080
 
