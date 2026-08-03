@@ -79,6 +79,9 @@ services:
   page-search-api:
     environment:
       SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK: http://solr-dev-host:8983/solr
+      # Local dev only: the plain-Xmx form is fine here since this compose file sets no
+      # mem_limit — see "Production Memory Configuration" below for the recommended
+      # G1GC/percentage-based flags a real deployment should use instead.
       JAVA_OPTS: -Xmx4g -Xms2g
 ```
 
@@ -127,6 +130,60 @@ docker-compose restart page-search-api
 
 API will be available at `http://localhost:8080`
 
+## Production Memory Configuration
+
+The image ships with default JVM flags (see `JAVA_OPTS` in the `page-search-api/Dockerfile`) tuned for running in a memory-constrained container:
+
+- `-XX:+UseG1GC` — G1 instead of JDK 8's default Parallel GC, for more predictable pause times on a request/response API.
+- `-XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0` — size the heap as a percentage of the container's memory limit instead of a fixed `-Xmx`/`-Xms`, so the same image behaves correctly across environments with different memory limits.
+- `-XX:+ExitOnOutOfMemoryError` — exit on OOM instead of limping along in a broken state, so the orchestrator restarts the container.
+
+**These percentage-based flags only work correctly if the container has an explicit memory limit** — without one, the JVM falls back to sizing off the host's total memory, which is not what you want in production. Always set a memory limit when running the container:
+
+```bash
+docker run -p 8080:8080 --memory=4g arquivo/page-search-api
+```
+
+In Kubernetes, set the equivalent `resources.limits.memory` (and match `requests.memory` to it for predictable scheduling/sizing). In an Ansible-managed `docker-compose.yml`, use the top-level `mem_limit` key (see the Preprod/Production examples below).
+
+**Recommended memory limit: 4 GiB.** Load testing (`ab` against `/textsearch?maxItems=50`, hitting the real dev Solr backend at `p44.arquivo.pt`, at increasing concurrency) compared 1 GiB, 2 GiB, and 4 GiB limits. As with image-search-api, raw "% memory used at peak" isn't the most meaningful signal on its own — G1's young-generation sizing scales with whatever heap ceiling it's given, so a bigger limit legitimately shows higher utilization even when the necessary working set hasn't changed. The signals that matter are distress indicators: Full GC events, "to-space exhausted" evacuation failures (heap pressure during a collection), and actual OOM-kills.
+
+| Memory limit | Concurrency | Peak memory | Full GC | To-space exhausted | Result |
+|---|---|---|---|---|---|
+| 1 GiB | up to 250 | ~99% | 7 | 0 | JVM OOM-killed itself (`-XX:+ExitOnOutOfMemoryError`, exit code 3) partway through the 250-concurrent run |
+| 2 GiB | up to 250 | ~92%+ | 4 | 1 | Also OOM-killed at 250 concurrent, though later than at 1 GiB |
+| 4 GiB | up to 250 | ~86% | 14 | 1 | Survived the full run; all GC pauses stayed short (100-200ms), no OOM-kill |
+
+Unlike image-search-api's load test (where 2 GiB was already safe), **page-search-api's `/textsearch` OOM-killed at both 1 GiB and 2 GiB** under the same concurrency. This tracks with `/textsearch` returning a heavier per-request JSON payload than image search's (richer per-page metadata, dedup logic across results), so more concurrent in-flight requests translate to more live heap held at once while waiting on the network round trip to Solr. 4 GiB is therefore the recommended floor here, not just a headroom choice — 2 GiB measurably crashed under realistic load.
+
+This number is based on synthetic load against a shared dev Solr instance, not real arquivo.pt production traffic — revisit it once real peak-concurrency numbers are available.
+
+To override the defaults (e.g. a different heap percentage, or disabling G1), set `JAVA_OPTS` at runtime — it replaces the Dockerfile's default entirely:
+
+```bash
+docker run -p 8080:8080 --memory=4g \
+  -e JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=80.0 -XX:InitialRAMPercentage=50.0 -XX:+ExitOnOutOfMemoryError" \
+  arquivo/page-search-api
+```
+
+### Concurrency limit: Tomcat's thread pool
+
+Independently of container memory, Spring Boot's embedded Tomcat caps concurrent request processing with its own defaults, unmodified in this project: `server.tomcat.threads.max=200` (max worker threads) and `server.tomcat.accept-count=100` (extra connections queued once all 200 threads are busy, beyond which new connections are refused). This showed up directly in the load test: at 250 concurrent requests even on the surviving 4 GiB run, throughput collapsed to ~3 requests/sec with ~83s average latency — not from GC pressure (pauses stayed at 100-200ms) but from requests queuing behind the 200-thread/100-backlog ceiling while each request waits ~1-2s on the Solr round trip. Raising the memory limit alone doesn't fix this; it only gives the JVM more room to run at the existing 200-thread ceiling.
+
+To raise the ceiling, pass the equivalent Spring Boot properties as JVM system properties in `JAVA_OPTS` (or as `SERVER_TOMCAT_THREADS_MAX`/`SERVER_TOMCAT_ACCEPT_COUNT` environment variables, via Spring's relaxed env binding):
+
+```bash
+docker run -p 8080:8080 --memory=4g \
+  -e JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+ExitOnOutOfMemoryError -Dserver.tomcat.threads.max=400 -Dserver.tomcat.accept-count=200" \
+  arquivo/page-search-api
+```
+
+Raising the thread cap increases the number of requests that can be in flight at once, and each one holds its own thread stack and request/response buffers — so it also raises the memory the JVM can actually use under load. Re-run load testing at the new thread count before increasing it in production, and scale the memory limit up alongside it rather than in isolation.
+
+### Known follow-up: unconfigured Solr client
+
+`SolrSearchService` builds its `HttpSolrClient` (SolrJ) with no explicit connection-pool sizing or connect/socket timeouts — it's possible this becomes a concurrency bottleneck before Tomcat's thread pool does, under different traffic shapes than what was load-tested here. Not addressed in this change; worth profiling separately if concurrency needs to be pushed materially above what's documented above.
+
 ## Environment Deployment
 
 The `docker-compose.yml` is a generic template for local validation. For environment-specific deployments:
@@ -148,9 +205,10 @@ version: '3.8'
 services:
   page-search-api:
     image: arquivo/page-search-api:v1.2.3
+    mem_limit: "4g"
     environment:
       SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK: http://solr-preprod:8983/solr
-      JAVA_OPTS: -Xmx4g -Xms2g
+      JAVA_OPTS: -XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+ExitOnOutOfMemoryError
     # ... rest of config
 ```
 
@@ -162,11 +220,14 @@ version: '3.8'
 services:
   page-search-api:
     image: arquivo/page-search-api:v1.2.3
+    mem_limit: "4g"
     environment:
       SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK: http://solr-prod:8983/solr
-      JAVA_OPTS: -Xmx8g -Xms4g
+      JAVA_OPTS: -XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+ExitOnOutOfMemoryError
     # ... rest of config
 ```
+
+`mem_limit` is what makes the percentage-based `JAVA_OPTS` flags size the heap correctly — see "Production Memory Configuration" above for why 4 GiB is the recommended floor.
 
 ## Container Configuration
 
@@ -201,7 +262,7 @@ All configuration is done via environment variables passed to the container at r
 | `NUTCHWAX_SEARCH_FILE` | `/app/` | Path to search servers configuration |
 | `SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK` | `http://localhost:8983/solr/searchpages` | Solr server URL. Spring's relaxed-binding form of the `searchpages.textsearch.service.bean.solr.link` property — the var name must match exactly, a plain `SOLR_URL` will not bind to it |
 | `SERVER_PORT` | `8080` | API server port |
-| `JAVA_OPTS` | `-Xmx2g -Xms512m` | JVM memory and options |
+| `JAVA_OPTS` | `-XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+ExitOnOutOfMemoryError` | JVM memory and GC options. Heap is sized as a percentage of the container's memory limit, so a `--memory`/`mem_limit` must be set (see "Production Memory Configuration") |
 
 ### Port Mapping
 
@@ -290,21 +351,33 @@ docker-compose exec page-search-api curl $SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SO
 
 ### Out of memory errors
 
-Adjust `JAVA_OPTS` environment variable in your deployment configuration:
+`-XX:+ExitOnOutOfMemoryError` (the default `JAVA_OPTS`) means an out-of-memory condition
+shows up as the container exiting with code `3`, not a hang — check `docker inspect
+<container_id>` for the exit code, and confirm it wasn't Docker's own OOM killer instead
+(`docker inspect --format='{{.State.OOMKilled}}' <container_id>`).
+
+Load testing found 1 GiB and 2 GiB memory limits both OOM-kill under realistic concurrency
+(see "Production Memory Configuration" above) — raise the limit to at least 4 GiB:
 
 ```yaml
+mem_limit: "4g"
 environment:
-  JAVA_OPTS: -Xmx8g -Xms4g
+  JAVA_OPTS: -XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+ExitOnOutOfMemoryError
 ```
+
+If 4 GiB still OOMs in your environment, check for higher sustained concurrency than what
+was load-tested here, and consider raising `-XX:MaxRAMPercentage` only after confirming the
+container's memory limit itself has enough headroom above it.
 
 ## Advanced Configuration
 
 ### Custom Java Options
 
-Override at runtime:
+Override at runtime — this replaces the Dockerfile's default `JAVA_OPTS` entirely, so
+include the base flags too if you still want them:
 
 ```bash
-export JAVA_OPTS="-Xmx4g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+export JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+ExitOnOutOfMemoryError -Dserver.tomcat.threads.max=400 -Dserver.tomcat.accept-count=200"
 docker-compose up -d
 ```
 
