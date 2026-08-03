@@ -11,7 +11,6 @@ WORKDIR /build
 COPY pom.xml pom.xml
 COPY utils/pom.xml utils/pom.xml
 COPY utils/src utils/src
-COPY page-search-indexer/pom.xml page-search-indexer/pom.xml
 COPY page-search-api/pom.xml page-search-api/pom.xml
 COPY page-search-api/maven-local-repository page-search-api/maven-local-repository
 COPY page-search-api/src page-search-api/src
