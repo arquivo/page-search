@@ -138,6 +138,19 @@ rewriting. Relative to wherever the app is mounted, e.g. locally:
 - Swagger UI: http://localhost:8081/textsearch/api-docs
 - OpenAPI 3 spec (JSON): http://localhost:8081/textsearch/api-docs/v3
 
+Note: `/textsearch/api-docs` itself is a redirect to `/textsearch/swagger-ui/index.html`
+(springdoc always serves the UI's static assets one level up from the
+configured path), so this only works behind a reverse proxy that forwards the
+whole `/textsearch` prefix rather than that single literal path. Apache
+already does this today for the search endpoint itself, e.g.:
+
+```
+ProxyPass "/textsearch" "{{ httpd_tomcat_textsearch_endpoint }}/textsearch"
+```
+
+so no proxy changes are needed for the docs to work — this note just makes
+the existing assumption explicit.
+
 Note: how (or whether) these paths are exposed publicly through Apache in
 dev/preprod/prod is per-environment reverse-proxy configuration, not part of
 this repository.
