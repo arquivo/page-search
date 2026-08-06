@@ -127,8 +127,16 @@ not in this repository.
 
 ### Api Documentation
 
-- OpenAPI 3 spec (JSON): https://preprod.arquivo.pt/pagesearch/v3/api-docs
-- Swagger UI: https://preprod.arquivo.pt/pagesearch/swagger-ui/index.html
+The app exposes its OpenAPI 3 docs at the springdoc defaults (no custom
+`springdoc.*` path is configured), relative to wherever it's mounted — e.g.
+locally:
+
+- OpenAPI 3 spec (JSON): http://localhost:8081/v3/api-docs
+- Swagger UI: http://localhost:8081/swagger-ui/index.html
+
+Note: how (or whether) these paths are exposed publicly through Apache in
+dev/preprod/prod is per-environment reverse-proxy configuration, not part of
+this repository.
 
 ## Page Search Indexer
 
