@@ -76,6 +76,24 @@ $ JAVA_HOME=/usr/lib/jvm/temurin-8-jdk-amd64 mvn -f page-search-api/pom.xml spri
 By default this listens on port `8081` (see `server.port` in
 `page-search-api/src/main/resources/application.properties`).
 
+### Auto-reload on code change
+
+`spring-boot:run` alone doesn't watch your source files. To get an auto-restarting
+dev loop, opt into the `devtools` Maven profile (kept out of the default build so
+it never ends up in the production WAR — `optional=true`/`provided` scope aren't
+enough here, since the executable WAR's own launcher re-adds `provided` jars at
+runtime):
+
+`spring-boot-devtools` restarts the app whenever `target/classes` changes, but
+something still needs to recompile on save — `entr` (`sudo apt install entr`)
+reruns the compile each time a watched file changes. Both as a single command
+line, backgrounding the app and foregrounding the watcher, with a `trap` to
+stop the backgrounded app together with the watcher on Ctrl+C:
+
+```
+$ JAVA_HOME=/usr/lib/jvm/temurin-8-jdk-amd64 mvn -f page-search-api/pom.xml spring-boot:run -Pdevtools & BOOT_PID=$!; trap "kill $BOOT_PID" EXIT; find page-search-api/src/main/java -name '*.java' | entr -r mvn -f page-search-api/pom.xml compile -q -Pdevtools
+```
+
 ### Pointing at a Solr backend
 
 `searchpages.textsearch.service.bean` selects the search backend: any value other
