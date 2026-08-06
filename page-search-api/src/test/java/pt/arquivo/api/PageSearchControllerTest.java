@@ -88,14 +88,16 @@ public class PageSearchControllerTest {
     @Test
     public void pageSearchUnexpectedException() throws Exception {
         Mockito.when(searchService.query(Mockito.any()))
-                .thenThrow(new SolrException(SolrException.ErrorCode.SERVER_ERROR, "Solr is down"));
+                .thenThrow(new SolrException(SolrException.ErrorCode.SERVER_ERROR,
+                        "Connection refused to solr-internal.arquivo.pt:8983"));
 
         MvcResult result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=sapo")).andReturn();
 
         MockHttpServletResponse response = result.getResponse();
         assertThat(response.getStatus()).isEqualTo(500);
         JSONObject jsonResponse = new JSONObject(response.getContentAsString());
-        assertThat(jsonResponse.getString("message")).isEqualTo("Solr is down");
+        // the raw exception message must not leak into the client-facing response
+        assertThat(jsonResponse.getString("message")).doesNotContain("solr-internal.arquivo.pt");
         assertThat(jsonResponse.getInt("httpStatus")).isEqualTo(500);
     }
 
