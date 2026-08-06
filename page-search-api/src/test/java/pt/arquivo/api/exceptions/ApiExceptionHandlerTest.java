@@ -34,13 +34,13 @@ public class ApiExceptionHandlerTest {
     }
 
     @Test
-    public void handleUnexpectedException_returnsInternalServerErrorWithMessage() {
+    public void handleUnexpectedException_returnsInternalServerErrorWithGenericMessage() {
         ResponseEntity<Object> response = handler
-                .handleUnexpectedException(new RuntimeException("solr connection failed"));
+                .handleUnexpectedException(new RuntimeException("solr://internal-host:8983 connection failed"));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         ApiException body = (ApiException) response.getBody();
-        assertThat(body.getMessage()).isEqualTo("solr connection failed");
+        assertThat(body.getMessage()).doesNotContain("internal-host");
         assertThat(body.getHttpStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
         assertThat(body.getTimestamp()).isNotNull();
     }
