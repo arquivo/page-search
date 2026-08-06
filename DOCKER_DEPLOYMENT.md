@@ -268,7 +268,7 @@ All configuration is done via environment variables passed to the container at r
 
 | Service | Default Port | Description |
 |---------|--------------|-------------|
-| API | 8080 | Page Search API (Swagger UI at `/swagger-ui/index.html`, OpenAPI spec at `/v3/api-docs`) |
+| API | 8080 | Page Search API (Swagger UI at `/textsearch/api-docs`, OpenAPI spec at `/textsearch/api-docs/v3`) |
 | Solr | 8983 | Solr search server |
 
 ## Management Commands
