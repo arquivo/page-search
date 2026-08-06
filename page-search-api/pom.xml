@@ -214,6 +214,22 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <!-- Not active by default: keeps devtools out of the war spring-boot-maven-plugin repackages
+                 for production. Opt in locally with `mvn spring-boot:run -Pdevtools`. -->
+            <id>devtools</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-devtools</artifactId>
+                    <version>2.2.4.RELEASE</version>
+                </dependency>
+            </dependencies>
+        </profile>
     </profiles>
 
     <build>
