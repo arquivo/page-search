@@ -109,12 +109,16 @@ not in this repository.
 
 ### Api Documentation
 
-The app exposes its OpenAPI 3 docs at the springdoc defaults (no custom
-`springdoc.*` path is configured), relative to wherever it's mounted — e.g.
-locally:
+The app exposes its OpenAPI 3 docs under `/textsearch/api-docs` (configured via
+`springdoc.api-docs.path`/`springdoc.swagger-ui.path` in
+`page-search-api/src/main/resources/application.properties`), matching the
+public URL convention proposed in
+[pwa-technologies#1588](https://github.com/arquivo/pwa-technologies/issues/1588)
+— so an Apache reverse proxy only needs a straight passthrough, no path
+rewriting. Relative to wherever the app is mounted, e.g. locally:
 
-- OpenAPI 3 spec (JSON): http://localhost:8081/v3/api-docs
-- Swagger UI: http://localhost:8081/swagger-ui/index.html
+- Swagger UI: http://localhost:8081/textsearch/api-docs
+- OpenAPI 3 spec (JSON): http://localhost:8081/textsearch/api-docs/v3
 
 Note: how (or whether) these paths are exposed publicly through Apache in
 dev/preprod/prod is per-environment reverse-proxy configuration, not part of
