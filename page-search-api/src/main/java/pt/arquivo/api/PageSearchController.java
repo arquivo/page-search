@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
@@ -158,12 +159,12 @@ public class PageSearchController {
                            @RequestParam(value = "to", required = false) String to,
                            @RequestParam(value = "type", required = false) String[] type,
                            @RequestParam(value = "collection", required = false) String[] collection,
-                           @Parameter(description = "Restrict the response to only these fields per result. Omit to return every field.",
-                                   schema = @Schema(allowableValues = {"title", "originalURL", "linkToArchive", "tstamp",
+                           @Parameter(description = "Restrict the response to only these fields per result. Omit to return majority of fields.",
+                                   array = @ArraySchema(schema = @Schema(allowableValues = {"title", "originalURL", "linkToArchive", "tstamp",
                                            "contentLength", "digest", "mimeType", "encoding", "date", "linkToScreenshot",
                                            "linkToNoFrame", "linkToExtractedText", "linkToMetadata", "linkToOriginalFile",
                                            "snippet", "fileName", "collection", "offset", "statusCode", "id", "language",
-                                           "languageConfidence"}))
+                                           "languageConfidence"})))
                            @RequestParam(value = "fields", required = false) String[] fields,
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
                            @RequestParam(value = "titleSearch", required = false) String titleSearch,
