@@ -109,7 +109,8 @@ not in this repository.
 
 ### Api Documentation
 
-https://preprod.arquivo.pt/pagesearch/swagger-ui.html#/
+- OpenAPI 3 spec (JSON): https://preprod.arquivo.pt/pagesearch/v3/api-docs
+- Swagger UI: https://preprod.arquivo.pt/pagesearch/swagger-ui/index.html
 
 ## Page Search Indexer
 
