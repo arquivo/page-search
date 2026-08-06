@@ -5,7 +5,7 @@ import io.swagger.v3.oas.models.tags.Tag;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
+import java.util.Arrays;
 
 @Configuration
 public class OpenApiConfig {
@@ -14,7 +14,7 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI api() {
         return new OpenAPI()
-                .tags(List.of(
+                .tags(Arrays.asList(
                         new Tag().name("PageSearch").description("Endpoints to search for Archived WebPages content"),
                         new Tag().name("Metadata").description("(Not Published) Endpoints to retrieve metadata information about an Archived Web Resource")
                 ));
