@@ -32,4 +32,16 @@ public class ApiExceptionHandlerTest {
         assertThat(body.getHttpStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
         assertThat(body.getTimestamp()).isNotNull();
     }
+
+    @Test
+    public void handleUnexpectedException_returnsInternalServerErrorWithMessage() {
+        ResponseEntity<Object> response = handler
+                .handleUnexpectedException(new RuntimeException("solr connection failed"));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        ApiException body = (ApiException) response.getBody();
+        assertThat(body.getMessage()).isEqualTo("solr connection failed");
+        assertThat(body.getHttpStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        assertThat(body.getTimestamp()).isNotNull();
+    }
 }
