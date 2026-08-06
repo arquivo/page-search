@@ -2,9 +2,11 @@ package pt.arquivo.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +18,12 @@ import pt.arquivo.services.*;
 import pt.arquivo.services.cdx.CDXSearchService;
 import pt.arquivo.services.solr.YearBalance;
 import pt.arquivo.utils.Utils;
-import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 
 
-@Api(tags = "PageSearch")
+@Tag(name = "PageSearch")
 @RestController
 public class PageSearchController {
 
@@ -46,7 +47,7 @@ public class PageSearchController {
     @Autowired
     MetadataController metadataController;
 
-    @ApiIgnore
+    @Hidden
     @CrossOrigin
     @GetMapping(value = {"/urlsearch/{url}"})
     public @ResponseBody
@@ -75,7 +76,7 @@ public class PageSearchController {
         return pageSearchResponse;
     }
 
-    @ApiOperation(value = "Get the extracted text of an Archived Page")
+    @Operation(summary = "Get the extracted text of an Archived Page")
     @CrossOrigin
     @GetMapping(value = "/textextracted")
     public String extractedText(@RequestParam(value = "m") String id) {
@@ -140,7 +141,7 @@ public class PageSearchController {
         return strength;
     }
 
-    @ApiOperation(value = "Search for Archived Pages that match the query parameters")
+    @Operation(summary = "Search for Archived Pages that match the query parameters")
     @CrossOrigin
     @GetMapping(value = "/textsearch")
     public @ResponseBody
@@ -162,9 +163,10 @@ public class PageSearchController {
                            @RequestParam(value = "titleSearch", required = false) String titleSearch,
                            @RequestParam(value = "timeline", required = false, defaultValue = "false") boolean timeline,
                            @RequestParam(value = "yearBalance", required = false) String yearBalance,
-                           @ApiParam(value = "Only return pages detected as being written in this language, e.g. pt")
+                           @Parameter(description = "Only return pages detected as being written in this language, e.g. pt")
                            @RequestParam(value = "language", required = false) String language,
-                           @ApiParam(value = "Lowest language detection confidence the results may have: HIGH (default), MEDIUM or LOW. The tiers are ordinal, so MEDIUM also includes the HIGH results and LOW includes every result. Only applies when filtering by language, unless explicitly requested.", allowableValues = "HIGH,MEDIUM,LOW")
+                           @Parameter(description = "Lowest language detection confidence the results may have: HIGH (default), MEDIUM or LOW. The tiers are ordinal, so MEDIUM also includes the HIGH results and LOW includes every result. Only applies when filtering by language, unless explicitly requested.",
+                                   schema = @Schema(allowableValues = {"HIGH", "MEDIUM", "LOW"}))
                            @RequestParam(value = "minLanguageConfidence", required = false) String minLanguageConfidence,
                            HttpServletRequest request
     ) {
