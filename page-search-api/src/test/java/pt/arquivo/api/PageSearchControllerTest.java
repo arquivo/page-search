@@ -1,5 +1,6 @@
 package pt.arquivo.api;
 
+import org.apache.solr.common.SolrException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -79,6 +80,20 @@ public class PageSearchControllerTest {
 
         jsonResponse = new JSONObject(response.getContentAsString());
         assertThat(jsonResponse.getJSONObject("request_parameters").getString("dedupField")).isEqualTo("site");
+    }
+
+    @Test
+    public void pageSearchUnexpectedException() throws Exception {
+        Mockito.when(searchService.query(Mockito.any()))
+                .thenThrow(new SolrException(SolrException.ErrorCode.SERVER_ERROR, "Solr is down"));
+
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=sapo")).andReturn();
+
+        MockHttpServletResponse response = result.getResponse();
+        assertThat(response.getStatus()).isEqualTo(500);
+        JSONObject jsonResponse = new JSONObject(response.getContentAsString());
+        assertThat(jsonResponse.getString("message")).isEqualTo("Solr is down");
+        assertThat(jsonResponse.getInt("httpStatus")).isEqualTo(500);
     }
 
     @Test
