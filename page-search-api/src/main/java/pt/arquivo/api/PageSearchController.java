@@ -158,6 +158,12 @@ public class PageSearchController {
                            @RequestParam(value = "to", required = false) String to,
                            @RequestParam(value = "type", required = false) String[] type,
                            @RequestParam(value = "collection", required = false) String[] collection,
+                           @Parameter(description = "Restrict the response to only these fields per result. Omit to return every field.",
+                                   schema = @Schema(allowableValues = {"title", "originalURL", "linkToArchive", "tstamp",
+                                           "contentLength", "digest", "mimeType", "encoding", "date", "linkToScreenshot",
+                                           "linkToNoFrame", "linkToExtractedText", "linkToMetadata", "linkToOriginalFile",
+                                           "snippet", "fileName", "collection", "offset", "statusCode", "id", "language",
+                                           "languageConfidence"}))
                            @RequestParam(value = "fields", required = false) String[] fields,
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
                            @RequestParam(value = "titleSearch", required = false) String titleSearch,
