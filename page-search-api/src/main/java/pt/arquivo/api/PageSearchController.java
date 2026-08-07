@@ -168,7 +168,10 @@ public class PageSearchController {
                            @RequestParam(value = "fields", required = false) String[] fields,
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
                            @RequestParam(value = "titleSearch", required = false) String titleSearch,
+                           @Parameter(description = "When true, also return a timeline with the distribution of results per year.")
                            @RequestParam(value = "timeline", required = false, defaultValue = "false") boolean timeline,
+                           @Parameter(description = "Lift the ranking of documents from the years the archive holds the least of. Takes true (default strength), false (no effect, the default), or a strength between "
+                                   + SearchQueryImpl.MIN_YEAR_BALANCE + " and " + SearchQueryImpl.MAX_YEAR_BALANCE + ".")
                            @RequestParam(value = "yearBalance", required = false) String yearBalance,
                            @Parameter(description = "Only return pages detected as being written in this language, e.g. pt")
                            @RequestParam(value = "language", required = false) String language,
