@@ -115,9 +115,11 @@ public class SolrSearchService implements SearchService {
 
     /**
      * The volumes of the archive per year, shared by the timeline and by the year balance ranking. Only the queries
-     * asking for one of them pay for it, and only the first of those pays the Solr query it caches.
+     * asking for one of them pay for it, and only the first of those pays the Solr query it caches. Synchronized
+     * because the requests racing on a cold start would otherwise get volumes each, and each one of those would
+     * query Solr for a baseline of its own.
      */
-    YearVolumes getYearVolumes() {
+    synchronized YearVolumes getYearVolumes() {
         if (this.yearVolumes == null) {
             this.yearVolumes = new YearVolumes(getSolrClient(), startYear(), yearVolumesTtlMillis);
         }
@@ -127,16 +129,16 @@ public class SolrSearchService implements SearchService {
     /**
      * Lets the tests work against an archive whose volumes are known, without a Solr to ask.
      */
-    void setYearVolumes(YearVolumes yearVolumes) {
+    synchronized void setYearVolumes(YearVolumes yearVolumes) {
         this.yearVolumes = yearVolumes;
         this.timelineService = null;
     }
 
     /**
      * The timeline is only built for the queries that ask for it, so its service is only created when the first of
-     * those queries arrives.
+     * those queries arrives. Synchronized for the same reason as the volumes it reads.
      */
-    TimelineService getTimelineService() {
+    synchronized TimelineService getTimelineService() {
         if (this.timelineService == null) {
             this.timelineService = new TimelineService(getYearVolumes());
         }

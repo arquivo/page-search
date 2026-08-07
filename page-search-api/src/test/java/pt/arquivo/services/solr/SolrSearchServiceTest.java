@@ -22,9 +22,17 @@ import java.io.IOException;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -167,6 +175,49 @@ public class SolrSearchServiceTest {
         SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
         assertThat(solrQuery.getFilterQueries())
                 .contains("type:" + ClientUtils.escapeQueryChars("application/zip"));
+    }
+
+    @Test
+    public void timelineServiceIsSharedByTheRequestsRacingOnAColdStart() throws Exception {
+        assertThat(distinctFromRacingCallers(service::getTimelineService)).isEqualTo(1);
+    }
+
+    @Test
+    public void yearVolumesAreSharedByTheRequestsRacingOnAColdStart() throws Exception {
+        // Every request getting volumes of its own would mean a baseline query to Solr each, which is the very thing
+        // the volumes cache. The ones the setUp injects would hide the race, so this starts from a cold service.
+        SearchServiceConfiguration configuration = new SearchServiceConfiguration();
+        configuration.setStartDate("19960101000000");
+        configuration.setBaseSolrUrl("http://solr.example.com/solr/searchpages");
+        SolrSearchService coldService = new SolrSearchService(configuration);
+
+        assertThat(distinctFromRacingCallers(coldService::getYearVolumes)).isEqualTo(1);
+    }
+
+    /**
+     * Calls a lazily initialized getter from many threads at once, and returns how many distinct instances it handed
+     * out. One means the racing callers shared it.
+     */
+    private static <T> int distinctFromRacingCallers(Callable<T> getter) throws Exception {
+        int racers = 16;
+        CyclicBarrier startTogether = new CyclicBarrier(racers);
+        ExecutorService threads = Executors.newFixedThreadPool(racers);
+
+        List<Future<T>> results = new ArrayList<>();
+        for (int i = 0; i < racers; i++) {
+            results.add(threads.submit(() -> {
+                startTogether.await();
+                return getter.call();
+            }));
+        }
+
+        Set<T> distinct = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Future<T> result : results) {
+            distinct.add(result.get());
+        }
+        threads.shutdown();
+
+        return distinct.size();
     }
 
     @Test
