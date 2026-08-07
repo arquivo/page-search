@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pt.arquivo.services.SearchQuery;
 import pt.arquivo.services.SearchResult;
+import pt.arquivo.services.Timeline;
 
 import java.util.ArrayList;
 
@@ -40,6 +41,10 @@ public class PageSearchResponse implements ApiResponse {
 
     @JsonProperty("response_items")
     private ArrayList<SearchResult> responseItems;
+
+    /** Yearly breakdown of the matching documents, only present when the query asked for timeline=true. */
+    @JsonProperty("timeline")
+    private Timeline timeline;
 
     public String getServiceName() {
         return serviceName;
@@ -111,6 +116,14 @@ public class PageSearchResponse implements ApiResponse {
 
     public void setResponseItems(ArrayList<SearchResult> responseItems) {
         this.responseItems = responseItems;
+    }
+
+    public Timeline getTimeline() {
+        return timeline;
+    }
+
+    public void setTimeline(Timeline timeline) {
+        this.timeline = timeline;
     }
 
     public void setPagination(int maxItems, int offset, String queryString, boolean firstPage, boolean lastPage) {

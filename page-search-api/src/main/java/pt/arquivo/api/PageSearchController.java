@@ -14,6 +14,7 @@ import pt.arquivo.api.exceptions.ApiNotFoundResourceException;
 import pt.arquivo.api.exceptions.ApiRequestException;
 import pt.arquivo.services.*;
 import pt.arquivo.services.cdx.CDXSearchService;
+import pt.arquivo.services.solr.YearBalance;
 import pt.arquivo.utils.Utils;
 import springfox.documentation.annotations.ApiIgnore;
 
@@ -109,6 +110,36 @@ public class PageSearchController {
         return searchService.query(searchQuery, true);
     }
 
+    /**
+     * How strongly the ranking should lift the documents of the years the archive holds the least of. It is asked for
+     * as a strength between 0 and 1, and yearBalance=true asks for it without picking one.
+     *
+     * @param yearBalance the requested value, null when the parameter wasn't sent
+     * @return the strength to rank with, 0 when the ranking should be left untouched
+     */
+    protected static double parseYearBalance(String yearBalance) {
+        if (yearBalance == null || yearBalance.trim().isEmpty() || yearBalance.equalsIgnoreCase("false")) {
+            return SearchQueryImpl.MIN_YEAR_BALANCE;
+        }
+        if (yearBalance.equalsIgnoreCase("true")) {
+            return YearBalance.DEFAULT_STRENGTH;
+        }
+
+        double strength;
+        try {
+            strength = Double.parseDouble(yearBalance.trim());
+        } catch (NumberFormatException e) {
+            throw new ApiRequestException("Invalid yearBalance, it takes true, false, or a value between "
+                    + SearchQueryImpl.MIN_YEAR_BALANCE + " and " + SearchQueryImpl.MAX_YEAR_BALANCE + ": "
+                    + yearBalance);
+        }
+        if (strength < SearchQueryImpl.MIN_YEAR_BALANCE || strength > SearchQueryImpl.MAX_YEAR_BALANCE) {
+            throw new ApiRequestException("Invalid yearBalance, it goes from " + SearchQueryImpl.MIN_YEAR_BALANCE
+                    + " (the ranking as it is) to " + SearchQueryImpl.MAX_YEAR_BALANCE + ": " + yearBalance);
+        }
+        return strength;
+    }
+
     @ApiOperation(value = "Search for Archived Pages that match the query parameters")
     @CrossOrigin
     @GetMapping(value = "/textsearch")
@@ -129,6 +160,8 @@ public class PageSearchController {
                            @RequestParam(value = "fields", required = false) String[] fields,
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
                            @RequestParam(value = "titleSearch", required = false) String titleSearch,
+                           @RequestParam(value = "timeline", required = false, defaultValue = "false") boolean timeline,
+                           @RequestParam(value = "yearBalance", required = false) String yearBalance,
                            @ApiParam(value = "Only return pages detected as being written in this language, e.g. pt")
                            @RequestParam(value = "language", required = false) String language,
                            @ApiParam(value = "Lowest language detection confidence the results may have: HIGH (default), MEDIUM or LOW. The tiers are ordinal, so MEDIUM also includes the HIGH results and LOW includes every result. Only applies when filtering by language, unless explicitly requested.", allowableValues = "HIGH,MEDIUM,LOW")
@@ -180,6 +213,8 @@ public class PageSearchController {
         searchQuery.setFields(fields);
         searchQuery.setPrettyPrint(prettyPrint);
         searchQuery.setTitleSearch(titleSearch);
+        searchQuery.setTimeline(timeline);
+        searchQuery.setYearBalance(parseYearBalance(yearBalance));
         searchQuery.setLanguage(language);
         try {
             searchQuery.setMinLanguageConfidence(minLanguageConfidence);
@@ -203,6 +238,11 @@ public class PageSearchController {
         if (searchQuery.isSpellcheck()) {
             String suggestedQuery = searchResults.getSuggestedQuery();
             pageSearchResponse.setSuggestedQuery(suggestedQuery == null ? "" : suggestedQuery);
+        }
+
+        // The timeline is only replied to the queries that asked for it, and only when the backend could compute it
+        if (searchQuery.isTimeline()) {
+            pageSearchResponse.setTimeline(searchResults.getTimeline());
         }
 
         pageSearchResponse.setServiceName(serviceName);

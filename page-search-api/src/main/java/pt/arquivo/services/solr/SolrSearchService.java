@@ -34,6 +34,7 @@ import pt.arquivo.services.SearchResultSolrImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.SearchServiceConfiguration;
+import pt.arquivo.services.Timeline;
 import pt.arquivo.utils.URLNormalizers;
 import pt.arquivo.utils.Utils;
 
@@ -82,6 +83,14 @@ public class SolrSearchService implements SearchService {
     @Value("${searchpages.textsearch.service.link:http://localhost:8081/textsearch}")
     private String textSearchServiceEndpoint;
 
+    /** How long the number of documents the archive holds per year is reused for, it only moves when indexing does. */
+    @Value("${searchpages.api.yearvolumes.ttl.ms:86400000}")
+    private long yearVolumesTtlMillis = 86400000L;
+
+    private YearVolumes yearVolumes;
+
+    private TimelineService timelineService;
+
     // For setting configs without autowired shanenigans
     public SolrSearchService(SearchServiceConfiguration configuration){
         this.startDate = configuration.getStartDate();
@@ -102,6 +111,45 @@ public class SolrSearchService implements SearchService {
             this.solrClient = new HttpSolrClient.Builder(this.baseSolrUrl).build();
         }
         return this.solrClient;
+    }
+
+    /**
+     * The volumes of the archive per year, shared by the timeline and by the year balance ranking. Only the queries
+     * asking for one of them pay for it, and only the first of those pays the Solr query it caches. Synchronized
+     * because the requests racing on a cold start would otherwise get volumes each, and each one of those would
+     * query Solr for a baseline of its own.
+     */
+    synchronized YearVolumes getYearVolumes() {
+        if (this.yearVolumes == null) {
+            this.yearVolumes = new YearVolumes(getSolrClient(), startYear(), yearVolumesTtlMillis);
+        }
+        return this.yearVolumes;
+    }
+
+    /**
+     * Lets the tests work against an archive whose volumes are known, without a Solr to ask.
+     */
+    synchronized void setYearVolumes(YearVolumes yearVolumes) {
+        this.yearVolumes = yearVolumes;
+        this.timelineService = null;
+    }
+
+    /**
+     * The timeline is only built for the queries that ask for it, so its service is only created when the first of
+     * those queries arrives. Synchronized for the same reason as the volumes it reads.
+     */
+    synchronized TimelineService getTimelineService() {
+        if (this.timelineService == null) {
+            this.timelineService = new TimelineService(getYearVolumes());
+        }
+        return this.timelineService;
+    }
+
+    /**
+     * The first year the archive has documents for, taken from the configured start date (e.g. 19960101000000).
+     */
+    private int startYear() {
+        return Integer.parseInt(this.startDate.trim().substring(0, 4));
     }
 
     /**
@@ -401,6 +449,14 @@ public class SolrSearchService implements SearchService {
             solrQuery.set("hl","false");
         }
 
+        // Handle year balance: lift the documents of the years the archive holds the least of
+        if (searchQuery.getYearBalance() > 0) {
+            String boostFunction = YearBalance.boostFunction(getYearVolumes().perYear(), searchQuery.getYearBalance());
+            if (boostFunction != null) {
+                solrQuery.set("boost", boostFunction);
+            }
+        }
+
         // Every spellcheck parameter is sent explicitly, so the reply doesn't depend on the request handler defaults
         if (searchQuery.isSpellcheck()) {
             solrQuery.set("spellcheck.dictionary", "default");
@@ -419,6 +475,63 @@ public class SolrSearchService implements SearchService {
         }
 
         return solrQuery;
+    }
+
+    /**
+     * Converts the API request into the query that counts the matching documents per year. It carries the same filters
+     * as the search itself, but not the deduplication: collapsing is a costly post filter (it multiplies the time of
+     * the facet by an order of magnitude) and it would leave the counts of the query no longer comparable with the
+     * counts of the whole archive that normalize them into the impact.
+     *
+     * @param searchQuery
+     * @return
+     */
+    SolrQuery convertTimelineQuery(SearchQuery searchQuery) {
+        SolrQuery solrQuery = convertSearchQuery(searchQuery);
+
+        String[] filterQueries = solrQuery.getFilterQueries();
+        if (filterQueries != null) {
+            String[] withoutCollapse = Arrays.stream(filterQueries)
+                    .filter(filterQuery -> !filterQuery.startsWith("{!collapse"))
+                    .toArray(String[]::new);
+            if (withoutCollapse.length == 0) {
+                solrQuery.remove("fq");
+            } else {
+                solrQuery.setFilterQueries(withoutCollapse);
+            }
+        }
+        solrQuery.remove("expand");
+        solrQuery.remove("expand.rows");
+        // Counting documents per year has no use for how they are scored
+        solrQuery.remove("boost");
+
+        // Only the counts are needed, no documents come back from this query
+        solrQuery.setStart(0);
+        solrQuery.setRows(0);
+        solrQuery.setFields("id");
+        solrQuery.set("hl", "false");
+        solrQuery.set("spellcheck", "false");
+
+        getTimelineService().addYearRangeFacet(solrQuery);
+        return solrQuery;
+    }
+
+    /**
+     * Runs the query that counts the matching documents per year and normalizes it against the size of the archive on
+     * each year. A failure here doesn't fail the search, the reply just comes without the timeline.
+     *
+     * @param searchQuery
+     * @return the timeline of the query, or null when Solr couldn't be asked for it
+     */
+    private Timeline queryTimeline(SearchQuery searchQuery) {
+        SolrQuery timelineQuery = convertTimelineQuery(searchQuery);
+        LOG.info("Solr Query (timeline): " + timelineQuery);
+        try {
+            return getTimelineService().buildTimeline(getSolrClient().query(timelineQuery));
+        } catch (SolrServerException | IOException e) {
+            LOG.error("Error querying Solr for the timeline: ", e);
+            return null;
+        }
     }
 
     /**
@@ -948,6 +1061,9 @@ public class SolrSearchService implements SearchService {
             QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
             SearchResults searchResults = parseQueryResponse(queryResponse, searchQuery);
             searchResults.setLastPageResults(isLastPage(searchResults.getEstimatedNumberResults(), searchQuery));
+            if (searchQuery.isTimeline()) {
+                searchResults.setTimeline(queryTimeline(searchQuery));
+            }
             return searchResults;
         } catch (SolrServerException | IOException e) {
             LOG.error("Error querying Solr: ", e);

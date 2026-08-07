@@ -19,9 +19,12 @@ import pt.arquivo.services.SearchResult;
 import pt.arquivo.services.SearchResultNutchImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
+import pt.arquivo.services.Timeline;
 import pt.arquivo.services.cdx.ItemCDX;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static pt.arquivo.services.cdx.CDXSearchService.getSearchResultNutch;
@@ -254,6 +257,85 @@ public class PageSearchControllerTest {
                 .get("/textsearch?q=torrse%20novsa&fields=title,snippet")).andReturn();
         jsonResponse = new JSONObject(result.getResponse().getContentAsString());
         assertThat(jsonResponse.has("suggested_query")).isFalse();
+    }
+
+    @Test
+    public void pageSearchTimeline() throws Exception {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        counts.put("2005", 1200L);
+        counts.put("2006", 1800L);
+        Map<String, Long> totalsPerYear = new LinkedHashMap<>();
+        totalsPerYear.put("2005", 100000L);
+        totalsPerYear.put("2006", 100000L);
+
+        SearchResults mockSearchResults = new SearchResults();
+        mockSearchResults.setResults(new ArrayList<>());
+        mockSearchResults.setTimeline(Timeline.of(counts, totalsPerYear));
+
+        Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
+
+        // timeline requested: the yearly counts and their impact come along with the results
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=eleicoes&timeline=true&maxItems=0")).andReturn();
+        JSONObject jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.getJSONObject("request_parameters").getBoolean("timeline")).isTrue();
+
+        JSONObject jsonTimeline = jsonResponse.getJSONObject("timeline");
+        assertThat(jsonTimeline.getJSONObject("counts").getLong("2005")).isEqualTo(1200L);
+        assertThat(jsonTimeline.getJSONObject("impact").getDouble("2005")).isEqualTo(0.012);
+
+        // timeline not requested: the reply is the one it always was
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes")).andReturn();
+        jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.has("timeline")).isFalse();
+        assertThat(jsonResponse.getJSONObject("request_parameters").has("timeline")).isFalse();
+
+        // the backend couldn't compute the timeline: the search still replies, without it
+        mockSearchResults.setTimeline(null);
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&timeline=true")).andReturn();
+        jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.has("timeline")).isFalse();
+        assertThat(jsonResponse.getJSONObject("request_parameters").getBoolean("timeline")).isTrue();
+    }
+
+    @Test
+    public void pageSearchYearBalance() throws Exception {
+        SearchResults mockSearchResults = new SearchResults();
+        mockSearchResults.setResults(new ArrayList<>());
+
+        Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
+
+        // asked for without a strength: the ranking is balanced by the default amount
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=eleicoes&yearBalance=true")).andReturn();
+        JSONObject jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.getDouble("yearBalance")).isEqualTo(0.5);
+
+        // asked for with a strength of its own
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=0.25")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.getDouble("yearBalance")).isEqualTo(0.25);
+
+        // not asked for, or turned down: the reply is the one it always was
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.has("yearBalance")).isFalse();
+
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=false")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.has("yearBalance")).isFalse();
+
+        // out of range, or not a number at all
+        assertThat(mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=2"))
+                .andReturn().getResponse().getStatus()).isEqualTo(400);
+        assertThat(mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=-1"))
+                .andReturn().getResponse().getStatus()).isEqualTo(400);
+        assertThat(mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=lots"))
+                .andReturn().getResponse().getStatus()).isEqualTo(400);
     }
 
     @Test

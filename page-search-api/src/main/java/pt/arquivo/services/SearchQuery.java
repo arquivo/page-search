@@ -89,4 +89,12 @@ public interface SearchQuery {
     void setMinLanguageConfidence(String minLanguageConfidence);
 
     boolean isSpellcheck();
+
+    boolean isTimeline();
+
+    void setTimeline(boolean timeline);
+
+    double getYearBalance();
+
+    void setYearBalance(double yearBalance);
 }
