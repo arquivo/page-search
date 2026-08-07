@@ -9,3 +9,7 @@
 **/target/
 /solr/test-data/
 docker-compose.override.yml
+**/.DS_Store
+*.code-workspace
+# Local Spring profiles, they point at whatever Solr each of us runs
+**/application-local*.properties

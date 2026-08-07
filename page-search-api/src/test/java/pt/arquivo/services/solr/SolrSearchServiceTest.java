@@ -22,7 +22,14 @@ import java.io.IOException;
 import java.time.Year;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -157,6 +164,30 @@ public class SolrSearchServiceTest {
         SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
         assertThat(solrQuery.getFilterQueries())
                 .contains("type:" + ClientUtils.escapeQueryChars("application/zip"));
+    }
+
+    @Test
+    public void timelineServiceIsSharedByTheRequestsRacingOnAColdStart() throws Exception {
+        // Every request getting a service of its own would mean a baseline query to Solr each, which is the very
+        // thing the service caches
+        int racers = 16;
+        CyclicBarrier startTogether = new CyclicBarrier(racers);
+        ExecutorService threads = Executors.newFixedThreadPool(racers);
+        List<Future<TimelineService>> timelineServices = new ArrayList<>();
+        for (int i = 0; i < racers; i++) {
+            timelineServices.add(threads.submit(() -> {
+                startTogether.await();
+                return service.getTimelineService();
+            }));
+        }
+
+        Set<TimelineService> distinct = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Future<TimelineService> timelineService : timelineServices) {
+            distinct.add(timelineService.get());
+        }
+        threads.shutdown();
+
+        assertThat(distinct).hasSize(1);
     }
 
     @Test

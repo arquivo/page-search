@@ -113,9 +113,10 @@ public class SolrSearchService implements SearchService {
 
     /**
      * The timeline is only built for the queries that ask for it, so its service (and the archive baseline it caches)
-     * is only created when the first of those queries arrives.
+     * is only created when the first of those queries arrives. Synchronized because the requests racing on a cold
+     * start would otherwise get a service each, and each one of those would query Solr for its own baseline.
      */
-    TimelineService getTimelineService() {
+    synchronized TimelineService getTimelineService() {
         if (this.timelineService == null) {
             this.timelineService = new TimelineService(getSolrClient(), startYear(), timelineBaselineTtlMillis);
         }
