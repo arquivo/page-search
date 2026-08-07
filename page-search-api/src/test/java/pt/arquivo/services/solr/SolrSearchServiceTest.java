@@ -24,8 +24,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -53,6 +56,14 @@ public class SolrSearchServiceTest {
         configuration.setBaseSolrUrl("http://solr.example.com/solr/searchpages");
         configuration.setTextSearchServiceEndpoint("http://textsearch.example.com");
         service = new SolrSearchService(configuration);
+
+        // An archive starting on 1996 and holding ten times more documents on 2008 than on 1997, so that the volumes
+        // are known without a Solr to ask
+        Map<String, Long> volumesPerYear = new LinkedHashMap<>();
+        volumesPerYear.put("1996", 50000L);
+        volumesPerYear.put("1997", 100000L);
+        volumesPerYear.put("2008", 1000000L);
+        service.setYearVolumes(new YearVolumes(volumesPerYear));
     }
 
     private static SearchQuery timelineQuery() {
@@ -168,26 +179,45 @@ public class SolrSearchServiceTest {
 
     @Test
     public void timelineServiceIsSharedByTheRequestsRacingOnAColdStart() throws Exception {
-        // Every request getting a service of its own would mean a baseline query to Solr each, which is the very
-        // thing the service caches
+        assertThat(distinctFromRacingCallers(service::getTimelineService)).isEqualTo(1);
+    }
+
+    @Test
+    public void yearVolumesAreSharedByTheRequestsRacingOnAColdStart() throws Exception {
+        // Every request getting volumes of its own would mean a baseline query to Solr each, which is the very thing
+        // the volumes cache. The ones the setUp injects would hide the race, so this starts from a cold service.
+        SearchServiceConfiguration configuration = new SearchServiceConfiguration();
+        configuration.setStartDate("19960101000000");
+        configuration.setBaseSolrUrl("http://solr.example.com/solr/searchpages");
+        SolrSearchService coldService = new SolrSearchService(configuration);
+
+        assertThat(distinctFromRacingCallers(coldService::getYearVolumes)).isEqualTo(1);
+    }
+
+    /**
+     * Calls a lazily initialized getter from many threads at once, and returns how many distinct instances it handed
+     * out. One means the racing callers shared it.
+     */
+    private static <T> int distinctFromRacingCallers(Callable<T> getter) throws Exception {
         int racers = 16;
         CyclicBarrier startTogether = new CyclicBarrier(racers);
         ExecutorService threads = Executors.newFixedThreadPool(racers);
-        List<Future<TimelineService>> timelineServices = new ArrayList<>();
+
+        List<Future<T>> results = new ArrayList<>();
         for (int i = 0; i < racers; i++) {
-            timelineServices.add(threads.submit(() -> {
+            results.add(threads.submit(() -> {
                 startTogether.await();
-                return service.getTimelineService();
+                return getter.call();
             }));
         }
 
-        Set<TimelineService> distinct = Collections.newSetFromMap(new IdentityHashMap<>());
-        for (Future<TimelineService> timelineService : timelineServices) {
-            distinct.add(timelineService.get());
+        Set<T> distinct = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Future<T> result : results) {
+            distinct.add(result.get());
         }
         threads.shutdown();
 
-        assertThat(distinct).hasSize(1);
+        return distinct.size();
     }
 
     @Test
@@ -245,6 +275,31 @@ public class SolrSearchServiceTest {
         assertThat(timelineQuery.getFilterQueries())
                 .contains("type:application\\/pdf", "collections:AWP1")
                 .noneMatch(filterQuery -> filterQuery.startsWith("{!collapse"));
+    }
+
+    @Test
+    public void yearBalanceBoostsTheThinYears() {
+        SearchQuery searchQuery = new SearchQueryImpl("eleições");
+        searchQuery.setYearBalance(1.0);
+
+        SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
+
+        // 1996 is the thinnest year of this archive, so at full strength it is lifted by MAX_LIFT
+        assertThat(solrQuery.get("boost")).contains("ms(dateOldest)").contains("1.2500");
+    }
+
+    @Test
+    public void searchQueryIsNotBoostedWhenYearBalanceIsntAskedFor() {
+        assertThat(service.convertSearchQuery(new SearchQueryImpl("eleições")).get("boost")).isNull();
+    }
+
+    @Test
+    public void timelineQueryIsNotBoosted() {
+        SearchQuery searchQuery = timelineQuery();
+        searchQuery.setYearBalance(1.0);
+
+        // Counting the documents of each year has no use for how they are scored
+        assertThat(service.convertTimelineQuery(searchQuery).get("boost")).isNull();
     }
 
     @Test

@@ -93,4 +93,8 @@ public interface SearchQuery {
     boolean isTimeline();
 
     void setTimeline(boolean timeline);
+
+    double getYearBalance();
+
+    void setYearBalance(double yearBalance);
 }
