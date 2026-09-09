@@ -110,6 +110,17 @@ $ JAVA_HOME=/usr/lib/jvm/temurin-8-jdk-amd64 mvn -f page-search-api/pom.xml spri
     -Dspring-boot.run.arguments="--searchpages.textsearch.service.bean=solr --searchpages.textsearch.service.bean.solr.link=http://<host>:<port>/solr/<collection>"
 ```
 
+For example, to compare behaviour against the dev and prod Solr instances
+(`searchpages.textsearch.service.bean.solr.link` already defaults to dev):
+
+```
+$ mvn -f page-search-api/pom.xml spring-boot:run \
+    -Dspring-boot.run.arguments="--searchpages.textsearch.service.bean.solr.link=http://p44.arquivo.pt:2200/solr/pages"   # dev
+
+$ mvn -f page-search-api/pom.xml spring-boot:run \
+    -Dspring-boot.run.arguments="--searchpages.textsearch.service.bean.solr.link=http://p125.arquivo.pt:2200/solr/pages" # prod
+```
+
 Once running, verify it's serving real results:
 
 ```
@@ -120,6 +131,11 @@ Note: other deployed environments (dev/preprod/prod) may point at different Solr
 hosts/collections than the one committed in `application.properties` — that
 per-environment configuration lives in each environment's own deployment setup,
 not in this repository.
+
+Highlighting always requests Solr's `hl.method=unified` explicitly (see
+`SolrSearchService#convertSearchQuery`), rather than relying on Solr's default
+`fastVector` highlighter, which needs full term vectors our index doesn't carry
+(arquivo/pwa-technologies#1609).
 
 ## Page Search API Architecture 
 
