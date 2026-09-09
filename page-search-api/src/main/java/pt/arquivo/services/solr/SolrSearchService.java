@@ -87,6 +87,10 @@ public class SolrSearchService implements SearchService {
     @Value("${searchpages.api.yearvolumes.ttl.ms:86400000}")
     private long yearVolumesTtlMillis = 86400000L;
 
+    /** Max time (ms) Solr is allowed to spend processing a single query, so slow queries don't overwhelm it. */
+    @Value("${searchpages.solr.timeallowed.ms:10000}")
+    private int timeAllowed = 10000;
+
     private YearVolumes yearVolumes;
 
     private TimelineService timelineService;
@@ -101,6 +105,7 @@ public class SolrSearchService implements SearchService {
         this.extractedTextServiceEndpoint = configuration.getExtractedTextServiceEndpoint();
         this.baseSolrUrl = configuration.getBaseSolrUrl();
         this.textSearchServiceEndpoint = configuration.getTextSearchServiceEndpoint();
+        this.timeAllowed = configuration.getTimeAllowedMs();
     }
 
     public SolrSearchService(){}
@@ -201,12 +206,24 @@ public class SolrSearchService implements SearchService {
     }
 
     /**
+     * Caps how long Solr is allowed to spend processing a query (timeAllowed param), so slow queries don't
+     * overwhelm Solr. Package-private to allow direct unit testing.
+     * @param solrQuery
+     * @return the same solrQuery, for chaining
+     */
+    SolrQuery applyTimeAllowed(SolrQuery solrQuery) {
+        solrQuery.set("timeAllowed", timeAllowed);
+        return solrQuery;
+    }
+
+    /**
      * Converts the API request into an appropriate Solr query.
      * @param searchQuery
      * @return
      */
     SolrQuery convertSearchQuery(SearchQuery searchQuery) {
         SolrQuery solrQuery = new SolrQuery();
+        applyTimeAllowed(solrQuery);
 
         if(searchQuery.getQueryTerms() == null){
             solrQuery.setQuery("*:*");
@@ -609,6 +626,7 @@ public class SolrSearchService implements SearchService {
         // If we don't get highlighted text on the content we display the first 500 chars of the content
         if (highlightedText.length() == 0) {
             SolrQuery solrQuery = new SolrQuery();
+            applyTimeAllowed(solrQuery);
             solrQuery.set("q", "id:" + docId);
             solrQuery.set("fl", "content");
             solrQuery.set("hl","false");
@@ -785,6 +803,7 @@ public class SolrSearchService implements SearchService {
         SearchResultSolrImpl searchResult = new SearchResultSolrImpl();
         populateSearchResult(searchResult, queryResponse, doc, oldestUrl, oldestTimestamp, oldestCollection, replyFields);
         searchResult.setSolrClient(this.solrClient);
+        searchResult.setTimeAllowed(this.timeAllowed);
         return searchResult;
     }
 
@@ -1027,6 +1046,7 @@ public class SolrSearchService implements SearchService {
                     .map(surt -> "urlTimestamp:" + "*/" + Utils.canocalizeTimestamp(tstamp) + "/" + ClientUtils.escapeQueryChars(surt))
                     .collect(Collectors.toList());
             SolrQuery solrQuery = new SolrQuery();
+            applyTimeAllowed(solrQuery);
             solrQuery.set("q", String.join(" OR ", solrQueryForSites));
             solrQuery.set("fl","id,type,tstamp,urlTimestamp,surt,titleString,collection,url");
             solrQuery.set("hl","false");
