@@ -16,7 +16,8 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .tags(Arrays.asList(
                         new Tag().name("PageSearch").description("Endpoints to search for Archived WebPages content"),
-                        new Tag().name("Metadata").description("(Not Published) Endpoints to retrieve metadata information about an Archived Web Resource")
+                        new Tag().name("Metadata").description("(Not Published) Endpoints to retrieve metadata information about an Archived Web Resource"),
+                        new Tag().name("HealthCheck").description("Endpoints to check the connectivity of this service's dependencies")
                 ));
     }
 }
