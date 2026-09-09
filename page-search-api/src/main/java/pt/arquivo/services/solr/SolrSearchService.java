@@ -443,6 +443,11 @@ public class SolrSearchService implements SearchService {
 
         solrQuery.setFields(stringBuilderFields.toString());
 
+        // Solr's default highlighter, fastVector, requires the index to carry full term vectors
+        // (termVectors, termPositions, termOffsets), which ours doesn't, so it's forced explicitly on every
+        // query rather than relying on server-side defaults (see arquivo/pwa-technologies#1609)
+        solrQuery.set("hl.method", "unified");
+
         // If we don't need snippet we don't ask Solr for highligting (which is on by default since v5), and a query
         // asking for no results at all has nothing to highlight either
         if(!needsSnippet || searchQuery.getMaxItems() == 0){
