@@ -110,6 +110,16 @@ $ JAVA_HOME=/usr/lib/jvm/temurin-8-jdk-amd64 mvn -f page-search-api/pom.xml spri
     -Dspring-boot.run.arguments="--searchpages.textsearch.service.bean=solr --searchpages.textsearch.service.bean.solr.link=http://<host>:<port>/solr/<collection>"
 ```
 
+The same property can be overridden the same way when running the packaged
+WAR directly instead of through Maven (e.g. after `mvn -f page-search-api/pom.xml package`),
+which is handy for quickly comparing behaviour against a different
+environment's Solr without touching `application.properties`:
+
+```
+$ java -jar page-search-api/target/page-search-api-1.0.0-SNAPSHOT.war \
+    --searchpages.textsearch.service.bean.solr.link=http://<host>:<port>/solr/<collection>
+```
+
 Once running, verify it's serving real results:
 
 ```
@@ -119,7 +129,18 @@ $ curl "http://localhost:8081/textsearch?q=test&maxItems=1"
 Note: other deployed environments (dev/preprod/prod) may point at different Solr
 hosts/collections than the one committed in `application.properties` — that
 per-environment configuration lives in each environment's own deployment setup,
-not in this repository.
+not in this repository. Check with your team for the actual dev/preprod/prod
+Solr endpoints.
+
+Highlighting always requests Solr's `hl.method=unified` explicitly (see
+`SolrSearchService#convertSearchQuery`), rather than relying on Solr's default
+`fastVector` highlighter, which needs full term vectors our index doesn't carry
+(arquivo/pwa-technologies#1609).
+
+`searchpages.solr.timeallowed.ms` (default `10000`) caps how long Solr is allowed to spend
+processing a single query (via Solr's `timeAllowed` parameter), applied to every request made
+to Solr. This protects Solr from being overwhelmed by slow-running queries; 10s is considered
+the maximum time that is acceptable for users to wait for a search query.
 
 ## Page Search API Architecture 
 
