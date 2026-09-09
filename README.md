@@ -121,6 +121,11 @@ hosts/collections than the one committed in `application.properties` — that
 per-environment configuration lives in each environment's own deployment setup,
 not in this repository.
 
+`searchpages.solr.timeallowed.ms` (default `10000`) caps how long Solr is allowed to spend
+processing a single query (via Solr's `timeAllowed` parameter), applied to every request made
+to Solr. This protects Solr from being overwhelmed by slow-running queries; 10s is considered
+the maximum time that is acceptable for users to wait for a search query.
+
 ## Page Search API Architecture 
 
 ![](docs/img/PageSearchArchitecture.png)
