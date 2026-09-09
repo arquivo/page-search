@@ -223,6 +223,7 @@ public class SolrSearchService implements SearchService {
      */
     SolrQuery convertSearchQuery(SearchQuery searchQuery) {
         SolrQuery solrQuery = new SolrQuery();
+        solrQuery.set("shards.tolerant", "true");
         applyTimeAllowed(solrQuery);
 
         if(searchQuery.getQueryTerms() == null){
@@ -631,6 +632,7 @@ public class SolrSearchService implements SearchService {
         // If we don't get highlighted text on the content we display the first 500 chars of the content
         if (highlightedText.length() == 0) {
             SolrQuery solrQuery = new SolrQuery();
+            solrQuery.set("shards.tolerant", "true");
             applyTimeAllowed(solrQuery);
             solrQuery.set("q", "id:" + docId);
             solrQuery.set("fl", "content");
@@ -1051,6 +1053,7 @@ public class SolrSearchService implements SearchService {
                     .map(surt -> "urlTimestamp:" + "*/" + Utils.canocalizeTimestamp(tstamp) + "/" + ClientUtils.escapeQueryChars(surt))
                     .collect(Collectors.toList());
             SolrQuery solrQuery = new SolrQuery();
+            solrQuery.set("shards.tolerant", "true");
             applyTimeAllowed(solrQuery);
             solrQuery.set("q", String.join(" OR ", solrQueryForSites));
             solrQuery.set("fl","id,type,tstamp,urlTimestamp,surt,titleString,collection,url");

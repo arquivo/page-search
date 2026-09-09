@@ -26,6 +26,22 @@ public class SearchResultSolrImplTest {
     }
 
     @Test
+    public void getExtractedText_queryToleratesUnavailableShards() throws Exception {
+        SolrDocument doc = new SolrDocument();
+        doc.addField("title", "title");
+        doc.addField("content", "content");
+        SolrDocumentList docList = new SolrDocumentList();
+        docList.add(doc);
+
+        QueryResponse queryResponse = mock(QueryResponse.class);
+        when(queryResponse.getResults()).thenReturn(docList);
+
+        SolrClient solrClient = mock(SolrClient.class);
+        when(solrClient.query(any(SolrQuery.class))).thenReturn(queryResponse);
+
+        SearchResultSolrImpl result = new SearchResultSolrImpl();
+        result.setId("doc-1");
+        result.setSolrClient(solrClient);
     public void timeAllowed_defaultsTo10000ms() {
         SearchResultSolrImpl result = new SearchResultSolrImpl();
         assertThat(result.getTimeAllowed()).isEqualTo(10000);
@@ -49,6 +65,7 @@ public class SearchResultSolrImplTest {
 
         ArgumentCaptor<SolrQuery> solrQueryCaptor = ArgumentCaptor.forClass(SolrQuery.class);
         verify(solrClient).query(solrQueryCaptor.capture());
+        assertThat(solrQueryCaptor.getValue().get("shards.tolerant")).isEqualTo("true");
         assertThat(solrQueryCaptor.getValue().get("timeAllowed")).isEqualTo("5000");
     }
 }

@@ -155,6 +155,12 @@ public class SolrSearchServiceTest {
     }
 
     @Test
+    public void convertSearchQuery_toleratesUnavailableShards() {
+        SolrQuery solrQuery = service.convertSearchQuery(new SearchQueryImpl("sapo"));
+        assertThat(solrQuery.get("shards.tolerant")).isEqualTo("true");
+    }
+
+    @Test
     public void convertSearchQuery_defaultsToMatchAllWhenNoQueryTerms() {
         SearchQueryImpl searchQuery = new SearchQueryImpl(null);
         SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
@@ -239,6 +245,13 @@ public class SolrSearchServiceTest {
         threads.shutdown();
 
         return distinct.size();
+    }
+
+    @Test
+    public void convertTimelineQuery_toleratesUnavailableShards() {
+        // convertTimelineQuery builds on top of convertSearchQuery, so it inherits shards.tolerant from there
+        SolrQuery timelineQuery = service.convertTimelineQuery(timelineQuery());
+        assertThat(timelineQuery.get("shards.tolerant")).isEqualTo("true");
     }
 
     @Test
@@ -629,6 +642,26 @@ public class SolrSearchServiceTest {
     }
 
     @Test
+    public void getHighlightedText_fallbackQueryToleratesUnavailableShards() throws Exception {
+        SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101010101/(com,example,)/path");
+        QueryResponse queryResponse = queryResponseWithResults(doc);
+
+        SolrDocument contentDoc = new SolrDocument();
+        contentDoc.addField("content", "short content");
+        QueryResponse contentResponse = queryResponseWithResults(contentDoc);
+
+        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        when(solrClient.query(any(SolrQuery.class))).thenReturn(contentResponse);
+        service.solrClient = solrClient;
+
+        service.getHighlightedText(queryResponse, "content", "doc-1");
+
+        ArgumentCaptor<SolrQuery> solrQueryCaptor = ArgumentCaptor.forClass(SolrQuery.class);
+        verify(solrClient).query(solrQueryCaptor.capture());
+        assertThat(solrQueryCaptor.getValue().get("shards.tolerant")).isEqualTo("true");
+    }
+
+    @Test
     public void getHighlightedText_truncatesLongContentFallbackWithEllipsis() throws Exception {
         SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101010101/(com,example,)/path");
         QueryResponse queryResponse = queryResponseWithResults(doc);
@@ -681,6 +714,7 @@ public class SolrSearchServiceTest {
         ArgumentCaptor<SolrQuery> solrQueryCaptor = ArgumentCaptor.forClass(SolrQuery.class);
         verify(solrClient).query(solrQueryCaptor.capture());
         assertThat(solrQueryCaptor.getValue().getQuery()).startsWith("urlTimestamp:*/20190101000000/");
+        assertThat(solrQueryCaptor.getValue().get("shards.tolerant")).isEqualTo("true");
         assertThat(solrQueryCaptor.getValue().get("timeAllowed")).isEqualTo("10000");
 
         assertThat(results.getResults()).hasSize(1);
