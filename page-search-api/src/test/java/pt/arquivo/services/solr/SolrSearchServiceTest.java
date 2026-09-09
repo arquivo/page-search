@@ -82,6 +82,27 @@ public class SolrSearchServiceTest {
     }
 
     @Test
+    public void applyTimeAllowed_defaultsTo10000ms() {
+        assertThat(service.applyTimeAllowed(new SolrQuery()).get("timeAllowed")).isEqualTo("10000");
+    }
+
+    @Test
+    public void applyTimeAllowed_isConfigurable() {
+        SearchServiceConfiguration configuration = new SearchServiceConfiguration();
+        configuration.setBaseSolrUrl("http://solr.example.com/solr/searchpages");
+        configuration.setTimeAllowedMs(5000);
+        SolrSearchService configuredService = new SolrSearchService(configuration);
+
+        assertThat(configuredService.applyTimeAllowed(new SolrQuery()).get("timeAllowed")).isEqualTo("5000");
+    }
+
+    @Test
+    public void convertSearchQuery_setsTimeAllowed() {
+        SolrQuery solrQuery = service.convertSearchQuery(new SearchQueryImpl("sapo"));
+        assertThat(solrQuery.get("timeAllowed")).isEqualTo("10000");
+    }
+
+    @Test
     public void sanitizeDedupField_defaultsToTitleStringForNullOrInvalid() {
         assertThat(service.sanitizeDedupField(null)).isEqualTo("titleString");
         assertThat(service.sanitizeDedupField("")).isEqualTo("titleString");
@@ -533,8 +554,22 @@ public class SolrSearchServiceTest {
     }
 
     @Test
-    public void query_solrServerException_returnsEmptyFallbackResults() throws Exception {
+    public void query_propagatesTimeAllowedToEachSearchResult() throws Exception {
+        SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101010101/(com,example,)/path");
+        QueryResponse queryResponse = queryResponseWithResults(doc);
+
         HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        when(solrClient.query(any(SolrQuery.class))).thenReturn(queryResponse);
+        service.solrClient = solrClient;
+
+        SearchResults results = service.query(new SearchQueryImpl("sapo"));
+
+        SearchResultSolrImpl result = (SearchResultSolrImpl) results.getResults().get(0);
+        assertThat(result.getTimeAllowed()).isEqualTo(10000);
+    }
+
+    @Test
+    public void query_solrServerException_returnsEmptyFallbackResults() throws Exception {        HttpSolrClient solrClient = mock(HttpSolrClient.class);
         when(solrClient.query(any(SolrQuery.class))).thenThrow(new SolrServerException("boom"));
         service.solrClient = solrClient;
 
@@ -544,6 +579,25 @@ public class SolrSearchServiceTest {
         assertThat(results.getNumberResults()).isEqualTo(0);
         assertThat(results.isLastPageResults()).isFalse();
         assertThat(results.getResults()).isNull();
+    }
+
+    @Test
+    public void query_setsTimeAllowedOnSolrRequest() throws Exception {
+        SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101010101/(com,example,)/path");
+        QueryResponse queryResponse = queryResponseWithResults(doc);
+
+        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        when(solrClient.query(any(SolrQuery.class))).thenReturn(queryResponse);
+        service.solrClient = solrClient;
+
+        // Restricted to a field that isn't the snippet, so this doesn't also trigger the highlighting fallback query
+        SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
+        searchQuery.setFields(new String[] { "title" });
+        service.query(searchQuery);
+
+        ArgumentCaptor<SolrQuery> solrQueryCaptor = ArgumentCaptor.forClass(SolrQuery.class);
+        verify(solrClient).query(solrQueryCaptor.capture());
+        assertThat(solrQueryCaptor.getValue().get("timeAllowed")).isEqualTo("10000");
     }
 
     @Test
@@ -594,6 +648,23 @@ public class SolrSearchServiceTest {
     }
 
     @Test
+    public void getHighlightedText_fallbackSetsTimeAllowedOnSolrRequest() throws Exception {
+        SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101010101/(com,example,)/path");
+        QueryResponse queryResponse = queryResponseWithResults(doc);
+        QueryResponse contentResponse = queryResponseWithResults(new SolrDocument());
+
+        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        when(solrClient.query(any(SolrQuery.class))).thenReturn(contentResponse);
+        service.solrClient = solrClient;
+
+        service.getHighlightedText(queryResponse, "content", "doc-1");
+
+        ArgumentCaptor<SolrQuery> solrQueryCaptor = ArgumentCaptor.forClass(SolrQuery.class);
+        verify(solrClient).query(solrQueryCaptor.capture());
+        assertThat(solrQueryCaptor.getValue().get("timeAllowed")).isEqualTo("10000");
+    }
+
+    @Test
     public void query_urlSearch_true_queriesByUrlTimestampAndExcludesSnippet() throws Exception {
         SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101000000/(com,example,)/path");
         QueryResponse queryResponse = queryResponseWithResults(doc);
@@ -610,6 +681,7 @@ public class SolrSearchServiceTest {
         ArgumentCaptor<SolrQuery> solrQueryCaptor = ArgumentCaptor.forClass(SolrQuery.class);
         verify(solrClient).query(solrQueryCaptor.capture());
         assertThat(solrQueryCaptor.getValue().getQuery()).startsWith("urlTimestamp:*/20190101000000/");
+        assertThat(solrQueryCaptor.getValue().get("timeAllowed")).isEqualTo("10000");
 
         assertThat(results.getResults()).hasSize(1);
         assertThat(((SearchResultSolrImpl) results.getResults().get(0)).getSnippet()).isNull();

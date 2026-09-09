@@ -44,6 +44,9 @@ public class SearchResultSolrImpl implements SearchResult {
 
     private SolrClient solrClient;
 
+    // Max time (ms) Solr is allowed to spend processing a query (timeAllowed param)
+    private int timeAllowed = 10000;
+
     public String getTitle() {
         return title;
     }
@@ -208,6 +211,7 @@ public class SearchResultSolrImpl implements SearchResult {
         solrQuery.setQuery("id:".concat(this.id));
         solrQuery.set("fl", "content,title");
         solrQuery.set("hl","false");
+        solrQuery.set("timeAllowed", timeAllowed);
         LOG.info("ExtractedText Solr Query: " + solrQuery);
         try {
             QueryResponse queryResponse = solrClient.query(solrQuery);
@@ -251,6 +255,14 @@ public class SearchResultSolrImpl implements SearchResult {
 
     public void setSolrClient(SolrClient solrClient) {
         this.solrClient = solrClient;
+    }
+
+    public int getTimeAllowed() {
+        return timeAllowed;
+    }
+
+    public void setTimeAllowed(int timeAllowed) {
+        this.timeAllowed = timeAllowed;
     }
 
     public String[] getFields() {

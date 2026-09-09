@@ -137,6 +137,11 @@ Highlighting always requests Solr's `hl.method=unified` explicitly (see
 `fastVector` highlighter, which needs full term vectors our index doesn't carry
 (arquivo/pwa-technologies#1609).
 
+`searchpages.solr.timeallowed.ms` (default `10000`) caps how long Solr is allowed to spend
+processing a single query (via Solr's `timeAllowed` parameter), applied to every request made
+to Solr. This protects Solr from being overwhelmed by slow-running queries; 10s is considered
+the maximum time that is acceptable for users to wait for a search query.
+
 ## Page Search API Architecture 
 
 ![](docs/img/PageSearchArchitecture.png)
