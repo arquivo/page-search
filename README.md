@@ -110,15 +110,14 @@ $ JAVA_HOME=/usr/lib/jvm/temurin-8-jdk-amd64 mvn -f page-search-api/pom.xml spri
     -Dspring-boot.run.arguments="--searchpages.textsearch.service.bean=solr --searchpages.textsearch.service.bean.solr.link=http://<host>:<port>/solr/<collection>"
 ```
 
-For example, to compare behaviour against the dev and prod Solr instances
-(`searchpages.textsearch.service.bean.solr.link` already defaults to dev):
+The same property can be overridden the same way when running the packaged
+WAR directly instead of through Maven (e.g. after `mvn -f page-search-api/pom.xml package`),
+which is handy for quickly comparing behaviour against a different
+environment's Solr without touching `application.properties`:
 
 ```
-$ mvn -f page-search-api/pom.xml spring-boot:run \
-    -Dspring-boot.run.arguments="--searchpages.textsearch.service.bean.solr.link=http://p44.arquivo.pt:2200/solr/pages"   # dev
-
-$ mvn -f page-search-api/pom.xml spring-boot:run \
-    -Dspring-boot.run.arguments="--searchpages.textsearch.service.bean.solr.link=http://p125.arquivo.pt:2200/solr/pages" # prod
+$ java -jar page-search-api/target/page-search-api-1.0.0-SNAPSHOT.war \
+    --searchpages.textsearch.service.bean.solr.link=http://<host>:<port>/solr/<collection>
 ```
 
 Once running, verify it's serving real results:
@@ -130,7 +129,8 @@ $ curl "http://localhost:8081/textsearch?q=test&maxItems=1"
 Note: other deployed environments (dev/preprod/prod) may point at different Solr
 hosts/collections than the one committed in `application.properties` — that
 per-environment configuration lives in each environment's own deployment setup,
-not in this repository.
+not in this repository. Check with your team for the actual dev/preprod/prod
+Solr endpoints.
 
 Highlighting always requests Solr's `hl.method=unified` explicitly (see
 `SolrSearchService#convertSearchQuery`), rather than relying on Solr's default
