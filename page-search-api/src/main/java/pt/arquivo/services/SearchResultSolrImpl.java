@@ -205,6 +205,7 @@ public class SearchResultSolrImpl implements SearchResult {
     public String getExtractedText() {
         StringBuilder extractedText = new StringBuilder();
         SolrQuery solrQuery = new SolrQuery();
+        solrQuery.set("shards.tolerant", "true");
         solrQuery.setQuery("id:".concat(this.id));
         solrQuery.set("fl", "content,title");
         solrQuery.set("hl","false");
