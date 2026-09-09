@@ -153,6 +153,11 @@ public class PageSearchController {
                            @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
                            @RequestParam(value = "maxItems", required = false, defaultValue = "50") int maxItems,
                            @RequestParam(value = "siteSearch", required = false) String[] siteSearch,
+                           @Parameter(description = "Field results are deduplicated by, keeping only the newest per distinct value. Translated internally to the underlying Solr field it collapses on: "
+                                   + "site or surt to surtOldest, mimetype to type, collection to collectionOldest, and title to titleString. The Solr field names "
+                                   + "(surtOldest, type, collectionOldest, titleString) are also accepted directly. Defaults to title; any other value falls back to title too.",
+                                   schema = @Schema(allowableValues = {"site", "surt", "surtOldest", "mimetype", "type",
+                                           "collection", "collectionOldest", "title", "titleString"}))
                            @RequestParam(value = "dedupField", required = false, defaultValue = "title") String dedupField,
                            @RequestParam(value = "itemsPerSite", required = false) Integer itemsPerSite,
                            @RequestParam(value = "dedupValue", required = false, defaultValue = "2") int dedupValue,
