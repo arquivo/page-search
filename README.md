@@ -176,6 +176,25 @@ Note: how (or whether) these paths are exposed publicly through Apache in
 dev/preprod/prod is per-environment reverse-proxy configuration, not part of
 this repository.
 
+### Health Check
+
+`GET /textsearch/healthcheck` pings the Solr instance configured via
+`searchpages.textsearch.service.bean.solr.link` and reports its connectivity,
+independently of which `SearchService` backend is currently selected (it never
+pings NutchWax). Returns `200 {"solr": "ok"}` when Solr is reachable, or
+`503 {"solr": "unreachable"}` otherwise. The ping's connection and socket
+timeouts are configurable via `searchpages.healthcheck.solr.connectiontimeout.ms`
+(default 2000) and `searchpages.healthcheck.solr.sockettimeout.ms` (default
+3000), so a Solr that's up but hanging still fails the check quickly. It's mapped under the `/textsearch`
+prefix for the same reverse-proxy reason as the API docs above, so it's public
+at `arquivo.pt/textsearch/healthcheck` with no proxy changes needed. See
+[pwa-technologies#1613](https://github.com/arquivo/pwa-technologies/issues/1613).
+
+This is meant as a rolling-deploy gate (e.g. for the webapp's aggregate
+backend healthcheck, pwa-technologies#1606), not as this container's own
+`HEALTHCHECK` — see the note in `docker-compose.yml` for why that one stays a
+shallow TCP check.
+
 ## Page Search Indexer
 
 ### How to index a collection of WARC files 
