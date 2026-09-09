@@ -354,6 +354,20 @@ public class SolrSearchServiceTest {
     }
 
     @Test
+    public void convertSearchQuery_alwaysRequestsTheUnifiedHighlightingMethod() {
+        // fastVector (Solr's default highlighter) requires term vectors our index doesn't carry, so hl.method
+        // is forced explicitly rather than left to Solr's server-side defaults (arquivo/pwa-technologies#1609)
+        SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
+        assertThat(service.convertSearchQuery(searchQuery).get("hl.method")).isEqualTo("unified");
+
+        // Still present even when highlighting itself is turned off for this query
+        searchQuery.setFields(new String[] { "title" });
+        SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
+        assertThat(solrQuery.get("hl")).isEqualTo("false");
+        assertThat(solrQuery.get("hl.method")).isEqualTo("unified");
+    }
+
+    @Test
     public void timestampSurtTo_extractsCollectionTimestampAndSurt() {
         String urlTimestamp = "COLLECTION1/20190101000000/(com,example,)/path";
         assertThat(service.timestampSurtToCollection(urlTimestamp)).isEqualTo("COLLECTION1");
