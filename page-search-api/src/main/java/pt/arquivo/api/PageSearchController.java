@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.solr.common.SolrException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -243,7 +244,17 @@ public class PageSearchController {
         }
 
         SearchResults searchResults;
-        searchResults = searchService.query(searchQuery);
+        try {
+            searchResults = searchService.query(searchQuery);
+        } catch (SolrException e) {
+            // Solr rejects the query outright (e.g. an unknown field) instead of a genuine backend failure: it's the
+            // request that's invalid, not the service, so this is reported as a 400 rather than leaking as a 500
+            if (e.code() == SolrException.ErrorCode.BAD_REQUEST.code) {
+                LOG.error("Invalid API Request " + request.getQueryString(), e);
+                throw new ApiRequestException("Invalid search request, check the query parameters");
+            }
+            throw e;
+        }
 
         PageSearchResponse pageSearchResponse = new PageSearchResponse();
         // When spellcheck is requested we always reply with suggested_query, empty when the query looks well spelled
