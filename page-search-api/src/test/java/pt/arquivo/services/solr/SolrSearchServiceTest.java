@@ -125,9 +125,23 @@ public class SolrSearchServiceTest {
     }
 
     @Test
+    public void sanitizeDedupField_mapsCollectionToCollectionOldest() {
+        // "collection" isn't a real Solr field (only "collectionOldest" and the multi-valued "collections" are), so
+        // passing it through unchanged made Solr reject the {!collapse field=collection} filter with a 500
+        assertThat(service.sanitizeDedupField("collection")).isEqualTo("collectionOldest");
+        // matching is case-insensitive
+        assertThat(service.sanitizeDedupField("COLLECTION")).isEqualTo("collectionOldest");
+    }
+
+    @Test
     public void sanitizeDedupField_passesThroughOtherValidFieldsUnchanged() {
         assertThat(service.sanitizeDedupField("type")).isEqualTo("type");
-        assertThat(service.sanitizeDedupField("collection")).isEqualTo("collection");
+        // Solr field names are case-sensitive, so passing them in directly must come back with their proper casing,
+        // not lowercased like the rest of the input
+        assertThat(service.sanitizeDedupField("collectionOldest")).isEqualTo("collectionOldest");
+        assertThat(service.sanitizeDedupField("COLLECTIONOLDEST")).isEqualTo("collectionOldest");
+        assertThat(service.sanitizeDedupField("surtOldest")).isEqualTo("surtOldest");
+        assertThat(service.sanitizeDedupField("titleString")).isEqualTo("titleString");
     }
 
     @Test
@@ -202,6 +216,17 @@ public class SolrSearchServiceTest {
         SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
         assertThat(solrQuery.getFilterQueries())
                 .contains("type:" + ClientUtils.escapeQueryChars("application/zip"));
+    }
+
+    @Test
+    public void convertSearchQuery_collapsesOnTheSanitizedDedupField() {
+        // dedupField=collection used to be passed straight through to Solr as {!collapse field=collection}, but
+        // "collection" isn't a real Solr field (only "collectionOldest" is), which made Solr reject the query
+        SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
+        searchQuery.setDedupField("collection");
+        searchQuery.setDedupValue(2);
+        SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
+        assertThat(solrQuery.getFilterQueries()).contains("{!collapse field=collectionOldest}");
     }
 
     @Test
