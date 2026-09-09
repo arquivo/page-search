@@ -159,12 +159,13 @@ public class SolrSearchService implements SearchService {
 
     /**
      * Makes sure that the requested dedupField is a valid solr field. The API accepts a few convenience aliases that
-     * get translated into the actual Solr field names: "site"/"surt" becomes "surtOldest", "mimetype" becomes
+     * get translated into the actual Solr field names: "site"/"surt"/"url" becomes "surtOldest", "mimetype" becomes
      * "type", and "collection" becomes "collectionOldest" ("collection" isn't a real Solr field, only
      * "collectionOldest" -single-valued- and "collections" -multi-valued, used for collection-restricted search-
-     * are). The Solr field names themselves are also accepted, case-insensitively, and returned with their proper
-     * casing (Solr field names are case-sensitive). When invalid or empty, the dedup field defaults to "titleString"
-     * (the same as "title").
+     * are). "url" is also the implicit dedupField used internally for site-restricted searches that don't specify
+     * one explicitly (see PageSearchController#pageSearch). The Solr field names themselves are also accepted,
+     * case-insensitively, and returned with their proper casing (Solr field names are case-sensitive). When invalid
+     * or empty, the dedup field defaults to "titleString" (the same as "title").
      * @param dedupField
      * @return
      */
@@ -174,12 +175,12 @@ public class SolrSearchService implements SearchService {
         }
         dedupField = dedupField.toLowerCase();
 
-        final List<String> validDedupFields = Arrays.asList(new String[] {"site","surt", "surtoldest", "mimetype","type","collection","collectionoldest","title","titlestring"});
+        final List<String> validDedupFields = Arrays.asList(new String[] {"site","surt","url", "surtoldest", "mimetype","type","collection","collectionoldest","title","titlestring"});
 
         // By default dedup by title, if invalid dedupField then fallback to dedup by title
         if(!validDedupFields.contains(dedupField) || dedupField.equals("title") ){
             dedupField = "titleString";
-        } else if (dedupField.equals("site") || dedupField.equals("surt") || dedupField.equals("surtoldest")){
+        } else if (dedupField.equals("site") || dedupField.equals("surt") || dedupField.equals("url") || dedupField.equals("surtoldest")){
             dedupField = "surtOldest";
         } else if(dedupField.equals("mimetype")){
             dedupField = "type";

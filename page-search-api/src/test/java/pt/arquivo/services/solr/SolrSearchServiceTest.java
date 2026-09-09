@@ -120,6 +120,14 @@ public class SolrSearchServiceTest {
     }
 
     @Test
+    public void sanitizeDedupField_mapsUrlToSurtOldest() {
+        // "url" is also the implicit dedupField PageSearchController sets for site-restricted searches that don't
+        // specify one explicitly; it wasn't in the allowlist, so those requests silently deduped by title instead
+        assertThat(service.sanitizeDedupField("url")).isEqualTo("surtOldest");
+        assertThat(service.sanitizeDedupField("URL")).isEqualTo("surtOldest");
+    }
+
+    @Test
     public void sanitizeDedupField_mapsMimetypeToType() {
         assertThat(service.sanitizeDedupField("mimetype")).isEqualTo("type");
     }
