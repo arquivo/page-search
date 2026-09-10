@@ -243,6 +243,9 @@ public class SolrSearchService implements SearchService {
         solrQuery.setStart(searchQuery.getOffset()); // No need to escape because offset and maxItems are integers
         solrQuery.setRows(searchQuery.getMaxItems());
 
+        // Never surface blocked content
+        solrQuery.addFilterQuery("-blocked:1");
+
         // Handle collection request:
         if (searchQuery.isSearchByCollection()) {
             boolean multipleCollection = false;
@@ -1065,6 +1068,7 @@ public class SolrSearchService implements SearchService {
             solrQuery.set("shards.tolerant", "true");
             applyTimeAllowed(solrQuery);
             solrQuery.set("q", String.join(" OR ", solrQueryForSites));
+            solrQuery.addFilterQuery("-blocked:1");
             solrQuery.set("fl","id,type,tstamp,urlTimestamp,surt,titleString,collection,url");
             solrQuery.set("hl","false");
             solrQuery.set("spellcheck","false");

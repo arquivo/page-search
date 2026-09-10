@@ -183,6 +183,12 @@ public class SolrSearchServiceTest {
     }
 
     @Test
+    public void convertSearchQuery_neverServesBlockedDocuments() {
+        SolrQuery solrQuery = service.convertSearchQuery(new SearchQueryImpl("sapo"));
+        assertThat(solrQuery.getFilterQueries()).contains("-blocked:1");
+    }
+
+    @Test
     public void convertSearchQuery_defaultsToMatchAllWhenNoQueryTerms() {
         SearchQueryImpl searchQuery = new SearchQueryImpl(null);
         SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
@@ -326,7 +332,9 @@ public class SolrSearchServiceTest {
                 .anyMatch(filterQuery -> filterQuery.startsWith("{!collapse"));
 
         SolrQuery timelineQuery = service.convertTimelineQuery(searchQuery);
-        assertThat(timelineQuery.getFilterQueries()).isNullOrEmpty();
+        assertThat(timelineQuery.getFilterQueries())
+                .containsExactly("-blocked:1")
+                .noneMatch(filterQuery -> filterQuery.startsWith("{!collapse"));
         assertThat(timelineQuery.get("expand")).isNull();
     }
 
@@ -749,6 +757,7 @@ public class SolrSearchServiceTest {
         assertThat(solrQueryCaptor.getValue().getQuery()).startsWith("urlTimestamp:*/20190101000000/");
         assertThat(solrQueryCaptor.getValue().get("shards.tolerant")).isEqualTo("true");
         assertThat(solrQueryCaptor.getValue().get("timeAllowed")).isEqualTo("10000");
+        assertThat(solrQueryCaptor.getValue().getFilterQueries()).contains("-blocked:1");
 
         assertThat(results.getResults()).hasSize(1);
         assertThat(((SearchResultSolrImpl) results.getResults().get(0)).getSnippet()).isNull();
