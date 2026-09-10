@@ -153,14 +153,14 @@ public class PageSearchController {
                            @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
                            @RequestParam(value = "maxItems", required = false, defaultValue = "50") int maxItems,
                            @RequestParam(value = "siteSearch", required = false) String[] siteSearch,
-                           @Parameter(description = "Field results are deduplicated by, keeping only the newest per distinct value. title (the default) collapses on the exact title. "
-                                   + "collection collapses on the collection. type collapses on the mimetype. url collapses on the exact URL, so two pages are only "
-                                   + "deduplicated if they are the very same URL, not just the same site. site is meant to collapse per site/domain instead, but "
-                                   + "currently behaves exactly like url (see https://github.com/arquivo/pwa-technologies/issues/1619). Any other or missing value "
-                                   + "falls back to title.",
+                           @Parameter(description = "Field results would be deduplicated by (title, collection, type, url or site). Deduplication is "
+                                   + "temporarily disabled (see https://github.com/arquivo/pwa-technologies/issues/1623): this parameter is accepted "
+                                   + "but currently has no effect.",
                                    schema = @Schema(allowableValues = {"title", "collection", "type", "url", "site"}))
                            @RequestParam(value = "dedupField", required = false, defaultValue = "title") String dedupField,
+                           @Parameter(description = "Deprecated alias for dedupValue. Currently ignored, see dedupField.")
                            @RequestParam(value = "itemsPerSite", required = false) Integer itemsPerSite,
+                           @Parameter(description = "Max results per dedupField value. Currently ignored, see dedupField.")
                            @RequestParam(value = "dedupValue", required = false, defaultValue = "2") int dedupValue,
                            @RequestParam(value = "from", required = false) String from,
                            @RequestParam(value = "to", required = false) String to,
