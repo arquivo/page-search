@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.solr.common.SolrException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -152,6 +153,12 @@ public class PageSearchController {
                            @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
                            @RequestParam(value = "maxItems", required = false, defaultValue = "50") int maxItems,
                            @RequestParam(value = "siteSearch", required = false) String[] siteSearch,
+                           @Parameter(description = "Field results are deduplicated by, keeping only the newest per distinct value. title (the default) collapses on the exact title. "
+                                   + "collection collapses on the collection. type collapses on the mimetype. url collapses on the exact URL, so two pages are only "
+                                   + "deduplicated if they are the very same URL, not just the same site. site is meant to collapse per site/domain instead, but "
+                                   + "currently behaves exactly like url (see https://github.com/arquivo/pwa-technologies/issues/1619). Any other or missing value "
+                                   + "falls back to title.",
+                                   schema = @Schema(allowableValues = {"title", "collection", "type", "url", "site"}))
                            @RequestParam(value = "dedupField", required = false, defaultValue = "title") String dedupField,
                            @RequestParam(value = "itemsPerSite", required = false) Integer itemsPerSite,
                            @RequestParam(value = "dedupValue", required = false, defaultValue = "2") int dedupValue,
@@ -243,7 +250,17 @@ public class PageSearchController {
         }
 
         SearchResults searchResults;
-        searchResults = searchService.query(searchQuery);
+        try {
+            searchResults = searchService.query(searchQuery);
+        } catch (SolrException e) {
+            // Solr rejects the query outright (e.g. an unknown field) instead of a genuine backend failure: it's the
+            // request that's invalid, not the service, so this is reported as a 400 rather than leaking as a 500
+            if (e.code() == SolrException.ErrorCode.BAD_REQUEST.code) {
+                LOG.error("Invalid API Request " + request.getQueryString(), e);
+                throw new ApiRequestException("Invalid search request, check the query parameters");
+            }
+            throw e;
+        }
 
         PageSearchResponse pageSearchResponse = new PageSearchResponse();
         // When spellcheck is requested we always reply with suggested_query, empty when the query looks well spelled

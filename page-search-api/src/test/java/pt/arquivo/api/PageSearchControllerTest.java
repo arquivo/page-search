@@ -102,6 +102,24 @@ public class PageSearchControllerTest {
     }
 
     @Test
+    public void pageSearchInvalidSolrRequestReturns400() throws Exception {
+        // e.g. an unknown/undefined Solr field used as the dedup collapse field: Solr rejects the query outright,
+        // so this is the caller's fault, not a backend failure, and must not leak as a raw 500
+        Mockito.when(searchService.query(Mockito.any()))
+                .thenThrow(new SolrException(SolrException.ErrorCode.BAD_REQUEST,
+                        "undefined field collection"));
+
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=sapo")).andReturn();
+
+        MockHttpServletResponse response = result.getResponse();
+        assertThat(response.getStatus()).isEqualTo(400);
+        JSONObject jsonResponse = new JSONObject(response.getContentAsString());
+        // the raw exception message must not leak into the client-facing response
+        assertThat(jsonResponse.getString("message")).doesNotContain("undefined field");
+        assertThat(jsonResponse.getInt("httpStatus")).isEqualTo(400);
+    }
+
+    @Test
     public void pageSearchOffset() throws Exception {
         SearchResultNutchImpl mockSearchResult1 = new SearchResultNutchImpl();
         SearchResultNutchImpl mockSearchResult2 = new SearchResultNutchImpl();
