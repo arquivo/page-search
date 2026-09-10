@@ -500,19 +500,6 @@ public class SolrSearchService implements SearchService {
     SolrQuery convertTimelineQuery(SearchQuery searchQuery) {
         SolrQuery solrQuery = convertSearchQuery(searchQuery);
 
-        String[] filterQueries = solrQuery.getFilterQueries();
-        if (filterQueries != null) {
-            String[] withoutCollapse = Arrays.stream(filterQueries)
-                    .filter(filterQuery -> !filterQuery.startsWith("{!collapse"))
-                    .toArray(String[]::new);
-            if (withoutCollapse.length == 0) {
-                solrQuery.remove("fq");
-            } else {
-                solrQuery.setFilterQueries(withoutCollapse);
-            }
-        }
-        solrQuery.remove("expand");
-        solrQuery.remove("expand.rows");
         // Counting documents per year has no use for how they are scored
         solrQuery.remove("boost");
 
