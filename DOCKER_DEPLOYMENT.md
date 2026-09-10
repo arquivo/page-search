@@ -253,6 +253,11 @@ Docker restarting an otherwise-healthy API container in a cascading fashion. Sin
 lives in `docker-compose.yml` rather than the image, each environment's Ansible-managed compose
 file can override it with different semantics if that environment needs something stricter.
 
+The app does separately expose `GET /textsearch/healthcheck`, a deep check that pings Solr and
+returns 503 when it's unreachable. It's deliberately not wired into the container `HEALTHCHECK`
+above, for the same cascading-restart reason — it exists for external rolling-deploy gates (e.g.
+the webapp's aggregate backend healthcheck) to poll instead.
+
 ### Environment Variables
 
 All configuration is done via environment variables passed to the container at runtime.
@@ -261,6 +266,8 @@ All configuration is done via environment variables passed to the container at r
 |----------|---------|-------------|
 | `NUTCHWAX_SEARCH_FILE` | `/app/` | Path to search servers configuration |
 | `SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK` | `http://localhost:8983/solr/searchpages` | Solr server URL. Spring's relaxed-binding form of the `searchpages.textsearch.service.bean.solr.link` property — the var name must match exactly, a plain `SOLR_URL` will not bind to it |
+| `SEARCHPAGES_HEALTHCHECK_SOLR_CONNECTIONTIMEOUT_MS` | `2000` | Connection timeout (ms) for the `/textsearch/healthcheck` ping to Solr |
+| `SEARCHPAGES_HEALTHCHECK_SOLR_SOCKETTIMEOUT_MS` | `3000` | Socket timeout (ms) for the `/textsearch/healthcheck` ping to Solr |
 | `SERVER_PORT` | `8080` | API server port |
 | `JAVA_OPTS` | `-XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+ExitOnOutOfMemoryError` | JVM memory and GC options. Heap is sized as a percentage of the container's memory limit, so a `--memory`/`mem_limit` must be set (see "Production Memory Configuration") |
 
