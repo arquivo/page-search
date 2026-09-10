@@ -42,6 +42,15 @@ public class SearchResultSolrImplTest {
         SearchResultSolrImpl result = new SearchResultSolrImpl();
         result.setId("doc-1");
         result.setSolrClient(solrClient);
+
+        result.getExtractedText();
+
+        ArgumentCaptor<SolrQuery> solrQueryCaptor = ArgumentCaptor.forClass(SolrQuery.class);
+        verify(solrClient).query(solrQueryCaptor.capture());
+        assertThat(solrQueryCaptor.getValue().get("shards.tolerant")).isEqualTo("true");
+    }
+
+    @Test
     public void timeAllowed_defaultsTo10000ms() {
         SearchResultSolrImpl result = new SearchResultSolrImpl();
         assertThat(result.getTimeAllowed()).isEqualTo(10000);
