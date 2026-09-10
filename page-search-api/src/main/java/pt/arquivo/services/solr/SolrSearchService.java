@@ -26,6 +26,7 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import pt.arquivo.services.SearchQuery;
@@ -35,6 +36,7 @@ import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.SearchServiceConfiguration;
 import pt.arquivo.services.Timeline;
+import pt.arquivo.services.cdx.CDXSearchService;
 import pt.arquivo.utils.URLNormalizers;
 import pt.arquivo.utils.Utils;
 
@@ -44,6 +46,14 @@ public class SolrSearchService implements SearchService {
 
     /** Result fields that are only returned when the user asks for them through the fields parameter. */
     private static final List<String> OPT_IN_FIELDS = Arrays.asList("language", "languageConfidence");
+
+    /** Fallback default for {@link #numberedCollectionsRegex} - kept in sync with the property default below. */
+    private static final String DEFAULT_NUMBERED_COLLECTIONS_REGEX =
+            "[EFMS]?AWP[1-9][0-9]?|PATCHING20[1-9][0-9]|RAQ20[1-9][0-9]";
+
+    /** Fallback default for {@link #namedCollectionsCsv} - kept in sync with the property default below. */
+    private static final String DEFAULT_NAMED_COLLECTIONS_CSV = "BN,BlocoEsquerda,BlogsSapo2018,CEGER,Curadoria,"
+            + "DEM-IST,Dinis,DinisAlves2018,EAWP10-2,Geocities,IA,InternetMemory,NON,Revisionista,Roteiro,Tomba,UL,Weblog";
 
     /**
      * The minLanguageConfidence tiers, from the most to the least confident, and the value each one has in the
@@ -91,6 +101,38 @@ public class SolrSearchService implements SearchService {
     @Value("${searchpages.solr.timeallowed.ms:10000}")
     private int timeAllowed = 10000;
 
+    /**
+     * Used by queryByUrl to resolve a document's collection before falling back to a broader regex search.
+     * Optional: when CDX isn't wired in (or not configured), queryByUrl just skips straight to the regex query.
+     */
+    @Autowired(required = false)
+    private CDXSearchService cdxSearchService;
+
+    /**
+     * Timeout (ms) for the CDX lookup queryByUrl uses to resolve a document's collection. Kept short and separate
+     * from the general CDX timeouts (see CDXSearchService), since this is a fast-path optimization, not the only
+     * way queryByUrl can find a document - a slow/failed lookup just falls back to the regex query.
+     */
+    @Value("${searchpages.queryByUrl.cdx.timeout.ms:1000}")
+    private int queryByUrlCdxTimeoutMs = 1000;
+
+    /**
+     * Regex matching every "numbered" collection code (e.g. AWP12, FAWP3, PATCHING2019, RAQ2021), used as part
+     * of the queryByUrl regex fallback. Configurable so a new pattern (e.g. widening the digit bound once a
+     * collection like FAWP reaches triple digits, or adding a wholly new "<prefix>AWP<N>"-like pattern) is a
+     * config change, not a code change.
+     */
+    @Value("${searchpages.queryByUrl.numberedCollectionsRegex:" + DEFAULT_NUMBERED_COLLECTIONS_REGEX + "}")
+    private String numberedCollectionsRegex = DEFAULT_NUMBERED_COLLECTIONS_REGEX;
+
+    /**
+     * The collection codes that don't follow the numbered pattern (see {@link #numberedCollectionsRegex}), named
+     * individually instead - comma separated. Configurable so a new one-off collection (e.g. Roteiro, Dinis) is
+     * a config change, not a code change.
+     */
+    @Value("${searchpages.queryByUrl.namedCollections:" + DEFAULT_NAMED_COLLECTIONS_CSV + "}")
+    private String namedCollectionsCsv = DEFAULT_NAMED_COLLECTIONS_CSV;
+
     private YearVolumes yearVolumes;
 
     private TimelineService timelineService;
@@ -137,6 +179,13 @@ public class SolrSearchService implements SearchService {
     synchronized void setYearVolumes(YearVolumes yearVolumes) {
         this.yearVolumes = yearVolumes;
         this.timelineService = null;
+    }
+
+    /**
+     * Lets the tests inject a CDXSearchService double, without going through Spring.
+     */
+    void setCdxSearchService(CDXSearchService cdxSearchService) {
+        this.cdxSearchService = cdxSearchService;
     }
 
     /**
@@ -1048,42 +1097,131 @@ public class SolrSearchService implements SearchService {
 
     /**
      * Implementation of the SearchService query by URL (used in queryByUrl). This is only used for metadata and
-     * textextracted to get a specific entry, so it will output at most one entry. Deduplication and snippet is 
+     * textextracted to get a specific entry, so it will output at most one entry. Deduplication and snippet is
      * turned off for this query. Site search does not use this, it's handled by the other query function.
+     *
+     * The collection segment of the urlTimestamp field isn't known upfront, so naively this needs a leading
+     * wildcard query (urlTimestamp:* /timestamp/surt), which forces Solr to walk its entire term dictionary and
+     * routinely blows past timeAllowed. To avoid that, this tries progressively broader (and slower) strategies
+     * until one finds the document:
+     *   1. Ask CDX (which indexes ahead of Solr) for the collection, then query Solr for the exact match.
+     *   2. If CDX doesn't answer in time, has nothing, or the resulting exact match comes back empty (e.g. a
+     *      stale/mismatched collection from CDX), fall back to a regex query over the known collection name
+     *      patterns - slower, but still bounded, unlike the leading wildcard.
+     *   3. If that also finds nothing, the document just isn't there.
      */
     @Override
     public SearchResults query(SearchQuery searchQuery, boolean urlSearch) {
-        if (urlSearch) {
-            String queryTerms = searchQuery.getQueryTerms();
-            String tstamp = searchQuery.getFrom();
-            List<String> solrQueryForSites = Arrays.asList(queryTerms.split(",")).stream()
-                    .filter(url -> Utils.urlValidator(url))
-                    .map(url -> URLNormalizers.canocalizeSurtUrl(url))
-                    .map(surt -> "urlTimestamp:" + "*/" + Utils.canocalizeTimestamp(tstamp) + "/" + ClientUtils.escapeQueryChars(surt))
-                    .collect(Collectors.toList());
-            SolrQuery solrQuery = new SolrQuery();
-            solrQuery.set("shards.tolerant", "true");
-            applyTimeAllowed(solrQuery);
-            solrQuery.set("q", String.join(" OR ", solrQueryForSites));
-            solrQuery.set("fl","id,type,tstamp,urlTimestamp,surt,titleString,collection,url");
-            solrQuery.set("hl","false");
-            solrQuery.set("spellcheck","false");
-
-            LOG.info("Solr Query (queryByUrl): "+solrQuery);
-            searchQuery.setFields(new String[] { "title", "originalURL", "mimeType", "tstamp", "digest", "collection", "id",
-            "linkToArchive", "linkToNoFrame", "linkToScreenshot", "linkToExtractedText",
-            "linkToMetadata", "linkToOriginalFile" }); // Everything except the snippet
-           
-            try {
-                QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
-                SearchResults searchResults = parseQueryResponse(queryResponse, searchQuery);
-                return searchResults;
-            } catch (SolrServerException | IOException e) {
-                LOG.error("Error querying Solr: ", e);
-                return null;
-            }
-        } else {    
+        if (!urlSearch) {
             return query(searchQuery);
+        }
+
+        String tstamp = Utils.canocalizeTimestamp(searchQuery.getFrom());
+        List<String> urls = Arrays.asList(searchQuery.getQueryTerms().split(","))
+                .stream()
+                .filter(Utils::urlValidator)
+                .collect(Collectors.toList());
+
+        List<String> exactClauses = urls.stream()
+                .map(url -> buildQueryByUrlClause(url, tstamp))
+                .collect(Collectors.toList());
+
+        SearchResults searchResults = executeQueryByUrl(exactClauses, searchQuery);
+
+        if (searchResults != null && searchResults.getNumberResults() == 0) {
+            List<String> regexClauses = urls.stream()
+                    .map(url -> buildRegexClause(URLNormalizers.canocalizeSurtUrl(url), tstamp))
+                    .collect(Collectors.toList());
+            if (!regexClauses.equals(exactClauses)) {
+                LOG.info("queryByUrl exact match found nothing, retrying with the regex fallback");
+                searchResults = executeQueryByUrl(regexClauses, searchQuery);
+            }
+        }
+
+        return searchResults;
+    }
+
+    /**
+     * Builds the queryByUrl clause for a single URL: an exact match on its collection when CDX can resolve one in
+     * time, or the (slower) regex fallback otherwise.
+     */
+    private String buildQueryByUrlClause(String url, String tstamp) {
+        String surt = URLNormalizers.canocalizeSurtUrl(url);
+        String collection = lookupCollectionViaCdx(url, tstamp);
+        if (collection != null) {
+            return "urlTimestamp:" + ClientUtils.escapeQueryChars(collection) + "/" + tstamp + "/"
+                    + ClientUtils.escapeQueryChars(surt);
+        }
+        return buildRegexClause(surt, tstamp);
+    }
+
+    /**
+     * Builds a regex query over the known collection name patterns, so the collection segment of urlTimestamp
+     * doesn't need a leading wildcard even when it isn't known.
+     */
+    private String buildRegexClause(String surt, String tstamp) {
+        return "urlTimestamp:/" + collectionsRegex() + "\\/" + escapeRegexLiteral(tstamp) + "\\/"
+                + escapeRegexLiteral(surt) + "/";
+    }
+
+    /**
+     * Regex matching every known collection code: the numbered ones ({@link #numberedCollectionsRegex}) plus
+     * the named ones that don't follow that pattern ({@link #namedCollectionsCsv}). Kept narrow (bounded digit
+     * counts) so Solr's regex automaton stays cheap, instead of degenerating into a full leading-wildcard scan.
+     */
+    private String collectionsRegex() {
+        String namedCollectionsRegex = String.join("|", namedCollectionsCsv.split("\\s*,\\s*"));
+        return "(" + numberedCollectionsRegex + "|" + namedCollectionsRegex + ")";
+    }
+
+    /**
+     * Asks CDX for the collection of an exact url+timestamp match. Returns null (falling back to the regex query)
+     * when CDX isn't wired in, doesn't answer in time, or has no match - CDX indexes ahead of Solr, but that's
+     * never guaranteed, so this is only ever a fast-path optimization, not a requirement.
+     */
+    private String lookupCollectionViaCdx(String url, String tstamp) {
+        if (cdxSearchService == null) {
+            return null;
+        }
+        return cdxSearchService.getCollectionForExactMatch(url, tstamp, queryByUrlCdxTimeoutMs);
+    }
+
+    /**
+     * Backslash-escapes every non-alphanumeric character, so a literal string can be embedded in a Lucene regex
+     * query safely. This is a different escaping requirement than ClientUtils.escapeQueryChars, which escapes
+     * classic Lucene query-syntax characters for exact-match/wildcard queries, not regex metacharacters.
+     */
+    private static String escapeRegexLiteral(String s) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : s.toCharArray()) {
+            if (!Character.isLetterOrDigit(c)) {
+                sb.append('\\');
+            }
+            sb.append(c);
+        }
+        return sb.toString();
+    }
+
+    private SearchResults executeQueryByUrl(List<String> solrQueryForSites, SearchQuery searchQuery) {
+        SolrQuery solrQuery = new SolrQuery();
+        solrQuery.set("shards.tolerant", "true");
+        applyTimeAllowed(solrQuery);
+        solrQuery.set("q", String.join(" OR ", solrQueryForSites));
+        solrQuery.set("fl", "id,type,tstamp,urlTimestamp,surt,titleString,collection,url");
+        solrQuery.set("hl", "false");
+        solrQuery.set("spellcheck", "false");
+
+        LOG.info("Solr Query (queryByUrl): " + solrQuery);
+        searchQuery.setFields(new String[] { "title", "originalURL", "mimeType", "tstamp", "digest", "collection", "id",
+                "linkToArchive", "linkToNoFrame", "linkToScreenshot", "linkToExtractedText",
+                "linkToMetadata", "linkToOriginalFile" }); // Everything except the snippet
+
+        try {
+            QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
+            return parseQueryResponse(queryResponse, searchQuery);
+        } catch (SolrServerException | IOException e) {
+            LOG.error("Error querying Solr: ", e);
+            return null;
         }
     }
 

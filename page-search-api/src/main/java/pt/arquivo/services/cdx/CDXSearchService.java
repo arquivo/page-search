@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import pt.arquivo.services.*;
 
@@ -27,9 +26,6 @@ public class CDXSearchService {
     private final String equalOP = "=";
     private final String andOP = "&";
     private final String outputCDX = "json";
-
-    @Autowired
-    private SearchService searchService;
 
     @Value("${searchpages.api.globaltimeout.ms}")
     private int timeoutreadConn;
@@ -211,14 +207,46 @@ public class CDXSearchService {
      * {@code Mockito.spy(...)} instead of hitting the network.
      */
     URLConnection openCdxConnection(String strurl) throws IOException {
+        return openCdxConnection(strurl, timeoutConn, timeoutreadConn);
+    }
+
+    /**
+     * Same as {@link #openCdxConnection(String)}, but with explicit timeouts instead of the general purpose
+     * ones, so callers with their own timeout budget (e.g. {@link #getCollectionForExactMatch}) don't have to
+     * share it with the rest of the CDX traffic.
+     */
+    URLConnection openCdxConnection(String strurl, int connectTimeoutMs, int readTimeoutMs) throws IOException {
         URL url = new URL(strurl);
         URLConnection con = strurl.startsWith("https")
                 ? (HttpsURLConnection) url.openConnection()
                 : url.openConnection();
-        con.setConnectTimeout(timeoutConn);
-        // set this to a globaltimeout equal to all services
-        con.setReadTimeout(timeoutreadConn);
+        con.setConnectTimeout(connectTimeoutMs);
+        con.setReadTimeout(readTimeoutMs);
         return con;
+    }
+
+    /**
+     * Fetches just the collection code for an exact url+timestamp match, bounded by an explicit timeout
+     * independent of the general purpose CDX timeouts. Used as a fast-path collection lookup so
+     * {@code SolrSearchService#query(SearchQuery, boolean)} can build an exact-match query instead of an
+     * expensive leading-wildcard one.
+     *
+     * @return the collection code, or null if CDX has no match, times out, or fails for any reason
+     */
+    public String getCollectionForExactMatch(String url, String timestamp, int timeoutMs) {
+        String urlCDX = generateCdxQuery(url, timestamp, timestamp);
+        try (InputStream is = openCdxConnection(urlCDX, timeoutMs, timeoutMs).getInputStream();
+                BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            String line = rd.readLine();
+            if (line == null || line.trim().isEmpty()) {
+                return null;
+            }
+            JsonObject o = new JsonParser().parse(line.trim()).getAsJsonObject();
+            return o.has("collection") ? o.get("collection").getAsString() : null;
+        } catch (Exception e) {
+            LOG.warn("[getCollectionForExactMatch] CDX lookup failed for url[" + url + "] timestamp[" + timestamp + "]: " + e);
+            return null;
+        }
     }
 
     /**
