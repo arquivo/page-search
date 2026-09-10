@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -157,5 +158,38 @@ public class CDXSearchServiceTest {
 
         assertThat(results.getEstimatedNumberResults()).isEqualTo(0);
         assertThat(results.getResults()).isNull();
+    }
+
+    @Test
+    public void getCollectionForExactMatch_happyPath_returnsCollection() throws Exception {
+        String cdxJson = "{\"url\":\"http://example.com\",\"timestamp\":\"20190101010101\","
+                + "\"collection\":\"AWP1\"}\n";
+
+        CDXSearchService spy = spy(cdxSearchService);
+        doReturn(connectionReturning(cdxJson)).when(spy).openCdxConnection(anyString(), anyInt(), anyInt());
+
+        String collection = spy.getCollectionForExactMatch("http://example.com", "20190101010101", 1000);
+
+        assertThat(collection).isEqualTo("AWP1");
+    }
+
+    @Test
+    public void getCollectionForExactMatch_noMatch_returnsNull() throws Exception {
+        CDXSearchService spy = spy(cdxSearchService);
+        doReturn(connectionReturning("")).when(spy).openCdxConnection(anyString(), anyInt(), anyInt());
+
+        String collection = spy.getCollectionForExactMatch("http://example.com", "20190101010101", 1000);
+
+        assertThat(collection).isNull();
+    }
+
+    @Test
+    public void getCollectionForExactMatch_connectionThrows_returnsNull() throws Exception {
+        CDXSearchService spy = spy(cdxSearchService);
+        doThrow(new IOException("timed out")).when(spy).openCdxConnection(anyString(), anyInt(), anyInt());
+
+        String collection = spy.getCollectionForExactMatch("http://example.com", "20190101010101", 1000);
+
+        assertThat(collection).isNull();
     }
 }
