@@ -16,9 +16,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SpellCheckResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
@@ -56,8 +56,7 @@ public class SolrSearchService implements SearchService {
         LANGUAGE_CONFIDENCE_TIERS.put(SearchQuery.LANGUAGE_CONFIDENCE_LOW, "NONE");
     }
 
-    // TODO should upgrade this for the SolrCloudClient
-    HttpSolrClient solrClient;
+    SolrClient solrClient;
 
     @Value("${searchpages.api.startdate:19960101000000}")
     private String startDate;
@@ -79,6 +78,20 @@ public class SolrSearchService implements SearchService {
 
     @Value("${searchpages.textsearch.service.bean.solr.link:http://localhost:8983/solr/searchpages}")
     private String baseSolrUrl;
+
+    /** Comma-separated ZK host:port list, optional trailing /chroot. Non-blank switches to SolrCloud mode. */
+    @Value("${searchpages.textsearch.service.bean.solr.zkhosts:}")
+    private String zkHosts;
+
+    /** Default collection for SolrCloud mode, required when zkHosts is set. Ignored in standalone mode. */
+    @Value("${searchpages.textsearch.service.bean.solr.collection:}")
+    private String defaultCollection;
+
+    @Value("${searchpages.textsearch.service.bean.solr.connectiontimeout.ms:5000}")
+    private int connectionTimeoutMillis = 5000;
+
+    @Value("${searchpages.textsearch.service.bean.solr.sockettimeout.ms:20000}")
+    private int socketTimeoutMillis = 20000;
 
     @Value("${searchpages.textsearch.service.link:http://localhost:8081/textsearch}")
     private String textSearchServiceEndpoint;
@@ -110,12 +123,31 @@ public class SolrSearchService implements SearchService {
 
     public SolrSearchService(){}
 
-    public HttpSolrClient getSolrClient() {
+    /**
+     * Builds the client lazily from this service's own config when nobody injected one already (e.g. the
+     * standalone Spring context used by the year-balance integration test). In production,
+     * PageSearchApplication injects a shared client via {@link #setSolrClient} instead, so this branch
+     * never runs there. Synchronized because SolrCloud client construction (ZK connect + cluster-state
+     * warm-up) is slow enough that concurrent first callers racing here would be wasteful, unlike the
+     * cheap HttpSolrClient construction this used to be.
+     */
+    public synchronized SolrClient getSolrClient() {
         if (this.solrClient == null) {
-            LOG.info("Initing SolrClient pointing to " + this.baseSolrUrl);
-            this.solrClient = new HttpSolrClient.Builder(this.baseSolrUrl).build();
+            if (SolrClientFactory.isCloudMode(this.zkHosts)) {
+                LOG.info("Initing CloudSolrClient pointing to ZK ensemble " + this.zkHosts
+                        + " (collection=" + this.defaultCollection + ")");
+            } else {
+                LOG.info("Initing SolrClient pointing to " + this.baseSolrUrl);
+            }
+            this.solrClient = SolrClientFactory.buildClient(this.baseSolrUrl, this.zkHosts, this.defaultCollection,
+                    this.connectionTimeoutMillis, this.socketTimeoutMillis);
         }
         return this.solrClient;
+    }
+
+    /** Lets PageSearchApplication inject the one client shared with the /healthcheck endpoint. */
+    public void setSolrClient(SolrClient solrClient) {
+        this.solrClient = solrClient;
     }
 
     /**
