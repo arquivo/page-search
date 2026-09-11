@@ -1,8 +1,8 @@
 package pt.arquivo.services.solr;
 
+import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SpellCheckResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
@@ -583,7 +583,7 @@ public class SolrSearchServiceTest {
         SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101010101/(com,example,)/path");
         QueryResponse queryResponse = queryResponseWithResults(doc);
 
-        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        SolrClient solrClient = mock(SolrClient.class);
         when(solrClient.query(any(SolrQuery.class))).thenReturn(queryResponse);
         service.solrClient = solrClient;
 
@@ -604,7 +604,7 @@ public class SolrSearchServiceTest {
         SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101010101/(com,example,)/path");
         QueryResponse queryResponse = queryResponseWithResults(doc);
 
-        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        SolrClient solrClient = mock(SolrClient.class);
         when(solrClient.query(any(SolrQuery.class))).thenReturn(queryResponse);
         service.solrClient = solrClient;
 
@@ -615,7 +615,8 @@ public class SolrSearchServiceTest {
     }
 
     @Test
-    public void query_solrServerException_returnsEmptyFallbackResults() throws Exception {        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+    public void query_solrServerException_returnsEmptyFallbackResults() throws Exception {
+        SolrClient solrClient = mock(SolrClient.class);
         when(solrClient.query(any(SolrQuery.class))).thenThrow(new SolrServerException("boom"));
         service.solrClient = solrClient;
 
@@ -632,7 +633,7 @@ public class SolrSearchServiceTest {
         SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101010101/(com,example,)/path");
         QueryResponse queryResponse = queryResponseWithResults(doc);
 
-        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        SolrClient solrClient = mock(SolrClient.class);
         when(solrClient.query(any(SolrQuery.class))).thenReturn(queryResponse);
         service.solrClient = solrClient;
 
@@ -665,7 +666,7 @@ public class SolrSearchServiceTest {
         contentDoc.addField("content", "short content");
         QueryResponse contentResponse = queryResponseWithResults(contentDoc);
 
-        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        SolrClient solrClient = mock(SolrClient.class);
         when(solrClient.query(any(SolrQuery.class))).thenReturn(contentResponse);
         service.solrClient = solrClient;
 
@@ -683,7 +684,7 @@ public class SolrSearchServiceTest {
         contentDoc.addField("content", "short content");
         QueryResponse contentResponse = queryResponseWithResults(contentDoc);
 
-        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        SolrClient solrClient = mock(SolrClient.class);
         when(solrClient.query(any(SolrQuery.class))).thenReturn(contentResponse);
         service.solrClient = solrClient;
 
@@ -704,7 +705,7 @@ public class SolrSearchServiceTest {
         contentDoc.addField("content", longContent);
         QueryResponse contentResponse = queryResponseWithResults(contentDoc);
 
-        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        SolrClient solrClient = mock(SolrClient.class);
         when(solrClient.query(any(SolrQuery.class))).thenReturn(contentResponse);
         service.solrClient = solrClient;
 
@@ -719,7 +720,7 @@ public class SolrSearchServiceTest {
         QueryResponse queryResponse = queryResponseWithResults(doc);
         QueryResponse contentResponse = queryResponseWithResults(new SolrDocument());
 
-        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        SolrClient solrClient = mock(SolrClient.class);
         when(solrClient.query(any(SolrQuery.class))).thenReturn(contentResponse);
         service.solrClient = solrClient;
 
@@ -735,7 +736,7 @@ public class SolrSearchServiceTest {
         SolrDocument doc = docWithUrlTimestamp("doc-1", "COLLECTION1/20190101000000/(com,example,)/path");
         QueryResponse queryResponse = queryResponseWithResults(doc);
 
-        HttpSolrClient solrClient = mock(HttpSolrClient.class);
+        SolrClient solrClient = mock(SolrClient.class);
         when(solrClient.query(any(SolrQuery.class))).thenReturn(queryResponse);
         service.solrClient = solrClient;
 
