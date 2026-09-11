@@ -98,9 +98,34 @@ $ JAVA_HOME=/usr/lib/jvm/temurin-8-jdk-amd64 mvn -f page-search-api/pom.xml spri
 
 `searchpages.textsearch.service.bean` selects the search backend: any value other
 than `nutchwax` loads `SolrSearchService` (see
-`PageSearchApplication#generateService()`), which in turn only reads
+`PageSearchApplication#generateService()`), which in turn reads
 `searchpages.textsearch.service.bean.solr.link` for the Solr base URL — e.g.
-`http://<host>:<port>/solr/<collection>`.
+`http://<host>:<port>/solr/<collection>` — when running against a standalone Solr.
+
+#### SolrCloud mode (multiple Solr nodes behind ZooKeeper)
+
+To point at a SolrCloud cluster instead of a single standalone Solr, set
+`searchpages.textsearch.service.bean.solr.zkhosts` to the ZK ensemble's connect
+string (comma-separated `host:port` list, with an optional trailing `/chroot`
+on the whole string) and `searchpages.textsearch.service.bean.solr.collection`
+to the collection name, e.g.:
+
+```
+searchpages.textsearch.service.bean.solr.zkhosts = zk1:2181,zk2:2181,zk3:2181/solr
+searchpages.textsearch.service.bean.solr.collection = pages
+```
+
+Whichever mode is active, `PageSearchApplication#solrClient()` builds one
+`SolrClient` (see `SolrClientFactory`) that's shared between the active
+`SolrSearchService` and the `/textsearch/healthcheck` endpoint below, so both
+go through the exact same connection instead of each opening their own — a
+`CloudSolrClient` in SolrCloud mode also automatically retries a request
+against another live replica if the node it picked is down, giving genuine
+node-level failover instead of just an initial connection to *some* healthy
+node. Only `zkhosts` being set switches the mode; there's no separate flag, and
+leaving it blank (the default) keeps the standalone `solr.link` behavior above.
+`zkhosts` and `collection` must be set together — a `zkhosts` with no
+`collection` fails fast at startup.
 
 To point at a different Solr instance/collection without editing the committed
 `application.properties`, pass both properties as Spring Boot run arguments:
@@ -178,14 +203,17 @@ this repository.
 
 ### Health Check
 
-`GET /textsearch/healthcheck` pings the Solr instance configured via
-`searchpages.textsearch.service.bean.solr.link` and reports its connectivity,
-independently of which `SearchService` backend is currently selected (it never
-pings NutchWax). Returns `200 {"solr": "ok"}` when Solr is reachable, or
-`503 {"solr": "unreachable"}` otherwise. The ping's connection and socket
-timeouts are configurable via `searchpages.healthcheck.solr.connectiontimeout.ms`
-(default 2000) and `searchpages.healthcheck.solr.sockettimeout.ms` (default
-3000), so a Solr that's up but hanging still fails the check quickly. It's mapped under the `/textsearch`
+`GET /textsearch/healthcheck` pings the same shared `SolrClient` described
+above (standalone or SolrCloud, whichever is configured) and reports its
+connectivity, independently of which `SearchService` backend is currently
+selected (it never pings NutchWax). Returns `200 {"solr": "ok"}` when Solr is
+reachable, or `503 {"solr": "unreachable"}` otherwise. The ping's connection
+and socket timeouts are configurable via
+`searchpages.textsearch.service.bean.solr.connectiontimeout.ms` (default 5000)
+and `searchpages.textsearch.service.bean.solr.sockettimeout.ms` (default
+20000) — shared with real search queries, since they now go through the same
+client/connection — so a Solr that's up but hanging still fails the check
+reasonably quickly. It's mapped under the `/textsearch`
 prefix for the same reverse-proxy reason as the API docs above, so it's public
 at `arquivo.pt/textsearch/healthcheck` with no proxy changes needed. See
 [pwa-technologies#1613](https://github.com/arquivo/pwa-technologies/issues/1613).

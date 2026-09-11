@@ -180,10 +180,6 @@ docker run -p 8080:8080 --memory=4g \
 
 Raising the thread cap increases the number of requests that can be in flight at once, and each one holds its own thread stack and request/response buffers — so it also raises the memory the JVM can actually use under load. Re-run load testing at the new thread count before increasing it in production, and scale the memory limit up alongside it rather than in isolation.
 
-### Known follow-up: unconfigured Solr client
-
-`SolrSearchService` builds its `HttpSolrClient` (SolrJ) with no explicit connection-pool sizing or connect/socket timeouts — it's possible this becomes a concurrency bottleneck before Tomcat's thread pool does, under different traffic shapes than what was load-tested here. Not addressed in this change; worth profiling separately if concurrency needs to be pushed materially above what's documented above.
-
 ## Environment Deployment
 
 The `docker-compose.yml` is a generic template for local validation. For environment-specific deployments:
@@ -265,9 +261,11 @@ All configuration is done via environment variables passed to the container at r
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `NUTCHWAX_SEARCH_FILE` | `/app/` | Path to search servers configuration |
-| `SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK` | `http://localhost:8983/solr/searchpages` | Solr server URL. Spring's relaxed-binding form of the `searchpages.textsearch.service.bean.solr.link` property — the var name must match exactly, a plain `SOLR_URL` will not bind to it |
-| `SEARCHPAGES_HEALTHCHECK_SOLR_CONNECTIONTIMEOUT_MS` | `2000` | Connection timeout (ms) for the `/textsearch/healthcheck` ping to Solr |
-| `SEARCHPAGES_HEALTHCHECK_SOLR_SOCKETTIMEOUT_MS` | `3000` | Socket timeout (ms) for the `/textsearch/healthcheck` ping to Solr |
+| `SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK` | `http://localhost:8983/solr/searchpages` | Standalone Solr server URL, used when `..._ZKHOSTS` (below) is not set. Spring's relaxed-binding form of the `searchpages.textsearch.service.bean.solr.link` property — the var name must match exactly, a plain `SOLR_URL` will not bind to it |
+| `SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_ZKHOSTS` | *(unset)* | SolrCloud mode instead of the standalone URL above: ZooKeeper ensemble connect string, e.g. `zk1:2181,zk2:2181,zk3:2181/solr`. Setting this switches the app to SolrCloud, routing across the whole node ensemble; requires `..._COLLECTION` to also be set |
+| `SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_COLLECTION` | *(unset)* | Collection name to query in SolrCloud mode, required whenever `..._ZKHOSTS` is set |
+| `SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_CONNECTIONTIMEOUT_MS` | `5000` | Connection timeout (ms) for the shared Solr client, used both for real search queries and the `/textsearch/healthcheck` ping |
+| `SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_SOCKETTIMEOUT_MS` | `20000` | Socket timeout (ms) for the shared Solr client, used both for real search queries and the `/textsearch/healthcheck` ping |
 | `SERVER_PORT` | `8080` | API server port |
 | `JAVA_OPTS` | `-XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+ExitOnOutOfMemoryError` | JVM memory and GC options. Heap is sized as a percentage of the container's memory limit, so a `--memory`/`mem_limit` must be set (see "Production Memory Configuration") |
 
