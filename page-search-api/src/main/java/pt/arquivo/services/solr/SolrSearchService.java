@@ -329,25 +329,11 @@ public class SolrSearchService implements SearchService {
             solrQuery.addFilterQuery(stringBuilder.toString());
         }
 
-        // Handle deduplication:
-        if (searchQuery.getDedupValue() >= 0){ //deduplication disabled if dedupValue == -1
-            Integer dedupValue = searchQuery.getDedupValue();
-            String dedupField = sanitizeDedupField(searchQuery.getDedupField());
-
-            if(dedupValue > 0){ 
-                dedupValue -= 1;
-            }
-
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("{!collapse field=")
-                            .append(dedupField)
-                            .append("}");
-            solrQuery.addFilterQuery(stringBuilder.toString());
-            if(dedupValue > 0){
-                solrQuery.add("expand", "true");
-                solrQuery.add("expand.rows", dedupValue.toString());
-            }
-        } 
+        // Deduplication (dedupField/dedupValue, and the deprecated limitPerSite which maps to dedupValue) is
+        // temporarily disabled: {!collapse} only deduplicates within a single shard, not across the whole
+        // collection, so a request for dedupValue=N could return up to N results per shard instead of N total.
+        // The parameters are still accepted by the API and silently ignored.
+        // See arquivo/pwa-technologies#1623 (disable) and #1624 (reimplementation).
 
         // Handle type request
         if (searchQuery.isSearchByType()) {
@@ -425,13 +411,6 @@ public class SolrSearchService implements SearchService {
 
             // We always need urlTimestamp, it's where we get the collection, url and timestamp
             fieldInclusivity.put("urlTimestamp", true);
-
-
-            // If we're deduping we'll need to get the dedup field to get the expand from solr 
-            if (searchQuery.getDedupValue() > 1){
-                String dedupField = sanitizeDedupField(searchQuery.getDedupField());
-                fieldInclusivity.put(dedupField, true);
-            }
 
             needsSnippet = false;
             for (String field : requestedFields) {
@@ -524,19 +503,6 @@ public class SolrSearchService implements SearchService {
     SolrQuery convertTimelineQuery(SearchQuery searchQuery) {
         SolrQuery solrQuery = convertSearchQuery(searchQuery);
 
-        String[] filterQueries = solrQuery.getFilterQueries();
-        if (filterQueries != null) {
-            String[] withoutCollapse = Arrays.stream(filterQueries)
-                    .filter(filterQuery -> !filterQuery.startsWith("{!collapse"))
-                    .toArray(String[]::new);
-            if (withoutCollapse.length == 0) {
-                solrQuery.remove("fq");
-            } else {
-                solrQuery.setFilterQueries(withoutCollapse);
-            }
-        }
-        solrQuery.remove("expand");
-        solrQuery.remove("expand.rows");
         // Counting documents per year has no use for how they are scored
         solrQuery.remove("boost");
 
@@ -843,7 +809,6 @@ public class SolrSearchService implements SearchService {
         final String[] siteSearchSurts;
         final String[] collectionSearch;
         final String[] replyFields;
-        final Map<String, SolrDocumentList> expandedResults = queryResponse.getExpandedResults();
 
         // Check which fields the user asked for
         String[] requestedFields = resultFields(searchQuery);
@@ -892,31 +857,6 @@ public class SolrSearchService implements SearchService {
                 continue;
             }
             searchResultArrayList.add(searchResult);
-            
-            if (expandedResults != null && expandedResults.size() > 0) {
-                
-                String dedupField = sanitizeDedupField(searchQuery.getDedupField());
-                String expandedDedupValue = (String) doc.getFieldValue(dedupField);
-                if (expandedDedupValue == null || !expandedResults.containsKey(expandedDedupValue)) {
-                    continue;
-                }
-
-                Iterator<?> expandedDocumentIterator = expandedResults.get(expandedDedupValue).iterator();
-                while(expandedDocumentIterator.hasNext()){
-                    Object next = expandedDocumentIterator.next();
-                    if (!(next instanceof SolrDocument)) {
-                        continue;
-                    }
-                    SolrDocument expandedDoc = (SolrDocument) next;
-
-                    SearchResultSolrImpl expandedResult = getSearchResultfromSolrDocument(expandedDoc,queryResponse,to,from,siteSearchSurts,collectionSearch,replyFields);
-                    if(expandedResult == null){
-                        continue;
-                    }
-                    searchResultArrayList.add(expandedResult);
-                }
-            }
-
         }
         searchResults.setResults(searchResultArrayList);
         searchResults.setEstimatedNumberResults(queryResponse.getResults().getNumFound());

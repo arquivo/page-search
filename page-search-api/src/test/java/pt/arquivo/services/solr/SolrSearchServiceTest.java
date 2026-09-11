@@ -233,14 +233,15 @@ public class SolrSearchServiceTest {
     }
 
     @Test
-    public void convertSearchQuery_collapsesOnTheSanitizedDedupField() {
-        // dedupField=collection used to be passed straight through to Solr as {!collapse field=collection}, but
-        // "collection" isn't a real Solr field (only "collectionOldest" is), which made Solr reject the query
+    public void convertSearchQuery_ignoresDedupParameters() {
+        // Deduplication is temporarily disabled (arquivo/pwa-technologies#1623): {!collapse} only dedupes within a
+        // single shard, so it no longer gets built regardless of dedupField/dedupValue.
         SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
         searchQuery.setDedupField("collection");
         searchQuery.setDedupValue(2);
         SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
-        assertThat(solrQuery.getFilterQueries()).contains("{!collapse field=collectionOldest}");
+        assertThat(solrQuery.getFilterQueries()).isNullOrEmpty();
+        assertThat(solrQuery.get("expand")).isNull();
     }
 
     @Test
@@ -324,12 +325,10 @@ public class SolrSearchServiceTest {
 
     @Test
     public void timelineQueryIsNotDeduplicated() {
+        // Deduplication is disabled (arquivo/pwa-technologies#1623), so neither query collapses; if it's ever
+        // reinstated, a collapse on the timeline query would leave the yearly counts incomparable with the
+        // counts of the whole archive
         SearchQuery searchQuery = timelineQuery();
-
-        // The search collapses on the dedup field, which is a costly post filter and would leave the yearly counts no
-        // longer comparable with the counts of the whole archive
-        assertThat(service.convertSearchQuery(searchQuery).getFilterQueries())
-                .anyMatch(filterQuery -> filterQuery.startsWith("{!collapse"));
 
         SolrQuery timelineQuery = service.convertTimelineQuery(searchQuery);
         assertThat(timelineQuery.getFilterQueries())
@@ -410,8 +409,9 @@ public class SolrSearchServiceTest {
 
     @Test
     public void convertSearchQuery_isNotFilteredByConfidenceWhenItDoesNotAskAboutTheLanguage() {
-        SolrQuery solrQuery = service.convertSearchQuery(new SearchQueryImpl("sapo"));
-        assertThat(solrQuery.getFilterQueries()).noneMatch(filterQuery -> filterQuery.startsWith("language"));
+        String[] filterQueries = service.convertSearchQuery(new SearchQueryImpl("sapo")).getFilterQueries();
+        assertThat(filterQueries != null ? filterQueries : new String[0])
+                .noneMatch(filterQuery -> filterQuery.startsWith("language"));
     }
 
     @Test
