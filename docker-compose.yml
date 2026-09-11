@@ -13,6 +13,11 @@ services:
       # (a plain SOLR_URL var does *not* bind to this property, so it must be spelled
       # out exactly like this to actually override it).
       SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_LINK: http://p44.arquivo.pt:2200/solr/pages
+      # SolrCloud mode instead of the standalone URL above: set both of these (relaxed-binding
+      # form of searchpages.textsearch.service.bean.solr.zkhosts/.collection) and the app routes
+      # across the whole ZK-managed node ensemble instead of a single Solr URL.
+      # SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_ZKHOSTS: zk1:2181,zk2:2181,zk3:2181/solr
+      # SEARCHPAGES_TEXTSEARCH_SERVICE_BEAN_SOLR_COLLECTION: pages
       SERVER_PORT: 8080
       # Matches the Dockerfile's default JAVA_OPTS (this fully replaces it,
       # not merges) — see DOCKER_DEPLOYMENT.md for the flag rationale and
