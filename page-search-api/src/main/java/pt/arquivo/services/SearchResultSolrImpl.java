@@ -37,10 +37,15 @@ public class SearchResultSolrImpl implements SearchResult {
     private Long offset;
     private Integer statusCode;
     private String id;
+    private String language;
+    private String languageConfidence;
 
     private String[] fields;
 
     private SolrClient solrClient;
+
+    // Max time (ms) Solr is allowed to spend processing a query (timeAllowed param)
+    private int timeAllowed = 10000;
 
     public String getTitle() {
         return title;
@@ -203,9 +208,11 @@ public class SearchResultSolrImpl implements SearchResult {
     public String getExtractedText() {
         StringBuilder extractedText = new StringBuilder();
         SolrQuery solrQuery = new SolrQuery();
+        solrQuery.set("shards.tolerant", "true");
         solrQuery.setQuery("id:".concat(this.id));
         solrQuery.set("fl", "content,title");
         solrQuery.set("hl","false");
+        solrQuery.set("timeAllowed", timeAllowed);
         LOG.info("ExtractedText Solr Query: " + solrQuery);
         try {
             QueryResponse queryResponse = solrClient.query(solrQuery);
@@ -227,12 +234,36 @@ public class SearchResultSolrImpl implements SearchResult {
         this.id = id;
     }
 
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public String getLanguageConfidence() {
+        return languageConfidence;
+    }
+
+    public void setLanguageConfidence(String languageConfidence) {
+        this.languageConfidence = languageConfidence;
+    }
+
     public SolrClient getSolrClient() {
         return solrClient;
     }
 
     public void setSolrClient(SolrClient solrClient) {
         this.solrClient = solrClient;
+    }
+
+    public int getTimeAllowed() {
+        return timeAllowed;
+    }
+
+    public void setTimeAllowed(int timeAllowed) {
+        this.timeAllowed = timeAllowed;
     }
 
     public String[] getFields() {

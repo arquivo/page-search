@@ -2,8 +2,13 @@ package pt.arquivo.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.apache.solr.common.SolrException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,15 +18,14 @@ import pt.arquivo.api.exceptions.ApiNotFoundResourceException;
 import pt.arquivo.api.exceptions.ApiRequestException;
 import pt.arquivo.services.*;
 import pt.arquivo.services.cdx.CDXSearchService;
+import pt.arquivo.services.solr.YearBalance;
 import pt.arquivo.utils.Utils;
-import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 
-@Api(tags = "PageSearch")
+@Tag(name = "PageSearch")
 @RestController
 public class PageSearchController {
 
@@ -45,7 +49,7 @@ public class PageSearchController {
     @Autowired
     MetadataController metadataController;
 
-    @ApiIgnore
+    @Hidden
     @CrossOrigin
     @GetMapping(value = {"/urlsearch/{url}"})
     public @ResponseBody
@@ -74,7 +78,7 @@ public class PageSearchController {
         return pageSearchResponse;
     }
 
-    @ApiOperation(value = "Get the extracted text of an Archived Page")
+    @Operation(summary = "Get the extracted text of an Archived Page")
     @CrossOrigin
     @GetMapping(value = "/textextracted")
     public String extractedText(@RequestParam(value = "m") String id) {
@@ -109,7 +113,37 @@ public class PageSearchController {
         return searchService.query(searchQuery, true);
     }
 
-    @ApiOperation(value = "Search for Archived Pages that match the query parameters")
+    /**
+     * How strongly the ranking should lift the documents of the years the archive holds the least of. It is asked for
+     * as a strength between 0 and 1, and yearBalance=true asks for it without picking one.
+     *
+     * @param yearBalance the requested value, null when the parameter wasn't sent
+     * @return the strength to rank with, 0 when the ranking should be left untouched
+     */
+    protected static double parseYearBalance(String yearBalance) {
+        if (yearBalance == null || yearBalance.trim().isEmpty() || yearBalance.equalsIgnoreCase("false")) {
+            return SearchQueryImpl.MIN_YEAR_BALANCE;
+        }
+        if (yearBalance.equalsIgnoreCase("true")) {
+            return YearBalance.DEFAULT_STRENGTH;
+        }
+
+        double strength;
+        try {
+            strength = Double.parseDouble(yearBalance.trim());
+        } catch (NumberFormatException e) {
+            throw new ApiRequestException("Invalid yearBalance, it takes true, false, or a value between "
+                    + SearchQueryImpl.MIN_YEAR_BALANCE + " and " + SearchQueryImpl.MAX_YEAR_BALANCE + ": "
+                    + yearBalance);
+        }
+        if (strength < SearchQueryImpl.MIN_YEAR_BALANCE || strength > SearchQueryImpl.MAX_YEAR_BALANCE) {
+            throw new ApiRequestException("Invalid yearBalance, it goes from " + SearchQueryImpl.MIN_YEAR_BALANCE
+                    + " (the ranking as it is) to " + SearchQueryImpl.MAX_YEAR_BALANCE + ": " + yearBalance);
+        }
+        return strength;
+    }
+
+    @Operation(summary = "Search for Archived Pages that match the query parameters")
     @CrossOrigin
     @GetMapping(value = "/textsearch")
     public @ResponseBody
@@ -119,6 +153,12 @@ public class PageSearchController {
                            @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
                            @RequestParam(value = "maxItems", required = false, defaultValue = "50") int maxItems,
                            @RequestParam(value = "siteSearch", required = false) String[] siteSearch,
+                           @Parameter(description = "Field results are deduplicated by, keeping only the newest per distinct value. title (the default) collapses on the exact title. "
+                                   + "collection collapses on the collection. type collapses on the mimetype. url collapses on the exact URL, so two pages are only "
+                                   + "deduplicated if they are the very same URL, not just the same site. site is meant to collapse per site/domain instead, but "
+                                   + "currently behaves exactly like url (see https://github.com/arquivo/pwa-technologies/issues/1619). Any other or missing value "
+                                   + "falls back to title.",
+                                   schema = @Schema(allowableValues = {"title", "collection", "type", "url", "site"}))
                            @RequestParam(value = "dedupField", required = false, defaultValue = "title") String dedupField,
                            @RequestParam(value = "itemsPerSite", required = false) Integer itemsPerSite,
                            @RequestParam(value = "dedupValue", required = false, defaultValue = "2") int dedupValue,
@@ -126,9 +166,25 @@ public class PageSearchController {
                            @RequestParam(value = "to", required = false) String to,
                            @RequestParam(value = "type", required = false) String[] type,
                            @RequestParam(value = "collection", required = false) String[] collection,
+                           @Parameter(description = "Restrict the response to only these fields per result. Omit to return majority of fields.",
+                                   array = @ArraySchema(schema = @Schema(allowableValues = {"title", "originalURL", "linkToArchive", "tstamp",
+                                           "contentLength", "digest", "mimeType", "encoding", "date", "linkToScreenshot",
+                                           "linkToNoFrame", "linkToExtractedText", "linkToMetadata", "linkToOriginalFile",
+                                           "snippet", "fileName", "collection", "offset", "statusCode", "id", "language",
+                                           "languageConfidence"})))
                            @RequestParam(value = "fields", required = false) String[] fields,
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
                            @RequestParam(value = "titleSearch", required = false) String titleSearch,
+                           @Parameter(description = "When true, also return a timeline with the distribution of results per year.")
+                           @RequestParam(value = "timeline", required = false, defaultValue = "false") boolean timeline,
+                           @Parameter(description = "Lift the ranking of documents from the years the archive holds the least of. Takes true (default strength), false (no effect, the default), or a strength between "
+                                   + SearchQueryImpl.MIN_YEAR_BALANCE + " and " + SearchQueryImpl.MAX_YEAR_BALANCE + ".")
+                           @RequestParam(value = "yearBalance", required = false) String yearBalance,
+                           @Parameter(description = "Only return pages detected as being written in this language, e.g. pt")
+                           @RequestParam(value = "language", required = false) String language,
+                           @Parameter(description = "Lowest language detection confidence the results may have: HIGH (default), MEDIUM or LOW. The tiers are ordinal, so MEDIUM also includes the HIGH results and LOW includes every result. Only applies when filtering by language, unless explicitly requested.",
+                                   schema = @Schema(allowableValues = {"HIGH", "MEDIUM", "LOW"}))
+                           @RequestParam(value = "minLanguageConfidence", required = false) String minLanguageConfidence,
                            HttpServletRequest request
     ) {
         long startTime;
@@ -176,6 +232,15 @@ public class PageSearchController {
         searchQuery.setFields(fields);
         searchQuery.setPrettyPrint(prettyPrint);
         searchQuery.setTitleSearch(titleSearch);
+        searchQuery.setTimeline(timeline);
+        searchQuery.setYearBalance(parseYearBalance(yearBalance));
+        searchQuery.setLanguage(language);
+        try {
+            searchQuery.setMinLanguageConfidence(minLanguageConfidence);
+        } catch (IllegalArgumentException e) {
+            LOG.error("Invalid API Request " + request.getQueryString());
+            throw new ApiRequestException(e.getMessage());
+        }
 
         searchQuery.setDedupValue(dedupValue);
         if (request.getParameter("dedupField") == null && searchQuery.isSearchBySite()) {
@@ -185,9 +250,29 @@ public class PageSearchController {
         }
 
         SearchResults searchResults;
-        searchResults = searchService.query(searchQuery);
+        try {
+            searchResults = searchService.query(searchQuery);
+        } catch (SolrException e) {
+            // Solr rejects the query outright (e.g. an unknown field) instead of a genuine backend failure: it's the
+            // request that's invalid, not the service, so this is reported as a 400 rather than leaking as a 500
+            if (e.code() == SolrException.ErrorCode.BAD_REQUEST.code) {
+                LOG.error("Invalid API Request " + request.getQueryString(), e);
+                throw new ApiRequestException("Invalid search request, check the query parameters");
+            }
+            throw e;
+        }
 
         PageSearchResponse pageSearchResponse = new PageSearchResponse();
+        // When spellcheck is requested we always reply with suggested_query, empty when the query looks well spelled
+        if (searchQuery.isSpellcheck()) {
+            String suggestedQuery = searchResults.getSuggestedQuery();
+            pageSearchResponse.setSuggestedQuery(suggestedQuery == null ? "" : suggestedQuery);
+        }
+
+        // The timeline is only replied to the queries that asked for it, and only when the backend could compute it
+        if (searchQuery.isTimeline()) {
+            pageSearchResponse.setTimeline(searchResults.getTimeline());
+        }
 
         pageSearchResponse.setServiceName(serviceName);
         pageSearchResponse.setLinkToService(linkToService);

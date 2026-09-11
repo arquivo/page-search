@@ -1,7 +1,18 @@
 package pt.arquivo.services;
 
 public interface SearchQuery {
+
+    /** Value of the fields parameter that asks for the query to be spellchecked. Not a field of the results. */
+    String SPELLCHECK_FIELD = "spellcheck";
+
+    /** languageConfidence tiers a request can ask for, from the most to the least confident. */
+    String LANGUAGE_CONFIDENCE_HIGH = "HIGH";
+    String LANGUAGE_CONFIDENCE_MEDIUM = "MEDIUM";
+    String LANGUAGE_CONFIDENCE_LOW = "LOW";
+
     String getQueryTerms();
+
+    String getQuotedQueryTerms();
 
     void setQueryTerms(String queryTerms);
 
@@ -64,6 +75,26 @@ public interface SearchQuery {
     String getTitleSearch();
 
     void setTitleSearch(String title);
-    
+
     boolean isSearchByTitle();
+
+    String getLanguage();
+
+    void setLanguage(String language);
+
+    boolean isSearchByLanguage();
+
+    String getMinLanguageConfidence();
+
+    void setMinLanguageConfidence(String minLanguageConfidence);
+
+    boolean isSpellcheck();
+
+    boolean isTimeline();
+
+    void setTimeline(boolean timeline);
+
+    double getYearBalance();
+
+    void setYearBalance(double yearBalance);
 }

@@ -1,7 +1,7 @@
 package pt.arquivo.api;
 
-import springfox.documentation.annotations.ApiIgnore;
+import io.swagger.v3.oas.annotations.Hidden;
 
-@ApiIgnore
+@Hidden
 public interface ApiResponse {
 }

@@ -4,6 +4,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SearchQueryImplTest {
@@ -155,6 +158,50 @@ public class SearchQueryImplTest {
     @Test
     public void setFields() {
         searchQuery.setFields(new String[]{"encoding", "type"});
+    }
+
+    @Test
+    public void setLanguage() {
+        searchQuery.setLanguage(" PT ");
+        assertEquals("pt", searchQuery.getLanguage());
+        assertTrue(searchQuery.isSearchByLanguage());
+
+        searchQuery.setLanguage(null);
+        assertNull(searchQuery.getLanguage());
+        assertFalse(searchQuery.isSearchByLanguage());
+    }
+
+    @Test
+    public void getMinLanguageConfidence() {
+        // no confidence filtering when the query doesn't filter by language either
+        assertNull(searchQuery.getMinLanguageConfidence());
+
+        // filtering by language only keeps the confident detections by default
+        searchQuery.setLanguage("pt");
+        assertEquals("HIGH", searchQuery.getMinLanguageConfidence());
+    }
+
+    @Test
+    public void setMinLanguageConfidence() {
+        searchQuery.setMinLanguageConfidence("medium");
+        assertEquals("MEDIUM", searchQuery.getMinLanguageConfidence());
+
+        searchQuery.setLanguage("pt");
+        assertEquals("MEDIUM", searchQuery.getMinLanguageConfidence());
+
+        searchQuery.setMinLanguageConfidence("HIGH");
+        assertEquals("HIGH", searchQuery.getMinLanguageConfidence());
+
+        searchQuery.setMinLanguageConfidence("low");
+        assertEquals("LOW", searchQuery.getMinLanguageConfidence());
+    }
+
+    @Test
+    public void setInvalidMinLanguageConfidence() {
+        // NONE is how the least confident tier is indexed, the API asks for it as LOW
+        assertThrows(IllegalArgumentException.class, () -> searchQuery.setMinLanguageConfidence("NONE"));
+        assertThrows(IllegalArgumentException.class, () -> searchQuery.setMinLanguageConfidence("VERY HIGH"));
+        assertNull(searchQuery.getMinLanguageConfidence());
     }
 
     @Test

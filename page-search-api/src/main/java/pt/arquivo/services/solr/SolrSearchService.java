@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -19,6 +20,7 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.response.SpellCheckResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -32,6 +34,7 @@ import pt.arquivo.services.SearchResultSolrImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
 import pt.arquivo.services.SearchServiceConfiguration;
+import pt.arquivo.services.Timeline;
 import pt.arquivo.utils.URLNormalizers;
 import pt.arquivo.utils.Utils;
 
@@ -39,8 +42,22 @@ public class SolrSearchService implements SearchService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SolrSearchService.class);
 
+    /** Result fields that are only returned when the user asks for them through the fields parameter. */
+    private static final List<String> OPT_IN_FIELDS = Arrays.asList("language", "languageConfidence");
+
+    /**
+     * The minLanguageConfidence tiers, from the most to the least confident, and the value each one has in the
+     * indexed languageConfidence field. The least confident tier is indexed as NONE.
+     */
+    private static final Map<String, String> LANGUAGE_CONFIDENCE_TIERS = new LinkedHashMap<String, String>();
+    static {
+        LANGUAGE_CONFIDENCE_TIERS.put(SearchQuery.LANGUAGE_CONFIDENCE_HIGH, "HIGH");
+        LANGUAGE_CONFIDENCE_TIERS.put(SearchQuery.LANGUAGE_CONFIDENCE_MEDIUM, "MEDIUM");
+        LANGUAGE_CONFIDENCE_TIERS.put(SearchQuery.LANGUAGE_CONFIDENCE_LOW, "NONE");
+    }
+
     // TODO should upgrade this for the SolrCloudClient
-    private HttpSolrClient solrClient;
+    HttpSolrClient solrClient;
 
     @Value("${searchpages.api.startdate:19960101000000}")
     private String startDate;
@@ -66,6 +83,18 @@ public class SolrSearchService implements SearchService {
     @Value("${searchpages.textsearch.service.link:http://localhost:8081/textsearch}")
     private String textSearchServiceEndpoint;
 
+    /** How long the number of documents the archive holds per year is reused for, it only moves when indexing does. */
+    @Value("${searchpages.api.yearvolumes.ttl.ms:86400000}")
+    private long yearVolumesTtlMillis = 86400000L;
+
+    /** Max time (ms) Solr is allowed to spend processing a single query, so slow queries don't overwhelm it. */
+    @Value("${searchpages.solr.timeallowed.ms:10000}")
+    private int timeAllowed = 10000;
+
+    private YearVolumes yearVolumes;
+
+    private TimelineService timelineService;
+
     // For setting configs without autowired shanenigans
     public SolrSearchService(SearchServiceConfiguration configuration){
         this.startDate = configuration.getStartDate();
@@ -76,6 +105,7 @@ public class SolrSearchService implements SearchService {
         this.extractedTextServiceEndpoint = configuration.getExtractedTextServiceEndpoint();
         this.baseSolrUrl = configuration.getBaseSolrUrl();
         this.textSearchServiceEndpoint = configuration.getTextSearchServiceEndpoint();
+        this.timeAllowed = configuration.getTimeAllowedMs();
     }
 
     public SolrSearchService(){}
@@ -89,39 +119,121 @@ public class SolrSearchService implements SearchService {
     }
 
     /**
-     * Makes sure that the requested dedupField is a valid solr field. When the dedup field is "site" it gets converted into 
-     * "surt", and if it's "mimetype" it gets converted into "type" (because those are the Solr field names). When invalid
-     * or empty, the dedup field defaults to "surt" (which is the same as "site"). 
+     * The volumes of the archive per year, shared by the timeline and by the year balance ranking. Only the queries
+     * asking for one of them pay for it, and only the first of those pays the Solr query it caches. Synchronized
+     * because the requests racing on a cold start would otherwise get volumes each, and each one of those would
+     * query Solr for a baseline of its own.
+     */
+    synchronized YearVolumes getYearVolumes() {
+        if (this.yearVolumes == null) {
+            this.yearVolumes = new YearVolumes(getSolrClient(), startYear(), yearVolumesTtlMillis);
+        }
+        return this.yearVolumes;
+    }
+
+    /**
+     * Lets the tests work against an archive whose volumes are known, without a Solr to ask.
+     */
+    synchronized void setYearVolumes(YearVolumes yearVolumes) {
+        this.yearVolumes = yearVolumes;
+        this.timelineService = null;
+    }
+
+    /**
+     * The timeline is only built for the queries that ask for it, so its service is only created when the first of
+     * those queries arrives. Synchronized for the same reason as the volumes it reads.
+     */
+    synchronized TimelineService getTimelineService() {
+        if (this.timelineService == null) {
+            this.timelineService = new TimelineService(getYearVolumes());
+        }
+        return this.timelineService;
+    }
+
+    /**
+     * The first year the archive has documents for, taken from the configured start date (e.g. 19960101000000).
+     */
+    private int startYear() {
+        return Integer.parseInt(this.startDate.trim().substring(0, 4));
+    }
+
+    /**
+     * Makes sure that the requested dedupField is a valid solr field. The API accepts a few convenience aliases that
+     * get translated into the actual Solr field names: "site"/"surt"/"url" becomes "surtOldest", "mimetype" becomes
+     * "type", and "collection" becomes "collectionOldest" ("collection" isn't a real Solr field, only
+     * "collectionOldest" -single-valued- and "collections" -multi-valued, used for collection-restricted search-
+     * are). "url" is also the implicit dedupField used internally for site-restricted searches that don't specify
+     * one explicitly (see PageSearchController#pageSearch). The Solr field names themselves are also accepted,
+     * case-insensitively, and returned with their proper casing (Solr field names are case-sensitive). When invalid
+     * or empty, the dedup field defaults to "titleString" (the same as "title").
      * @param dedupField
      * @return
      */
-    private String sanitizeDedupField(String dedupField){
-        if (dedupField == null) { 
+    String sanitizeDedupField(String dedupField){
+        if (dedupField == null) {
             dedupField = "";
         }
         dedupField = dedupField.toLowerCase();
 
-        final List<String> validDedupFields = Arrays.asList(new String[] {"site","surt", "surtOldest", "mimetype","type","collection","collectionOldest","title","titleString"});
+        final List<String> validDedupFields = Arrays.asList(new String[] {"site","surt","url", "surtoldest", "mimetype","type","collection","collectionoldest","title","titlestring"});
 
         // By default dedup by title, if invalid dedupField then fallback to dedup by title
         if(!validDedupFields.contains(dedupField) || dedupField.equals("title") ){
             dedupField = "titleString";
-        } else if (dedupField.equals("site") || dedupField.equals("surt")){
+        } else if (dedupField.equals("site") || dedupField.equals("surt") || dedupField.equals("url") || dedupField.equals("surtoldest")){
             dedupField = "surtOldest";
         } else if(dedupField.equals("mimetype")){
             dedupField = "type";
+        } else if(dedupField.equals("collection") || dedupField.equals("collectionoldest")){
+            dedupField = "collectionOldest";
+        } else if(dedupField.equals("titlestring")){
+            dedupField = "titleString";
         }
 
         return dedupField;
-    }  
+    }
     
+    /**
+     * The fields the user asked to have on each result. The spellcheck field asks for the query to be spellchecked,
+     * it isn't a result field, so it doesn't count here.
+     *
+     * @param searchQuery
+     * @return the requested result fields, or null when the default fields should be returned
+     */
+    private String[] resultFields(SearchQuery searchQuery) {
+        if (searchQuery.getFields() == null) {
+            return null;
+        }
+        List<String> fields = Arrays.stream(searchQuery.getFields())
+                .filter(field -> !SearchQuery.SPELLCHECK_FIELD.equalsIgnoreCase(field))
+                .collect(Collectors.toList());
+
+        if (fields.isEmpty()) {
+            return null;
+        }
+        return fields.toArray(new String[0]);
+    }
+
+    /**
+     * Caps how long Solr is allowed to spend processing a query (timeAllowed param), so slow queries don't
+     * overwhelm Solr. Package-private to allow direct unit testing.
+     * @param solrQuery
+     * @return the same solrQuery, for chaining
+     */
+    SolrQuery applyTimeAllowed(SolrQuery solrQuery) {
+        solrQuery.set("timeAllowed", timeAllowed);
+        return solrQuery;
+    }
+
     /**
      * Converts the API request into an appropriate Solr query.
      * @param searchQuery
      * @return
      */
-    private SolrQuery convertSearchQuery(SearchQuery searchQuery) {
+    SolrQuery convertSearchQuery(SearchQuery searchQuery) {
         SolrQuery solrQuery = new SolrQuery();
+        solrQuery.set("shards.tolerant", "true");
+        applyTimeAllowed(solrQuery);
 
         if(searchQuery.getQueryTerms() == null){
             solrQuery.setQuery("*:*");
@@ -130,6 +242,9 @@ public class SolrSearchService implements SearchService {
         }
         solrQuery.setStart(searchQuery.getOffset()); // No need to escape because offset and maxItems are integers
         solrQuery.setRows(searchQuery.getMaxItems());
+
+        // Never surface blocked content
+        solrQuery.addFilterQuery("-blocked:1");
 
         // Handle collection request:
         if (searchQuery.isSearchByCollection()) {
@@ -186,6 +301,31 @@ public class SolrSearchService implements SearchService {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("titleString:");
             stringBuilder.append(ClientUtils.escapeQueryChars(title));
+            solrQuery.addFilterQuery(stringBuilder.toString());
+        }
+
+        // Handle language request
+        if (searchQuery.isSearchByLanguage()) {
+            solrQuery.addFilterQuery("language:" + ClientUtils.escapeQueryChars(searchQuery.getLanguage()));
+        }
+
+        // Handle minLanguageConfidence request. The tiers are ordinal, so a request takes every tier down to the
+        // one it asked for, e.g. MEDIUM also takes the HIGH documents
+        String minLanguageConfidence = searchQuery.getMinLanguageConfidence();
+        if (minLanguageConfidence != null) {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("languageConfidence:(");
+            boolean multipleTiers = false;
+            for (Map.Entry<String, String> tier : LANGUAGE_CONFIDENCE_TIERS.entrySet()) {
+                if (multipleTiers)
+                    stringBuilder.append(" OR ");
+                stringBuilder.append(tier.getValue());
+                multipleTiers = true;
+
+                if (tier.getKey().equals(minLanguageConfidence))
+                    break;
+            }
+            stringBuilder.append(")");
             solrQuery.addFilterQuery(stringBuilder.toString());
         }
 
@@ -271,12 +411,14 @@ public class SolrSearchService implements SearchService {
 
         // Optimization: Make sure we only ask the fields we need.
         // At most we'll only need these fields from Solr:
-        String[] fieldsArray = new String[] { "id", "type", "urlTimestamp", "titleString" };
+        String[] fieldsArray = new String[] { "id", "type", "urlTimestamp", "titleString", "language",
+                "languageConfidence" };
         Hashtable<String, Boolean> fieldInclusivity = new Hashtable<String, Boolean>();
         Boolean needsSnippet = true; // Snippet is different, we'll handle it separately
 
         // If user only asks for certain fields, we don't need to ask for every field
-        if (searchQuery.getFields() != null) {
+        String[] requestedFields = resultFields(searchQuery);
+        if (requestedFields != null) {
             for (int i = 0; i < fieldsArray.length; i++) {
                 fieldInclusivity.put(fieldsArray[i], false);
             }
@@ -292,7 +434,7 @@ public class SolrSearchService implements SearchService {
             }
 
             needsSnippet = false;
-            for (String field : searchQuery.getFields()) {
+            for (String field : requestedFields) {
                 switch (field) {
                     case "title":
                         fieldInclusivity.put("titleString", true);
@@ -304,11 +446,17 @@ public class SolrSearchService implements SearchService {
                         fieldInclusivity.put("id", true);
                         needsSnippet = true;
                         break;
+                    case "language":
+                        fieldInclusivity.put("language", true);
+                        break;
+                    case "languageConfidence":
+                        fieldInclusivity.put("languageConfidence", true);
+                        break;
                 }
             }
         } else {
             for (int i = 0; i < fieldsArray.length; i++) {
-                fieldInclusivity.put(fieldsArray[i], true);
+                fieldInclusivity.put(fieldsArray[i], !OPT_IN_FIELDS.contains(fieldsArray[i]));
             }
         }
         StringBuilder stringBuilderFields = new StringBuilder();
@@ -325,18 +473,106 @@ public class SolrSearchService implements SearchService {
 
         solrQuery.setFields(stringBuilderFields.toString());
 
-        // If we don't need snippet we don't ask Solr for highligting (which is on by default since v5)
-        if(!needsSnippet){
+        // Solr's default highlighter, fastVector, requires the index to carry full term vectors
+        // (termVectors, termPositions, termOffsets), which ours doesn't, so it's forced explicitly on every
+        // query rather than relying on server-side defaults (see arquivo/pwa-technologies#1609)
+        solrQuery.set("hl.method", "unified");
+
+        // If we don't need snippet we don't ask Solr for highligting (which is on by default since v5), and a query
+        // asking for no results at all has nothing to highlight either
+        if(!needsSnippet || searchQuery.getMaxItems() == 0){
             solrQuery.set("hl","false");
+        }
+
+        // Handle year balance: lift the documents of the years the archive holds the least of
+        if (searchQuery.getYearBalance() > 0) {
+            String boostFunction = YearBalance.boostFunction(getYearVolumes().perYear(), searchQuery.getYearBalance());
+            if (boostFunction != null) {
+                solrQuery.set("boost", boostFunction);
+            }
+        }
+
+        // Every spellcheck parameter is sent explicitly, so the reply doesn't depend on the request handler defaults
+        if (searchQuery.isSpellcheck()) {
+            solrQuery.set("spellcheck.dictionary", "default");
+            solrQuery.set("spellcheck", "true");
+            solrQuery.set("spellcheck.extendedResults", "true");
+            solrQuery.set("spellcheck.count", "1");
+            solrQuery.set("spellcheck.alternativeTermCount", "5");
+            solrQuery.set("spellcheck.collate", "true");
+            solrQuery.set("spellcheck.collateExtendedResults", "true");
+            solrQuery.set("spellcheck.maxCollationTries", "10");
+            solrQuery.set("spellcheck.maxCollations", "1");
+            // Quoted so collations are only kept when the corrected terms match as a phrase
+            solrQuery.set("spellcheck.q", searchQuery.getQuotedQueryTerms());
+        } else {
+            solrQuery.set("spellcheck", "false");
         }
 
         return solrQuery;
     }
 
     /**
+     * Converts the API request into the query that counts the matching documents per year. It carries the same filters
+     * as the search itself, but not the deduplication: collapsing is a costly post filter (it multiplies the time of
+     * the facet by an order of magnitude) and it would leave the counts of the query no longer comparable with the
+     * counts of the whole archive that normalize them into the impact.
+     *
+     * @param searchQuery
+     * @return
+     */
+    SolrQuery convertTimelineQuery(SearchQuery searchQuery) {
+        SolrQuery solrQuery = convertSearchQuery(searchQuery);
+
+        String[] filterQueries = solrQuery.getFilterQueries();
+        if (filterQueries != null) {
+            String[] withoutCollapse = Arrays.stream(filterQueries)
+                    .filter(filterQuery -> !filterQuery.startsWith("{!collapse"))
+                    .toArray(String[]::new);
+            if (withoutCollapse.length == 0) {
+                solrQuery.remove("fq");
+            } else {
+                solrQuery.setFilterQueries(withoutCollapse);
+            }
+        }
+        solrQuery.remove("expand");
+        solrQuery.remove("expand.rows");
+        // Counting documents per year has no use for how they are scored
+        solrQuery.remove("boost");
+
+        // Only the counts are needed, no documents come back from this query
+        solrQuery.setStart(0);
+        solrQuery.setRows(0);
+        solrQuery.setFields("id");
+        solrQuery.set("hl", "false");
+        solrQuery.set("spellcheck", "false");
+
+        getTimelineService().addYearRangeFacet(solrQuery);
+        return solrQuery;
+    }
+
+    /**
+     * Runs the query that counts the matching documents per year and normalizes it against the size of the archive on
+     * each year. A failure here doesn't fail the search, the reply just comes without the timeline.
+     *
+     * @param searchQuery
+     * @return the timeline of the query, or null when Solr couldn't be asked for it
+     */
+    private Timeline queryTimeline(SearchQuery searchQuery) {
+        SolrQuery timelineQuery = convertTimelineQuery(searchQuery);
+        LOG.info("Solr Query (timeline): " + timelineQuery);
+        try {
+            return getTimelineService().buildTimeline(getSolrClient().query(timelineQuery));
+        } catch (SolrServerException | IOException e) {
+            LOG.error("Error querying Solr for the timeline: ", e);
+            return null;
+        }
+    }
+
+    /**
      * Escapes special symbols, but not all of them to allow for "" (exact match) and - (excluding) searches
      */
-    private String sanitizeQuery(String query, SolrQuery solrQuery){
+    String sanitizeQuery(String query, SolrQuery solrQuery){
         
         Pattern exactMatchPattern = Pattern.compile("(^|.*?\\s)\"([^\"]*)\"(\\s.*|$)");
         String line = query;
@@ -408,9 +644,12 @@ public class SolrSearchService implements SearchService {
         // If we don't get highlighted text on the content we display the first 500 chars of the content
         if (highlightedText.length() == 0) {
             SolrQuery solrQuery = new SolrQuery();
+            solrQuery.set("shards.tolerant", "true");
+            applyTimeAllowed(solrQuery);
             solrQuery.set("q", "id:" + docId);
             solrQuery.set("fl", "content");
             solrQuery.set("hl","false");
+            solrQuery.set("spellcheck","false");
             try {
                 SolrDocumentList solrDocumentList = getSolrClient().query(solrQuery).getResults();
                 if (solrDocumentList.size() > 0) {
@@ -459,7 +698,7 @@ public class SolrSearchService implements SearchService {
      * @param tu
      * @return String
      */
-    private String timestampSurtToCollection(String tu) {
+    String timestampSurtToCollection(String tu) {
         return tu.substring(0, tu.indexOf("/"));
     }
 
@@ -469,7 +708,7 @@ public class SolrSearchService implements SearchService {
      * @param tu
      * @return String
      */
-    private String timestampSurtToTimestamp(String tu) {
+    String timestampSurtToTimestamp(String tu) {
         String r = tu.substring(tu.indexOf("/") + 1);
         return r.substring(0, r.indexOf("/"));
     }
@@ -480,7 +719,7 @@ public class SolrSearchService implements SearchService {
      * @param tu
      * @return String
      */
-    private String timestampSurtToSurt(String tu) {
+    String timestampSurtToSurt(String tu) {
         String r = tu.substring(tu.indexOf("/") + 1);
         return r.substring(r.indexOf("/") + 1);
     }
@@ -491,7 +730,7 @@ public class SolrSearchService implements SearchService {
      * siteSearch or collection doesn't match collection search
      *
      */
-    private List<Object> filterUrlTimestamps(List <Object> urlstimestamps, Long to, Long from, String[] siteSearchSurts, String[] collectionSearch){
+    List<Object> filterUrlTimestamps(List <Object> urlstimestamps, Long to, Long from, String[] siteSearchSurts, String[] collectionSearch){
                 urlstimestamps = urlstimestamps.stream()
                         .filter(u -> ((String) u).indexOf("/") >= 0)
                         .collect(Collectors.toList());
@@ -530,7 +769,7 @@ public class SolrSearchService implements SearchService {
      * Given a list of strings in the format collection/timestamp/surt (as returned by the Solr field urlTimestamp), will
      * return the one with the oldest timestamp
      */
-    private String getOldestUrlTimestamp(List <Object> urlstimestamps){
+    String getOldestUrlTimestamp(List <Object> urlstimestamps){
         String oldestTimestamp = null;
         String oldestUrlTimestamp = null;
         Iterator<Object> it = (Iterator<Object>) urlstimestamps.iterator();
@@ -583,6 +822,7 @@ public class SolrSearchService implements SearchService {
         SearchResultSolrImpl searchResult = new SearchResultSolrImpl();
         populateSearchResult(searchResult, queryResponse, doc, oldestUrl, oldestTimestamp, oldestCollection, replyFields);
         searchResult.setSolrClient(this.solrClient);
+        searchResult.setTimeAllowed(this.timeAllowed);
         return searchResult;
     }
 
@@ -606,13 +846,14 @@ public class SolrSearchService implements SearchService {
         final Map<String, SolrDocumentList> expandedResults = queryResponse.getExpandedResults();
 
         // Check which fields the user asked for
-        if (searchQuery.getFields() == null) {
+        String[] requestedFields = resultFields(searchQuery);
+        if (requestedFields == null) {
             // Default reply fields
             replyFields = new String[] { "title", "originalURL", "mimeType", "tstamp", "digest", "collection", "id",
                     "snippet", "linkToArchive", "linkToNoFrame", "linkToScreenshot", "linkToExtractedText",
                     "linkToMetadata", "linkToOriginalFile" };
         } else {
-            replyFields = searchQuery.getFields();
+            replyFields = requestedFields;
         }
 
         // Check if the user searched for one or more specific websites
@@ -660,9 +901,13 @@ public class SolrSearchService implements SearchService {
                     continue;
                 }
 
-                Iterator<SolrDocument> expandedDocumentIterator = expandedResults.get(expandedDedupValue).iterator();
+                Iterator<?> expandedDocumentIterator = expandedResults.get(expandedDedupValue).iterator();
                 while(expandedDocumentIterator.hasNext()){
-                    SolrDocument expandedDoc = expandedDocumentIterator.next();
+                    Object next = expandedDocumentIterator.next();
+                    if (!(next instanceof SolrDocument)) {
+                        continue;
+                    }
+                    SolrDocument expandedDoc = (SolrDocument) next;
 
                     SearchResultSolrImpl expandedResult = getSearchResultfromSolrDocument(expandedDoc,queryResponse,to,from,siteSearchSurts,collectionSearch,replyFields);
                     if(expandedResult == null){
@@ -677,7 +922,39 @@ public class SolrSearchService implements SearchService {
         searchResults.setEstimatedNumberResults(queryResponse.getResults().getNumFound());
         searchResults.setNumberResults(queryResponse.getResults().size());
 
+        if (searchQuery.isSpellcheck()) {
+            searchResults.setSuggestedQuery(parseSuggestedQuery(queryResponse, searchQuery));
+        }
+
         return searchResults;
+    }
+
+    /**
+     * Extracts the spelling suggestion (collation) from a query response. Returns null when Solr had nothing to
+     * suggest or when the suggestion is just the query the user already made.
+     *
+     * @param queryResponse
+     * @param searchQuery
+     * @return
+     */
+    String parseSuggestedQuery(QueryResponse queryResponse, SearchQuery searchQuery) {
+        SpellCheckResponse spellCheckResponse = queryResponse.getSpellCheckResponse();
+        if (spellCheckResponse == null) {
+            return null;
+        }
+        String collation = spellCheckResponse.getCollatedResult();
+        if (collation == null) {
+            return null;
+        }
+        // The suggestion is quoted like the spellcheck.q we sent, so take back the quotes we added ourselves
+        boolean quotedByUs = !searchQuery.getQueryTerms().equals(searchQuery.getQuotedQueryTerms());
+        if (quotedByUs && collation.length() > 1 && collation.startsWith("\"") && collation.endsWith("\"")) {
+            collation = collation.substring(1, collation.length() - 1);
+        }
+        if (collation.equalsIgnoreCase(searchQuery.getQueryTerms())) {
+            return null;
+        }
+        return collation;
     }
 
     /**
@@ -759,6 +1036,13 @@ public class SolrSearchService implements SearchService {
                     searchResult.setLinkToOriginalFile(
                             waybackNoFrameServiceEndpoint + "/" + oldestTimestamp + "id_/" + oldestUrl);
                     break;
+                // Left out of the reply when the document has no detected language, there is no empty value for it
+                case "language":
+                    searchResult.setLanguage((String) doc.getFieldValue("language"));
+                    break;
+                case "languageConfidence":
+                    searchResult.setLanguageConfidence((String) doc.getFieldValue("languageConfidence"));
+                    break;
 
             }
 
@@ -781,9 +1065,13 @@ public class SolrSearchService implements SearchService {
                     .map(surt -> "urlTimestamp:" + "*/" + Utils.canocalizeTimestamp(tstamp) + "/" + ClientUtils.escapeQueryChars(surt))
                     .collect(Collectors.toList());
             SolrQuery solrQuery = new SolrQuery();
+            solrQuery.set("shards.tolerant", "true");
+            applyTimeAllowed(solrQuery);
             solrQuery.set("q", String.join(" OR ", solrQueryForSites));
+            solrQuery.addFilterQuery("-blocked:1");
             solrQuery.set("fl","id,type,tstamp,urlTimestamp,surt,titleString,collection,url");
             solrQuery.set("hl","false");
+            solrQuery.set("spellcheck","false");
 
             LOG.info("Solr Query (queryByUrl): "+solrQuery);
             searchQuery.setFields(new String[] { "title", "originalURL", "mimeType", "tstamp", "digest", "collection", "id",
@@ -814,6 +1102,9 @@ public class SolrSearchService implements SearchService {
             QueryResponse queryResponse = this.getSolrClient().query(solrQuery);
             SearchResults searchResults = parseQueryResponse(queryResponse, searchQuery);
             searchResults.setLastPageResults(isLastPage(searchResults.getEstimatedNumberResults(), searchQuery));
+            if (searchQuery.isTimeline()) {
+                searchResults.setTimeline(queryTimeline(searchQuery));
+            }
             return searchResults;
         } catch (SolrServerException | IOException e) {
             LOG.error("Error querying Solr: ", e);

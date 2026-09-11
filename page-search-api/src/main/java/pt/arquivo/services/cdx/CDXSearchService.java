@@ -38,22 +38,22 @@ public class CDXSearchService {
     private int timeoutConn;
 
     @Value("${wayback.service.cdx.endpoint}")
-    private String waybackCdxEndpoint;
+    String waybackCdxEndpoint;
 
     @Value("${screenshot.service.endpoint}")
-    private String screenshotServiceEndpoint;
+    String screenshotServiceEndpoint;
 
     @Value("${wayback.service.endpoint}")
-    private String waybackServiceEndpoint;
+    String waybackServiceEndpoint;
 
     @Value("${wayback.noframe.service.endpoint}")
-    private String waybackNoFrameServiceEndpoint;
+    String waybackNoFrameServiceEndpoint;
 
     @Value("${searchpages.extractedtext.service.link}")
-    private String extractedTextServiceEndpoint;
+    String extractedTextServiceEndpoint;
 
     @Value("${searchpages.textsearch.service.link}")
-    private String textSearchServiceEndpoint;
+    String textSearchServiceEndpoint;
 
     @Value("${searchpages.api.show.ids}")
     private boolean showIds;
@@ -130,7 +130,7 @@ public class CDXSearchService {
         return searchResult;
     }
 
-    private String generateCdxQuery(String url, String from, String to) {
+    String generateCdxQuery(String url, String from, String to) {
         if (from == null) {
             from = "";
         }
@@ -186,18 +186,7 @@ public class CDXSearchService {
 
         try {
             LOG.debug("[OPEN Connection]: " + strurl);
-            URL url = new URL(strurl);
-            URLConnection con;
-            if (strurl.startsWith("https")) {
-                con = (HttpsURLConnection) url.openConnection();
-            } else {
-                con = url.openConnection();
-            }
-            con.setConnectTimeout(timeoutConn);
-
-            // set this to a globaltimeout equal to all services
-            con.setReadTimeout(timeoutreadConn);
-
+            URLConnection con = openCdxConnection(strurl);
             is = con.getInputStream();
             BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
             jsonResponse = readAll(rd);
@@ -215,6 +204,21 @@ public class CDXSearchService {
                 }
             }
         }
+    }
+
+    /**
+     * Opens a connection to the CDX server. Extracted as its own method so tests can stub it out via
+     * {@code Mockito.spy(...)} instead of hitting the network.
+     */
+    URLConnection openCdxConnection(String strurl) throws IOException {
+        URL url = new URL(strurl);
+        URLConnection con = strurl.startsWith("https")
+                ? (HttpsURLConnection) url.openConnection()
+                : url.openConnection();
+        con.setConnectTimeout(timeoutConn);
+        // set this to a globaltimeout equal to all services
+        con.setReadTimeout(timeoutreadConn);
+        return con;
     }
 
     /**
@@ -238,7 +242,7 @@ public class CDXSearchService {
     }
 
 
-    private void populateEndpointsLinks(SearchResultNutchImpl searchResult, boolean textMatch) throws UnsupportedEncodingException {
+    void populateEndpointsLinks(SearchResultNutchImpl searchResult, boolean textMatch) throws UnsupportedEncodingException {
 
         searchResult.setLinkToArchive(waybackServiceEndpoint.concat("/")
                 .concat(searchResult.getTstamp().concat("/").concat(searchResult.getOriginalURL())));

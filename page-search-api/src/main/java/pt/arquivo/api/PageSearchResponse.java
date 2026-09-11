@@ -3,16 +3,17 @@ package pt.arquivo.api;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pt.arquivo.services.SearchQuery;
 import pt.arquivo.services.SearchResult;
+import pt.arquivo.services.Timeline;
 
 import java.util.ArrayList;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@ApiModel
+@Schema
 public class PageSearchResponse implements ApiResponse {
 
     private static Logger LOG = LoggerFactory.getLogger(PageSearchResponse.class);
@@ -35,8 +36,15 @@ public class PageSearchResponse implements ApiResponse {
     @JsonProperty("request_parameters")
     private SearchQuery requestParameters;
 
+    @JsonProperty("suggested_query")
+    private String suggestedQuery;
+
     @JsonProperty("response_items")
     private ArrayList<SearchResult> responseItems;
+
+    /** Yearly breakdown of the matching documents, only present when the query asked for timeline=true. */
+    @JsonProperty("timeline")
+    private Timeline timeline;
 
     public String getServiceName() {
         return serviceName;
@@ -94,12 +102,28 @@ public class PageSearchResponse implements ApiResponse {
         this.requestParameters = requestParameters;
     }
 
+    public String getSuggestedQuery() {
+        return suggestedQuery;
+    }
+
+    public void setSuggestedQuery(String suggestedQuery) {
+        this.suggestedQuery = suggestedQuery;
+    }
+
     public ArrayList<SearchResult> getResponseItems() {
         return responseItems;
     }
 
     public void setResponseItems(ArrayList<SearchResult> responseItems) {
         this.responseItems = responseItems;
+    }
+
+    public Timeline getTimeline() {
+        return timeline;
+    }
+
+    public void setTimeline(Timeline timeline) {
+        this.timeline = timeline;
     }
 
     public void setPagination(int maxItems, int offset, String queryString, boolean firstPage, boolean lastPage) {

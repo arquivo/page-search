@@ -8,6 +8,28 @@ public class SearchResults {
     private long numberResults;
     private boolean lastPageResults = false;
 
+    /** Spelling correction for the query, null when spellcheck wasn't requested or the query looks well spelled. */
+    private String suggestedQuery;
+
+    /** Yearly breakdown of the matching documents, null when the timeline wasn't requested. */
+    private Timeline timeline;
+
+    public Timeline getTimeline() {
+        return timeline;
+    }
+
+    public void setTimeline(Timeline timeline) {
+        this.timeline = timeline;
+    }
+
+    public String getSuggestedQuery() {
+        return suggestedQuery;
+    }
+
+    public void setSuggestedQuery(String suggestedQuery) {
+        this.suggestedQuery = suggestedQuery;
+    }
+
     public boolean isLastPageResults() {
         return lastPageResults;
     }

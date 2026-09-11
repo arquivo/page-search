@@ -1,5 +1,6 @@
 package pt.arquivo.api;
 
+import org.apache.solr.common.SolrException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -19,9 +20,12 @@ import pt.arquivo.services.SearchResult;
 import pt.arquivo.services.SearchResultNutchImpl;
 import pt.arquivo.services.SearchResults;
 import pt.arquivo.services.SearchService;
+import pt.arquivo.services.Timeline;
 import pt.arquivo.services.cdx.ItemCDX;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static pt.arquivo.services.cdx.CDXSearchService.getSearchResultNutch;
@@ -79,6 +83,40 @@ public class PageSearchControllerTest {
 
         jsonResponse = new JSONObject(response.getContentAsString());
         assertThat(jsonResponse.getJSONObject("request_parameters").getString("dedupField")).isEqualTo("site");
+    }
+
+    @Test
+    public void pageSearchUnexpectedException() throws Exception {
+        Mockito.when(searchService.query(Mockito.any()))
+                .thenThrow(new SolrException(SolrException.ErrorCode.SERVER_ERROR,
+                        "Connection refused to solr-internal.arquivo.pt:8983"));
+
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=sapo")).andReturn();
+
+        MockHttpServletResponse response = result.getResponse();
+        assertThat(response.getStatus()).isEqualTo(500);
+        JSONObject jsonResponse = new JSONObject(response.getContentAsString());
+        // the raw exception message must not leak into the client-facing response
+        assertThat(jsonResponse.getString("message")).doesNotContain("solr-internal.arquivo.pt");
+        assertThat(jsonResponse.getInt("httpStatus")).isEqualTo(500);
+    }
+
+    @Test
+    public void pageSearchInvalidSolrRequestReturns400() throws Exception {
+        // e.g. an unknown/undefined Solr field used as the dedup collapse field: Solr rejects the query outright,
+        // so this is the caller's fault, not a backend failure, and must not leak as a raw 500
+        Mockito.when(searchService.query(Mockito.any()))
+                .thenThrow(new SolrException(SolrException.ErrorCode.BAD_REQUEST,
+                        "undefined field collection"));
+
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=sapo")).andReturn();
+
+        MockHttpServletResponse response = result.getResponse();
+        assertThat(response.getStatus()).isEqualTo(400);
+        JSONObject jsonResponse = new JSONObject(response.getContentAsString());
+        // the raw exception message must not leak into the client-facing response
+        assertThat(jsonResponse.getString("message")).doesNotContain("undefined field");
+        assertThat(jsonResponse.getInt("httpStatus")).isEqualTo(400);
     }
 
     @Test
@@ -215,6 +253,163 @@ public class PageSearchControllerTest {
 
         // verify pretty print
         response.getContentAsString().contains("{\n");
+    }
+
+    @Test
+    public void pageSearchSpellcheck() throws Exception {
+        SearchResults mockSearchResults = new SearchResults();
+        mockSearchResults.setResults(new ArrayList<>());
+        mockSearchResults.setSuggestedQuery("torres novas");
+
+        Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
+
+        // spellcheck field requested and the query is misspelled: reply with the suggestion
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=torrse%20novsa&fields=spellcheck&maxItems=0")).andReturn();
+        JSONObject jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.getString("suggested_query")).isEqualTo("torres novas");
+
+        // spellcheck field requested and the query is well spelled: reply with an empty suggestion
+        mockSearchResults.setSuggestedQuery(null);
+        result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=torres%20novas&fields=spellcheck&maxItems=0")).andReturn();
+        jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.getString("suggested_query")).isEqualTo("");
+
+        // spellcheck field requested along with regular result fields
+        mockSearchResults.setSuggestedQuery("torres novas");
+        result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=torrse%20novsa&fields=title,snippet,spellcheck")).andReturn();
+        jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.getString("suggested_query")).isEqualTo("torres novas");
+
+        // spellcheck field not requested: no suggestion field at all
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=torrse%20novsa")).andReturn();
+        jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.has("suggested_query")).isFalse();
+
+        result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=torrse%20novsa&fields=title,snippet")).andReturn();
+        jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.has("suggested_query")).isFalse();
+    }
+
+    @Test
+    public void pageSearchTimeline() throws Exception {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        counts.put("2005", 1200L);
+        counts.put("2006", 1800L);
+        Map<String, Long> totalsPerYear = new LinkedHashMap<>();
+        totalsPerYear.put("2005", 100000L);
+        totalsPerYear.put("2006", 100000L);
+
+        SearchResults mockSearchResults = new SearchResults();
+        mockSearchResults.setResults(new ArrayList<>());
+        mockSearchResults.setTimeline(Timeline.of(counts, totalsPerYear));
+
+        Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
+
+        // timeline requested: the yearly counts and their impact come along with the results
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=eleicoes&timeline=true&maxItems=0")).andReturn();
+        JSONObject jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.getJSONObject("request_parameters").getBoolean("timeline")).isTrue();
+
+        JSONObject jsonTimeline = jsonResponse.getJSONObject("timeline");
+        assertThat(jsonTimeline.getJSONObject("counts").getLong("2005")).isEqualTo(1200L);
+        assertThat(jsonTimeline.getJSONObject("impact").getDouble("2005")).isEqualTo(0.012);
+
+        // timeline not requested: the reply is the one it always was
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes")).andReturn();
+        jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.has("timeline")).isFalse();
+        assertThat(jsonResponse.getJSONObject("request_parameters").has("timeline")).isFalse();
+
+        // the backend couldn't compute the timeline: the search still replies, without it
+        mockSearchResults.setTimeline(null);
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&timeline=true")).andReturn();
+        jsonResponse = new JSONObject(result.getResponse().getContentAsString());
+        assertThat(jsonResponse.has("timeline")).isFalse();
+        assertThat(jsonResponse.getJSONObject("request_parameters").getBoolean("timeline")).isTrue();
+    }
+
+    @Test
+    public void pageSearchYearBalance() throws Exception {
+        SearchResults mockSearchResults = new SearchResults();
+        mockSearchResults.setResults(new ArrayList<>());
+
+        Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
+
+        // asked for without a strength: the ranking is balanced by the default amount
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=eleicoes&yearBalance=true")).andReturn();
+        JSONObject jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.getDouble("yearBalance")).isEqualTo(0.5);
+
+        // asked for with a strength of its own
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=0.25")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.getDouble("yearBalance")).isEqualTo(0.25);
+
+        // not asked for, or turned down: the reply is the one it always was
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.has("yearBalance")).isFalse();
+
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=false")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.has("yearBalance")).isFalse();
+
+        // out of range, or not a number at all
+        assertThat(mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=2"))
+                .andReturn().getResponse().getStatus()).isEqualTo(400);
+        assertThat(mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=-1"))
+                .andReturn().getResponse().getStatus()).isEqualTo(400);
+        assertThat(mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=eleicoes&yearBalance=lots"))
+                .andReturn().getResponse().getStatus()).isEqualTo(400);
+    }
+
+    @Test
+    public void pageSearchLanguage() throws Exception {
+        SearchResults mockSearchResults = new SearchResults();
+        mockSearchResults.setResults(new ArrayList<>());
+
+        Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
+
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=sapo&language=PT")).andReturn();
+        JSONObject jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.getString("language")).isEqualTo("pt");
+        assertThat(jsonRequests.getString("minLanguageConfidence")).isEqualTo("HIGH");
+
+        result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=sapo&language=pt&minLanguageConfidence=medium")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.getString("minLanguageConfidence")).isEqualTo("MEDIUM");
+
+        // no language filtering, so no confidence filtering either
+        result = mockMvc.perform(MockMvcRequestBuilders.get("/textsearch?q=sapo")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.has("language")).isFalse();
+        assertThat(jsonRequests.has("minLanguageConfidence")).isFalse();
+
+        result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=sapo&language=pt&minLanguageConfidence=low")).andReturn();
+        jsonRequests = new JSONObject(result.getResponse().getContentAsString())
+                .getJSONObject("request_parameters");
+        assertThat(jsonRequests.getString("minLanguageConfidence")).isEqualTo("LOW");
+
+        // NONE is how the least confident tier is indexed, the API asks for it as LOW
+        result = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=sapo&language=pt&minLanguageConfidence=NONE")).andReturn();
+        assertThat(result.getResponse().getStatus()).isEqualTo(400);
     }
 
     @Test

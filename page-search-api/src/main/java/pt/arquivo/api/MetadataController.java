@@ -1,8 +1,8 @@
 package pt.arquivo.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,7 @@ import pt.arquivo.services.cdx.CDXSearchService;
 import pt.arquivo.utils.Utils;
 
 
-@Api(tags = "Metadata")
+@Tag(name = "Metadata")
 @RestController
 public class MetadataController {
 
@@ -37,7 +37,7 @@ public class MetadataController {
     @Autowired
     CDXSearchService cdxSearchService;
 
-    @ApiOperation(value = "Get the metadata information about an archived page")
+    @Operation(summary = "Get the metadata information about an archived page")
     @CrossOrigin
     @GetMapping(value = {"/metadata"})
     public MetadataResponse getMetadata(@RequestParam(value = "id") String id) {
