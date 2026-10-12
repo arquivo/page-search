@@ -201,9 +201,11 @@ public class PageSearchController {
                                    + "0 and 1 both return one result per value. -1 turns deduplication off.")
                            @RequestParam(value = "dedupValue", required = false, defaultValue = "2") int dedupValue,
                            @Parameter(description = "Only return pages captured on or after this date (a timestamp, or a prefix of one, e.g. 2000 or 20000101). "
+                                   + "A prefix is read as the start of the period it names, e.g. 2000 is 20000101000000. "
                                    + "Matched against a page's most recent capture, so a page first captured before this date can still be returned if it was captured again on or after it.")
                            @RequestParam(value = "from", required = false) String from,
                            @Parameter(description = "Only return pages captured on or before this date (a timestamp, or a prefix of one, e.g. 2025 or 20251231). "
+                                   + "A prefix is read as the end of the period it names, so the whole period is included, e.g. 2025 is up to 20251231235959 and 202502 up to 20250228235959. "
                                    + "Matched against a page's oldest capture, so a page also captured after this date can still be returned if it was first captured on or before it.")
                            @RequestParam(value = "to", required = false) String to,
                            @Parameter(description = "Only return documents of these types, as a comma separated list (a document of any of them is returned). "
