@@ -83,4 +83,23 @@ public class OpenApiConfigTest {
         assertThat(allowed).contains("title", "spellcheck");
         assertThat(fields.getString("description")).contains("suggested_query");
     }
+
+    @Test
+    public void apiDocsDescribeSiteSearchWildcard() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders
+                        .get("/textsearch/api-docs/v3"))
+                .andReturn().getResponse();
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        JSONArray parameters = new JSONObject(response.getContentAsString(StandardCharsets.UTF_8))
+                .getJSONObject("paths").getJSONObject("/textsearch").getJSONObject("get").getJSONArray("parameters");
+        JSONObject siteSearch = null;
+        for (int i = 0; i < parameters.length(); i++) {
+            if ("siteSearch".equals(parameters.getJSONObject(i).getString("name"))) {
+                siteSearch = parameters.getJSONObject(i);
+            }
+        }
+        assertThat(siteSearch).isNotNull();
+        assertThat(siteSearch.getString("description")).contains("*.sapo.pt");
+    }
 }
