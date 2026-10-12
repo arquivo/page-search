@@ -189,7 +189,12 @@ public class PageSearchController {
                                    + "falls back to title.",
                                    schema = @Schema(allowableValues = {"title", "collection", "type", "url", "site"}))
                            @RequestParam(value = "dedupField", required = false, defaultValue = "title") String dedupField,
+                           @Parameter(description = "Deprecated, use dedupValue instead. Currently has no effect: dedupValue (2 by default) "
+                                   + "applies even when only itemsPerSite is sent.",
+                                   deprecated = true)
                            @RequestParam(value = "itemsPerSite", required = false) Integer itemsPerSite,
+                           @Parameter(description = "Number of results returned per distinct dedupField value, the newest ones. "
+                                   + "0 and 1 both return one result per value. -1 turns deduplication off.")
                            @RequestParam(value = "dedupValue", required = false, defaultValue = "2") int dedupValue,
                            @Parameter(description = "Only return pages captured on or after this date (a timestamp, or a prefix of one, e.g. 2000 or 20000101). "
                                    + "Matched against a page's most recent capture, so a page first captured before this date can still be returned if it was captured again on or after it.")
@@ -197,6 +202,11 @@ public class PageSearchController {
                            @Parameter(description = "Only return pages captured on or before this date (a timestamp, or a prefix of one, e.g. 2025 or 20251231). "
                                    + "Matched against a page's oldest capture, so a page also captured after this date can still be returned if it was first captured on or before it.")
                            @RequestParam(value = "to", required = false) String to,
+                           @Parameter(description = "Only return documents of these types, as a comma separated list (a document of any of them is returned). "
+                                   + "Case insensitive. pdf, doc/docx, xls/xlsx, ppt/pptx, ps/ai/eps, htm/html and rtf match the mimetypes of those formats "
+                                   + "(e.g. doc matches both Word formats). A value with a / is matched as an exact mimetype, e.g. application/pdf. "
+                                   + "Any other value matches every mimetype containing it, e.g. opendocument.",
+                                   example = "pdf,doc")
                            @RequestParam(value = "type", required = false) String[] type,
                            @Parameter(description = "Restrict results to one or more collections. Accepts a trailing wildcard to match every collection sharing a prefix, "
                                    + "e.g. FAWP* matches FAWP1, FAWP2, ..., FAWP34. Multiple collections/patterns can be comma-separated, e.g. FAWP*,MAWP*.")
@@ -211,7 +221,9 @@ public class PageSearchController {
                                            "snippet", "fileName", "collection", "offset", "statusCode", "id", "language",
                                            "languageConfidence", SearchQuery.SPELLCHECK_FIELD})))
                            @RequestParam(value = "fields", required = false) String[] fields,
+                           @Parameter(description = "When true, indent the JSON response to make it easier to read.")
                            @RequestParam(value = "prettyPrint", required = false) boolean prettyPrint,
+                           @Parameter(description = "Only return pages whose title is exactly this one, e.g. titleSearch=Público.")
                            @RequestParam(value = "titleSearch", required = false) String titleSearch,
                            @Parameter(description = "When true, also return a timeline with the distribution of results per year.")
                            @RequestParam(value = "timeline", required = false, defaultValue = "false") boolean timeline,
