@@ -160,7 +160,7 @@ public class PageSearchController {
     ApiResponse pageSearch(@Parameter(description = "Search terms, e.g. q=\"António Costa\" or q=Albert -Einstein. URLs aren't accepted here, "
                                    + "they're rejected with 400 Bad Request: use versionHistory, or the CDX server and Memento APIs, to search by URL.")
                            @RequestParam(value = "q", required = false) String query,
-                           @Parameter(description = "URL whose captures should be listed, from the oldest, instead of searching by q. "
+                           @Parameter(description = "URL whose captures should be listed, newest first, instead of searching by q. "
                                    + "Can be bounded by from/to and paginated with offset/maxItems.")
                            @RequestParam(value = "versionHistory", required = false) String url,
                            @Parameter(description = "Capture whose metadata should be returned, instead of searching by q, as <URL>/<timestamp>, "
