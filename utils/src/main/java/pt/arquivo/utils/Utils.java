@@ -1,5 +1,6 @@
 package pt.arquivo.utils;
 
+import java.time.YearMonth;
 import java.util.regex.Pattern;
 
 public class Utils {
@@ -67,6 +68,33 @@ public class Utils {
         + String.format("%02d", minute)
         + String.format("%02d", second);;
         return r;
+    }
+
+    /**
+     * Completes a timestamp, or a prefix of one, with the end of the period it names, so it can be used as an
+     * inclusive upper bound: 2006 becomes 20061231235959 and 200602 becomes 20060228235959. This is how the CDX
+     * server (pywb) reads a "to" date. canocalizeTimestamp completes with the start of the period instead, which is
+     * right for "from".
+     */
+    public static String canocalizeEndTimestamp(String timestamp){
+        final String endPadding = "99991231235959";
+        String r = timestamp.length() > 14 ? timestamp.substring(0, 14) : timestamp;
+        if (!r.matches("[0-9]*")) {
+            return canocalizeTimestamp(timestamp);
+        }
+        r = r + endPadding.substring(r.length());
+
+        // Padding with day 31 overshoots the shorter months, e.g. 200602 gives 20060231: use their last day instead
+        int year = Integer.parseInt(r.substring(0, 4));
+        int month = Integer.parseInt(r.substring(4, 6));
+        int day = Integer.parseInt(r.substring(6, 8));
+        if (month >= 1 && month <= 12) {
+            int lastDay = YearMonth.of(year, month).lengthOfMonth();
+            if (day > lastDay) {
+                r = r.substring(0, 6) + String.format("%02d", lastDay) + r.substring(8);
+            }
+        }
+        return canocalizeTimestamp(r);
     }
 
     public static String timestampToSolrDate(String timestamp){

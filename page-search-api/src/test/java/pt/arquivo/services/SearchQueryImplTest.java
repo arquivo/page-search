@@ -116,7 +116,7 @@ public class SearchQueryImplTest {
 
     @Test
     public void getTo() {
-        assertEquals("20200101010100", searchQuery.getTo());
+        assertEquals("20200101010159", searchQuery.getTo());
     }
 
     @Test
@@ -127,6 +127,33 @@ public class SearchQueryImplTest {
         // should strip out extra characters
         searchQuery.setTo("202001010101010000000");
         assertEquals("20200101010101", searchQuery.getTo());
+    }
+
+    @Test
+    public void setToCompletesAShortDateWithTheEndOfItsPeriod() {
+        searchQuery.setTo("2006");
+        assertEquals("20061231235959", searchQuery.getTo());
+
+        searchQuery.setTo("200604");
+        assertEquals("20060430235959", searchQuery.getTo());
+
+        searchQuery.setTo("20061231");
+        assertEquals("20061231235959", searchQuery.getTo());
+    }
+
+    @Test
+    public void setToEndsFebruaryOnItsLastDay() {
+        searchQuery.setTo("200602");
+        assertEquals("20060228235959", searchQuery.getTo());
+
+        searchQuery.setTo("200802");
+        assertEquals("20080229235959", searchQuery.getTo());
+    }
+
+    @Test
+    public void setFromStillCompletesAShortDateWithTheStartOfItsPeriod() {
+        searchQuery.setFrom("2006");
+        assertEquals("20060000000000", searchQuery.getFrom());
     }
 
     @Test
