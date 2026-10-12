@@ -307,25 +307,10 @@ public class SolrSearchService implements SearchService {
 
         // Handle siteSearch request
         if (searchQuery.isSearchBySite()) {
-            String[] sites = searchQuery.getSite();
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("surts:");
-            boolean multipleSite = false;
-            for (String site : sites) {
-                if (multipleSite)
-                    stringBuilder.append(" OR surts:");
-
-                String[] fullSurt = URLNormalizers.canocalizeSurtUrl(site).split("\\)");
-                if (fullSurt.length == 1 || fullSurt[1].length() == 0) {
-                    // If only a domain is given, search for all subdomains
-                    stringBuilder.append(ClientUtils.escapeQueryChars(fullSurt[0]) + "*");
-                } else {
-                    // If a full URL is given, look only for the exact URL
-                    stringBuilder.append(ClientUtils.escapeQueryChars(fullSurt[0] + ")" + fullSurt[1]) + "*");
-                }
-                multipleSite = true;
+            List<SiteSearchFilter> siteFilters = SiteSearchFilter.parseAll(searchQuery.getSite());
+            if (!siteFilters.isEmpty()) {
+                solrQuery.addFilterQuery(SiteSearchFilter.toFilterQuery(siteFilters));
             }
-            solrQuery.addFilterQuery(stringBuilder.toString());
         }
 
         // Handle titleSearch request
@@ -846,15 +831,15 @@ public class SolrSearchService implements SearchService {
      * siteSearch or collection doesn't match collection search
      *
      */
-    List<Object> filterUrlTimestamps(List <Object> urlstimestamps, Long to, Long from, String[] siteSearchSurts, String[] collectionSearch){
+    List<Object> filterUrlTimestamps(List <Object> urlstimestamps, Long to, Long from, List<SiteSearchFilter> siteSearchFilters, String[] collectionSearch){
                 urlstimestamps = urlstimestamps.stream()
                         .filter(u -> ((String) u).indexOf("/") >= 0)
                         .collect(Collectors.toList());
 
                 // Filter out urltimestamps from wrong URLs if siteSearch was made
-                if (siteSearchSurts != null) {
+                if (siteSearchFilters != null) {
                     urlstimestamps = urlstimestamps.stream()
-                            .filter(tu -> StringUtils.startsWithAny(timestampSurtToSurt((String) tu), siteSearchSurts))
+                            .filter(tu -> SiteSearchFilter.anyMatches(siteSearchFilters, timestampSurtToSurt((String) tu)))
                             .collect(Collectors.toList());
                 }
 
@@ -908,19 +893,19 @@ public class SolrSearchService implements SearchService {
      * @param queryResponse
      * @param to
      * @param from
-     * @param siteSearchSurts
+     * @param siteSearchFilters
      * @param collectionSearch
      * @param replyFields
      * @return
      */
-    private SearchResultSolrImpl getSearchResultfromSolrDocument(SolrDocument doc, QueryResponse queryResponse, Long to, Long from, String[] siteSearchSurts, String[] collectionSearch, String[] replyFields, int titleMaxLength, int snippetMaxLength ){
+    private SearchResultSolrImpl getSearchResultfromSolrDocument(SolrDocument doc, QueryResponse queryResponse, Long to, Long from, List<SiteSearchFilter> siteSearchFilters, String[] collectionSearch, String[] replyFields, int titleMaxLength, int snippetMaxLength ){
         String oldestUrl = null;
         String oldestTimestamp = null;
         String oldestCollection = null;
 
         
         List<Object> urlstimestamps = new ArrayList<Object>(doc.getFieldValues("urlTimestamp"));
-        urlstimestamps = filterUrlTimestamps(urlstimestamps, to, from, siteSearchSurts, collectionSearch);
+        urlstimestamps = filterUrlTimestamps(urlstimestamps, to, from, siteSearchFilters, collectionSearch);
 
         // Sometimes after filtering we get no results
         if (urlstimestamps.size() == 0) {
@@ -954,7 +939,7 @@ public class SolrSearchService implements SearchService {
         ArrayList<SearchResult> searchResultArrayList = new ArrayList<>();
 
         final Long to, from;
-        final String[] siteSearchSurts;
+        final List<SiteSearchFilter> siteSearchFilters;
         final String[] collectionSearch;
         final String[] replyFields;
 
@@ -973,14 +958,10 @@ public class SolrSearchService implements SearchService {
         }
 
         // Check if the user searched for one or more specific websites
-        if (searchQuery.isSearchBySite()) {
-            siteSearchSurts = Arrays.asList(searchQuery.getSite()).stream()
-                    .map(s -> URLNormalizers.canocalizeSurtUrl(s))
-                    .collect(Collectors.toList())
-                    .toArray(new String[0]);
-        } else {
-            siteSearchSurts = null;
-        }
+        List<SiteSearchFilter> siteFilters = searchQuery.isSearchBySite()
+                ? SiteSearchFilter.parseAll(searchQuery.getSite())
+                : null;
+        siteSearchFilters = siteFilters == null || siteFilters.isEmpty() ? null : siteFilters;
 
         // Check if the request is time-bounded
         if (searchQuery.getFrom() != null) {
@@ -1027,7 +1008,7 @@ public class SolrSearchService implements SearchService {
 
         for (SolrDocument doc : orderedDocs) {
 
-            SearchResultSolrImpl searchResult = getSearchResultfromSolrDocument(doc,queryResponse,to,from,siteSearchSurts,collectionSearch,replyFields,titleMaxLength,snippetMaxLength);
+            SearchResultSolrImpl searchResult = getSearchResultfromSolrDocument(doc,queryResponse,to,from,siteSearchFilters,collectionSearch,replyFields,titleMaxLength,snippetMaxLength);
             if(searchResult == null){
                 continue;
             }
