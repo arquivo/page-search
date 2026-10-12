@@ -221,6 +221,31 @@ public class OpenApiConfigTest {
     }
 
     @Test
+    public void apiDocsDescribeHowShortFromAndToAreCompleted() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders
+                        .get("/textsearch/api-docs/v3"))
+                .andReturn().getResponse();
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        JSONArray parameters = new JSONObject(response.getContentAsString(StandardCharsets.UTF_8))
+                .getJSONObject("paths").getJSONObject("/textsearch").getJSONObject("get").getJSONArray("parameters");
+        JSONObject from = null;
+        JSONObject to = null;
+        for (int i = 0; i < parameters.length(); i++) {
+            String name = parameters.getJSONObject(i).getString("name");
+            if ("from".equals(name)) {
+                from = parameters.getJSONObject(i);
+            } else if ("to".equals(name)) {
+                to = parameters.getJSONObject(i);
+            }
+        }
+        assertThat(from).isNotNull();
+        assertThat(to).isNotNull();
+        assertThat(from.getString("description")).contains("start of the period", "20000101000000");
+        assertThat(to.getString("description")).contains("end of the period", "20251231235959");
+    }
+
+    @Test
     public void apiDocsDescribeEveryParameter() throws Exception {
         MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders
                         .get("/textsearch/api-docs/v3"))
