@@ -174,6 +174,13 @@ public class PageSearchController {
                            @RequestParam(value = "titleMaxLength", required = false) Integer titleMaxLength,
                            @Parameter(description = "Maximum number of characters returned in the snippet field. Snippets longer than this are cut short. 0 disables truncation.")
                            @RequestParam(value = "snippetMaxLength", required = false) Integer snippetMaxLength,
+                           @Parameter(description = "Only return pages from these sites, as a comma separated list (a page from any of them is returned). "
+                                   + "A host matches that host only, not its subdomains: sapo.pt returns pages from sapo.pt but not from blogs.sapo.pt. "
+                                   + "Prefix a host with *. to also match all of its subdomains: *.sapo.pt returns pages from sapo.pt and from any subdomain of it. "
+                                   + "The * wildcard is only supported as a *. prefix of a host. "
+                                   + "A URL with a path matches every page whose URL starts with it, e.g. sapo.pt/noticias. "
+                                   + "The protocol and a leading www. are ignored, so http://www.sapo.pt, https://sapo.pt and sapo.pt are the same site.",
+                                   example = "publico.pt,*.sapo.pt")
                            @RequestParam(value = "siteSearch", required = false) String[] siteSearch,
                            @Parameter(description = "Field results are deduplicated by, keeping only the newest per distinct value. title (the default) collapses on the exact title. "
                                    + "collection collapses on the collection. type collapses on the mimetype. url collapses on the exact URL, so two pages are only "
