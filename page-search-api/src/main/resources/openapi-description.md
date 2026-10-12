@@ -18,6 +18,8 @@ Search with `GET /textsearch?q=<terms>`:
 
 The results can be narrowed down by capture date (`from`, `to`), site (`siteSearch`), document type (`type`),
 collection (`collection`), exact title (`titleSearch`) and detected language (`language`, `minLanguageConfidence`).
+A site matches that host only, e.g. `siteSearch=sapo.pt`. Prefix it with `*.` to also match its subdomains, e.g.
+`siteSearch=*.sapo.pt`.
 
 ## Results
 
