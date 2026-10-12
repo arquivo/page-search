@@ -102,4 +102,33 @@ public class OpenApiConfigTest {
         assertThat(siteSearch).isNotNull();
         assertThat(siteSearch.getString("description")).contains("*.sapo.pt");
     }
+
+    @Test
+    public void apiDocsDescribeEveryParameter() throws Exception {
+        MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders
+                        .get("/textsearch/api-docs/v3"))
+                .andReturn().getResponse();
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        JSONObject paths = new JSONObject(response.getContentAsString(StandardCharsets.UTF_8)).getJSONObject("paths");
+        List<String> undescribed = new ArrayList<>();
+        int described = 0;
+        JSONArray pathNames = paths.names();
+        for (int p = 0; p < pathNames.length(); p++) {
+            String path = pathNames.getString(p);
+            JSONObject operation = paths.getJSONObject(path).optJSONObject("get");
+            JSONArray parameters = operation == null ? null : operation.optJSONArray("parameters");
+            for (int i = 0; parameters != null && i < parameters.length(); i++) {
+                JSONObject parameter = parameters.getJSONObject(i);
+                if (parameter.optString("description").trim().isEmpty()) {
+                    undescribed.add(path + "?" + parameter.getString("name"));
+                } else {
+                    described++;
+                }
+            }
+        }
+        // Guards against the loop above silently checking nothing if the spec's layout changes
+        assertThat(described).isGreaterThan(20);
+        assertThat(undescribed).isEmpty();
+    }
 }
