@@ -493,17 +493,32 @@ public class PageSearchControllerTest {
     }
 
     @Test
-    public void pageSearchItemsPerSiteFromToAppliedToSearchQuery() throws Exception {
+    public void pageSearchIgnoresRemovedItemsPerSite() throws Exception {
+        SearchResults mockSearchResults = new SearchResults();
+        mockSearchResults.setResults(new ArrayList<>());
+        Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
+
+        // Clients built against the old API may still send it, and shouldn't be rejected
+        MockHttpServletResponse response = mockMvc.perform(MockMvcRequestBuilders
+                .get("/textsearch?q=sapo&itemsPerSite=5")).andReturn().getResponse();
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        ArgumentCaptor<SearchQuery> captor = ArgumentCaptor.forClass(SearchQuery.class);
+        Mockito.verify(searchService).query(captor.capture());
+        assertThat(captor.getValue().getDedupValue()).isEqualTo(2);
+    }
+
+    @Test
+    public void pageSearchFromToAppliedToSearchQuery() throws Exception {
         SearchResults mockSearchResults = new SearchResults();
         mockSearchResults.setResults(new ArrayList<>());
         Mockito.when(searchService.query(Mockito.any())).thenReturn(mockSearchResults);
 
         mockMvc.perform(MockMvcRequestBuilders
-                .get("/textsearch?q=sapo&itemsPerSite=3&from=20200101&to=20211231")).andReturn();
+                .get("/textsearch?q=sapo&from=20200101&to=20211231")).andReturn();
 
         ArgumentCaptor<SearchQuery> captor = ArgumentCaptor.forClass(SearchQuery.class);
         Mockito.verify(searchService).query(captor.capture());
-        assertThat(captor.getValue().getLimitPerSite()).isEqualTo(3);
         assertThat(captor.getValue().getFrom()).isEqualTo("20200101000000");
         assertThat(captor.getValue().getTo()).isEqualTo("20211231000000");
     }

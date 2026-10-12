@@ -32,10 +32,6 @@ public class SearchQueryImpl implements SearchQuery {
 
     private int snippetMaxLength = 300;
 
-    // TODO decreprated field
-    @JsonIgnore
-    private Integer limitPerSite;
-
     private int dedupValue = 2;
 
     private String from;
@@ -134,15 +130,6 @@ public class SearchQueryImpl implements SearchQuery {
 
     public void setSnippetMaxLength(int snippetMaxLength) {
         this.snippetMaxLength = Math.max(snippetMaxLength, 0);
-    }
-
-    public Integer getLimitPerSite() {
-        return limitPerSite;
-    }
-
-    public void setLimitPerSite(Integer limitPerSite) {
-        this.limitPerSite = limitPerSite;
-        this.dedupValue = limitPerSite;
     }
 
     public String getFrom() {
@@ -375,7 +362,6 @@ public class SearchQueryImpl implements SearchQuery {
         stringBuilder.append("q: ").append(getQueryTerms());
         stringBuilder.append(" offset: ").append(getOffset());
         stringBuilder.append(" maxItems: ").append(getMaxItems());
-        stringBuilder.append(" itemsPerSite: ").append(getLimitPerSite());
         stringBuilder.append(" from: ").append(getFrom());
         stringBuilder.append(" to: ").append(getTo());
         stringBuilder.append(" type: ").append(getType());

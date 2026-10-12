@@ -191,10 +191,6 @@ public class PageSearchController {
                                    + "falls back to title.",
                                    schema = @Schema(allowableValues = {"title", "collection", "type", "url", "site"}))
                            @RequestParam(value = "dedupField", required = false, defaultValue = "title") String dedupField,
-                           @Parameter(description = "Deprecated, use dedupValue instead. Currently has no effect: dedupValue (2 by default) "
-                                   + "applies even when only itemsPerSite is sent.",
-                                   deprecated = true)
-                           @RequestParam(value = "itemsPerSite", required = false) Integer itemsPerSite,
                            @Parameter(description = "Number of results returned per distinct dedupField value, the newest ones. "
                                    + "0 and 1 both return one result per value. -1 turns deduplication off.")
                            @RequestParam(value = "dedupValue", required = false, defaultValue = "2") int dedupValue,
@@ -270,10 +266,6 @@ public class PageSearchController {
         searchQuery.setTitleMaxLength(titleMaxLength != null ? titleMaxLength : defaultTitleMaxLength);
         searchQuery.setSnippetMaxLength(snippetMaxLength != null ? snippetMaxLength : defaultSnippetMaxLength);
 
-        // TODO to decrepate parameter
-        if (itemsPerSite != null) {
-            searchQuery.setLimitPerSite(itemsPerSite);
-        }
         if (from != null) {
             searchQuery.setFrom(from);
         }

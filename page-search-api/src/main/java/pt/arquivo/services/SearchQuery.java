@@ -72,10 +72,6 @@ public interface SearchQuery {
 
     boolean isTimeBoundedQuery();
 
-    Integer getLimitPerSite();
-
-    void setLimitPerSite(Integer limitPerSite);
-
     boolean getPrettyPrint();
 
     void setPrettyPrint(boolean prettyPrint);
