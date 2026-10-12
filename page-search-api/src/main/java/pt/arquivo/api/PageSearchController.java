@@ -87,7 +87,9 @@ public class PageSearchController {
     @Operation(summary = "Get the extracted text of an Archived Page")
     @CrossOrigin
     @GetMapping(value = "/textextracted")
-    public String extractedText(@RequestParam(value = "m") String id) {
+    public String extractedText(@Parameter(description = "Capture whose extracted text should be returned, as <URL>/<timestamp>, "
+                                        + "e.g. http://www.fccn.pt/20010610000000.")
+                                @RequestParam(value = "m") String id) {
         LOG.info(String.format("Request to /textextracted for ID=%s", id));
         String extractedText;
 

@@ -2,6 +2,7 @@ package pt.arquivo.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,9 @@ public class MetadataController {
     @Operation(summary = "Get the metadata information about an archived page")
     @CrossOrigin
     @GetMapping(value = {"/metadata"})
-    public MetadataResponse getMetadata(@RequestParam(value = "id") String id) {
+    public MetadataResponse getMetadata(@Parameter(description = "Capture whose metadata should be returned, as <URL>/<timestamp>, "
+                                                + "e.g. http://www.fccn.pt/20010610000000.")
+                                        @RequestParam(value = "id") String id) {
         LOG.info(String.format("Request to /metadata for ID=%s", id));
 
         MetadataResponse metadataResponse = new MetadataResponse();
