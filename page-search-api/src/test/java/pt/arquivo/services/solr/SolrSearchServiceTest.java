@@ -249,6 +249,18 @@ public class SolrSearchServiceTest {
     }
 
     @Test
+    public void convertSearchQuery_shortFromAndToIncludeTheWholePeriodTheyName() {
+        // https://github.com/arquivo/pwa-technologies/issues/1662: to=2006 used to stop at the start of 2006
+        SearchQueryImpl searchQuery = new SearchQueryImpl("expresso");
+        searchQuery.setFrom("2005");
+        searchQuery.setTo("2006");
+        SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
+        assertThat(solrQuery.getFilterQueries()).contains(
+                "dateLatest:[ " + ClientUtils.escapeQueryChars("2005-01-01T00:00:00Z") + " TO * ]",
+                "dateOldest:[ * TO " + ClientUtils.escapeQueryChars("2006-12-31T23:59:59Z") + "]");
+    }
+
+    @Test
     public void convertSearchQuery_groupsOnTheSanitizedDedupField() {
         // dedupField=collection used to be passed straight through to Solr as {!collapse field=collection}, but
         // "collection" isn't a real Solr field (only "collectionOldest" is), which made Solr reject the query
