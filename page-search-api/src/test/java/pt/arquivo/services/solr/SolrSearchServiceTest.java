@@ -590,13 +590,61 @@ public class SolrSearchServiceTest {
     }
 
     @Test
-    public void filterUrlTimestamps_filtersBySiteSearchSurtPrefix() {
+    public void filterUrlTimestamps_filtersBySiteSearch() {
         List<Object> urlstimestamps = new ArrayList<>(Arrays.asList(
                 "COLLECTION1/20190101000000/(com,example,)/path1",
-                "COLLECTION1/20190101000000/(com,other,)/path2"));
+                "COLLECTION1/20190101000000/(com,example,",
+                "COLLECTION1/20190101000000/(com,example,blog,)/path2",
+                "COLLECTION1/20190101000000/(com,other,)/path3"));
         List<Object> result = service.filterUrlTimestamps(urlstimestamps, null, null,
-                new String[] { "(com,example,)" }, null);
-        assertThat(result).containsExactly("COLLECTION1/20190101000000/(com,example,)/path1");
+                SiteSearchFilter.parseAll(new String[] { "www.example.com" }), null);
+        assertThat(result).containsExactly(
+                "COLLECTION1/20190101000000/(com,example,)/path1",
+                "COLLECTION1/20190101000000/(com,example,");
+    }
+
+    @Test
+    public void filterUrlTimestamps_keepsSubdomainsForWildcardSiteSearch() {
+        List<Object> urlstimestamps = new ArrayList<>(Arrays.asList(
+                "COLLECTION1/20190101000000/(com,example,)/path1",
+                "COLLECTION1/20190101000000/(com,example,blog,)/path2",
+                "COLLECTION1/20190101000000/(com,other,)/path3"));
+        List<Object> result = service.filterUrlTimestamps(urlstimestamps, null, null,
+                SiteSearchFilter.parseAll(new String[] { "*.example.com" }), null);
+        assertThat(result).containsExactly(
+                "COLLECTION1/20190101000000/(com,example,)/path1",
+                "COLLECTION1/20190101000000/(com,example,blog,)/path2");
+    }
+
+    @Test
+    public void convertSearchQuery_restrictsSiteSearchToTheHost() {
+        SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
+        searchQuery.setSite(new String[] { "https://www.sapo.pt" });
+
+        SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
+
+        assertThat(solrQuery.getFilterQueries()).contains("surts:\\(pt,sapo, OR surts:\\(pt,sapo,\\)*");
+    }
+
+    @Test
+    public void convertSearchQuery_joinsSiteSearchHostsAndWildcardsWithOr() {
+        SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
+        searchQuery.setSite(new String[] { "sapo.pt", "*.sapo.pt" });
+
+        SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
+
+        assertThat(solrQuery.getFilterQueries())
+                .contains("surts:\\(pt,sapo, OR surts:\\(pt,sapo,\\)* OR surts:\\(pt,sapo,*");
+    }
+
+    @Test
+    public void convertSearchQuery_ignoresBlankSiteSearch() {
+        SearchQueryImpl searchQuery = new SearchQueryImpl("sapo");
+        searchQuery.setSite(new String[] { "" });
+
+        SolrQuery solrQuery = service.convertSearchQuery(searchQuery);
+
+        assertThat(solrQuery.getFilterQueries()).noneMatch(fq -> fq.startsWith("surts:"));
     }
 
     @Test
