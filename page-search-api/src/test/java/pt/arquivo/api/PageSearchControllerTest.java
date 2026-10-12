@@ -520,7 +520,7 @@ public class PageSearchControllerTest {
         ArgumentCaptor<SearchQuery> captor = ArgumentCaptor.forClass(SearchQuery.class);
         Mockito.verify(searchService).query(captor.capture());
         assertThat(captor.getValue().getFrom()).isEqualTo("20200101000000");
-        assertThat(captor.getValue().getTo()).isEqualTo("20211231000000");
+        assertThat(captor.getValue().getTo()).isEqualTo("20211231235959");
     }
 
     @Test

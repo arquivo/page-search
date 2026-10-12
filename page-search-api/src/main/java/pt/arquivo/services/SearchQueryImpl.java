@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.lang.StringUtils;
+import pt.arquivo.utils.Utils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -151,12 +152,9 @@ public class SearchQueryImpl implements SearchQuery {
         return to;
     }
 
+    // A short "to" names a period and includes all of it, e.g. 2006 is up to 20061231235959, as on the CDX server
     public void setTo(String to) {
-        if (to.length() > 14) {
-            this.to = to.substring(0, 14);
-        } else {
-            this.to = StringUtils.rightPad(to, 14, "0");
-        }
+        this.to = Utils.canocalizeEndTimestamp(to);
     }
 
     public String[] getType() {
