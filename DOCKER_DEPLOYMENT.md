@@ -26,11 +26,11 @@ The Page Search API is containerized and published to Docker Hub. This allows fo
 
 The GitHub Actions workflow (`.github/workflows/docker-build.yml`) automatically:
 
-1. **Builds** the Maven project on push to `master`, `main`, or `development` branches
+1. **Builds** the Maven project on push to the `main` branch
 2. **Builds** Docker image using the compiled WAR file
 3. **Pushes** to `arquivo/page-search-api` on Docker Hub with tags:
-   - `latest` (for master/main)
-   - Branch name (e.g., `development`)
+   - `latest` (for main)
+   - Branch name (e.g., `main`, or the branch of a manual run)
    - Semantic version (for git tags like `v1.0.0`)
    - Short commit SHA
 
@@ -323,7 +323,7 @@ docker image prune -a
 
 ### Automatic (Recommended)
 
-1. Push to `master` branch or create a git tag:
+1. Push to the `main` branch or create a git tag:
    ```bash
    git tag v1.2.3
    git push origin v1.2.3
